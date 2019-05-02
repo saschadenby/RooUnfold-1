@@ -13,13 +13,13 @@
 #define ROOUNFOLDBAYES_HH
 
 #include "RooUnfold.h"
+#include "RooUnfoldResponse.h"
 
 #include "TVectorD.h"
 #include "TMatrixD.h"
 
 class TH1;
 class TH2;
-class RooUnfoldResponse;
 
 class RooUnfoldBayes : public RooUnfold {
 

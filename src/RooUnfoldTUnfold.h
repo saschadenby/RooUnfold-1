@@ -14,8 +14,8 @@
 
 #include "RooUnfold.h"
 #include "TUnfold.h"
+#include "RooUnfoldResponse.h"
 
-class RooUnfoldResponse;
 class TH1;
 class TH1D;
 class TH2D;

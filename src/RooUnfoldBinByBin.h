@@ -13,9 +13,9 @@
 #define ROOUNFOLDBINBYBIN_H_
 
 #include "RooUnfold.h"
+#include "RooUnfoldResponse.h"
 #include "TVectorD.h"
 
-class RooUnfoldResponse;
 class TH1;
 class TH1D;
 class TH2D;
