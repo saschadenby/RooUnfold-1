@@ -14,6 +14,9 @@
 
 #include "TNamed.h"
 #include "TMatrixD.h"
+#include "RooAbsReal.h"
+#include "RooRealVar.h"
+#include "RooDataHist.h"
 #include "TH1.h"
 #if ROOT_VERSION_CODE >= ROOT_VERSION(5,0,0)
 #include "TVectorDfwd.h"
@@ -129,6 +132,8 @@ public:
   static Int_t   FindBin(const Hist*  h, Double_t x, Double_t y, Double_t z);  // return vector index for bin containing (x,y,z)
   static Int_t   GetBin (const Hist*  h, Int_t i, Bool_t overflow= kFALSE);  // vector index (0..nx*ny-1) -> multi-dimensional histogram global bin number (0..(nx+2)*(ny+2)-1) skipping under/overflow bins
   static Double_t GetBinContent (const Hist* h, Int_t i, Bool_t overflow= kFALSE); // Bin content by vector index
+  static Double_t GetBinCenterX (const Hist2D* h, Int_t i, Bool_t overflow= kFALSE); // Bin center by vector index  
+  static Double_t GetBinCenterY (const Hist2D* h, Int_t i, Bool_t overflow= kFALSE); // Bin center by vector index  
   static Double_t GetBinError   (const Hist* h, Int_t i, Bool_t overflow= kFALSE); // Bin error   by vector index
   static void PrintMatrix (const TMatrixD& m, const char* name="matrix", const char* format=0, Int_t cols_per_sheet=10);
 
@@ -149,7 +154,6 @@ private:
   virtual Int_t Fake2D (Double_t xr, Double_t yr, Double_t w= 1.0);  // Fill fake event into 2D Response Matrix (with weight)
 
   static Int_t GetBinDim (const Hist* h, Int_t i);
-  static void ReplaceAxis(TAxis* axis, const TAxis* source);
 
   // instance variables
 
@@ -178,5 +182,6 @@ public:
 };
 
 typedef RooUnfoldResponseT<TH1,TH2> RooUnfoldResponse;
+typedef RooUnfoldResponseT<RooAbsReal,RooAbsReal> RooAbsRealUnfoldResponse;
 
 #endif

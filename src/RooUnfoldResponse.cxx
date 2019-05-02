@@ -41,6 +41,10 @@ END_HTML */
 #include "TRandom.h"
 #include "TCollection.h"
 
+#include "RooHistFunc.h"
+#include "RooDataHist.h"
+
+
 #if ROOT_VERSION_CODE >= ROOT_VERSION(5,18,0)
 #define HAVE_RooUnfoldFoldingFunction
 #endif
@@ -50,6 +54,257 @@ using std::cerr;
 using std::endl;
 using std::pow;
 using std::sqrt;
+
+
+namespace {
+  int findBinX(const TH1* h, double x){
+    return h->GetXaxis()->FindBin(x);
+  }
+  int findBinY(const TH1* h, double y){
+    return h->GetYaxis()->FindBin(y);
+  }
+  int findBinZ(const TH1* h, double z){
+    return h->GetZaxis()->FindBin(z);
+  }
+  int findBinX(const RooAbsReal* h, double x){
+    // TODO
+    return 0;
+  }
+  int findBinY(const RooAbsReal* h, double y){
+    // TODO
+    return 0;
+  }
+  int findBinZ(const RooAbsReal* h, double z){
+    // TODO
+    return 0;
+  }
+  double xMin(const TH1* hist){
+    return hist->GetXaxis()->GetXmin();
+  }
+  double xMax(const TH1* hist){
+    return hist->GetXaxis()->GetXmax();
+  }  
+  double yMin(const TH1* hist){
+    return hist->GetYaxis()->GetXmin();
+  }
+  double yMax(const TH1* hist){
+    return hist->GetYaxis()->GetXmax();
+  }  
+  double zMin(const TH1* hist){
+    return hist->GetZaxis()->GetXmin();
+  }
+  double zMax(const TH1* hist){
+    return hist->GetZaxis()->GetXmax();
+  }
+  double xMin(const RooAbsReal* hist){
+    return 0;
+  }
+  double xMax(const RooAbsReal* hist){
+    return 0;
+  }  
+  double yMin(const RooAbsReal* hist){
+    return 0;
+  }
+  double yMax(const RooAbsReal* hist){
+    return 0;
+  }  
+  double zMin(const RooAbsReal* hist){
+    return 0;
+  }
+  double zMax(const RooAbsReal* hist){
+    return 0;
+  }    
+  
+  int sumW2N(const TH1* hist){
+    return hist->GetSumw2N();
+  }
+  int sumW2N(const RooAbsReal* hist){
+    return 0;
+  }
+
+  
+  void add(TH1* hista, const TH1* histb){
+    hista->Add(histb);
+  }
+  void add(RooAbsReal* hista, RooAbsReal* histb){
+    // TODO
+  }  
+  void projectY(RooAbsReal* _res, RooAbsReal* _tru, bool overflow){
+    // TODO
+  } 
+  void projectY(TH2* _res, TH1* _tru, bool overflow){
+    Int_t s= _res->GetSumw2N();
+    for (Int_t j= 1-overflow; j<_res->GetNbinsY()+1+overflow; j++) {
+      Double_t ntru= 0.0, wtru= 0.0;
+      for (Int_t i= 0; i<_res->GetNbinsX()+2; i++) {
+               ntru +=      _res->GetBinContent (i, j);
+        if (s) wtru += pow (_res->GetBinError   (i, j), 2);
+      }
+      Int_t bin= RooUnfoldResponseT<TH1,TH2>::GetBin (_tru, j, overflow);
+             _tru->SetBinContent (bin,      ntru);
+      if (s) _tru->SetBinError   (bin, sqrt(wtru));
+    }
+  }
+  void projectX(RooAbsReal* _res, RooAbsReal* _mes, bool overflow){
+    // TODO
+  }  
+  void projectX(TH2* _res, TH1* _mes, bool overflow){
+    Int_t s= _res->GetSumw2N();
+    for (Int_t i= 1-overflow; i<_res->GetNbinsX()+1+overflow; i++) {
+      Double_t nmes= 0.0, wmes= 0.0;
+      for (Int_t j= 0; j<_res->GetNbinsY(); j++) {
+               nmes +=      _res->GetBinContent (i, j);
+        if (s) wmes += pow (_res->GetBinError   (i, j), 2);
+      }
+      Int_t bin= RooUnfoldResponseT<TH1,TH2>::GetBin (_mes, i, overflow);
+             _mes->SetBinContent (bin,      nmes );
+      if (s) _mes->SetBinError   (bin, sqrt(wmes));
+    }
+  }
+  void subtractProjectX(RooAbsReal* _res, RooAbsReal* _mes, RooAbsReal* _fak, bool overflow){
+    // TODO
+  }
+  
+  void subtractProjectX(TH2* _res, TH1* _mes, TH1* _fak, bool overflow){
+    Int_t s= _res->GetSumw2N();
+    Int_t sm= _mes->GetSumw2N(), nfake=0;
+    for (Int_t i= 1-overflow; i<_res->GetNbinsX()+1+overflow; i++) {
+      Double_t nmes= 0.0, wmes= 0.0;
+      for (Int_t j= 0; j<_res->GetNbinsY()+2; j++) {
+               nmes +=      _res->GetBinContent (i, j);
+        if (s) wmes += pow (_res->GetBinError   (i, j), 2);
+      }
+      Int_t bin= RooUnfoldResponseT<TH1,TH2>::GetBin (_mes, i, overflow);
+      Double_t fake= _mes->GetBinContent (bin) - nmes;
+      if (fake!=0.0) nfake++;
+      if (!s) wmes= nmes;
+      _fak->SetBinContent (bin, fake);
+      _fak->SetBinError   (bin, sqrt (wmes + (sm ? pow(_mes->GetBinError(bin),2) : _mes->GetBinContent(bin))));
+    }
+#if ROOT_VERSION_CODE >= ROOT_VERSION(5,13,0)
+    _fak->SetEntries (_fak->GetEffectiveEntries());  // 0 entries if 0 fakes
+#else
+    _fak->SetEntries (nfake);  // 0 entries if 0 fakes
+#endif    
+  }
+
+  int fill(TH1* hist, double x, double w){
+    return hist->Fill (x, w);
+  }
+  int fill(TH1* hist, double x, double y, double w){
+    return ((TH2*)hist)->Fill (x, y, w);
+  }
+  int fill(TH1* hist, double x, double y, double z, double w){
+    return ((TH3*)hist)->Fill (x, y, z, w);
+  }    
+  int fill(TH2* hist, double x, double y, double w){
+    return hist->Fill (x, y, w);
+  }
+  int fill(RooAbsReal* hist, double x, double w){
+    return 0;
+  }
+  int fill(RooAbsReal* hist, double x, double y, double w){
+    return 0;
+  }  
+  int fill(RooAbsReal* hist, double x, double y, double z, double w){
+    return 0;
+  }  
+
+  
+  TH1* copy(const TH1* orighist, bool reset, const char* name = 0, const char* title = 0){
+    Bool_t oldstat= TH1::AddDirectoryStatus();
+    TH1::AddDirectory (kFALSE);
+    TH1* hist = (TH1*)(orighist ->Clone());
+    if(name) hist->SetName(name);
+    if(title) hist->SetTitle(title);
+    hist->Reset();
+    return hist;
+    TH1::AddDirectory (oldstat);
+  }
+  TH2* copy(const TH2* orighist, bool reset, const char* name = 0, const char* title = 0){
+    Bool_t oldstat= TH1::AddDirectoryStatus();
+    TH1::AddDirectory (kFALSE);
+    TH2* hist = (TH2*)(orighist ->Clone());
+    if(name) hist->SetName(name);
+    if(title) hist->SetTitle(title);
+    hist->Reset();
+    return hist;
+    TH1::AddDirectory (oldstat);
+  }  
+  RooAbsReal* copy(const RooAbsReal* r, bool reset, const char* name = 0, const char* title = 0){
+    RooAbsReal* retval = (RooAbsReal*)(r->clone());
+    if(name) retval->SetName(name);
+    if(title) retval->SetTitle(title);
+    return retval;
+  }
+  int entries(const TH1* hist){
+    return hist->GetEntries();
+  }
+  int entries(const RooAbsReal* hist){
+    // TODO
+    return 0;
+  }
+  int dim(const TH1* hist){
+    return hist->GetDimension();
+  }
+  int dim(const RooAbsReal* hist){
+    // TODO
+    return 0;
+  }
+  int nBins(const TH1* hist){
+    return hist->GetNbinsX() * hist->GetNbinsY() * hist->GetNbinsZ();
+  }
+  int nBinsX(const TH1* hist){
+    return hist->GetNbinsX();
+  }  
+  int nBinsY(const TH1* hist){
+    return hist->GetNbinsY();
+  }
+  int nBinsZ(const TH1* hist){
+    return hist->GetNbinsZ();
+  }  
+  int nBins(const RooAbsReal* hist){
+    // TODO
+    return 0;
+  }
+  int nBinsX(const RooAbsReal* hist){
+    // TODO
+    return 0;
+  }  
+  int nBinsY(const RooAbsReal* hist){
+    // TODO
+    return 0;
+  }
+  int nBinsZ(const RooAbsReal* hist){
+    // TODO
+    return 0;
+  }
+  template<class Hist2D> Hist2D* createHist(const char* name, const char* title, int nbinsx, double xmin, double xmax, const char* xname, int nbinsy, double ymin, double ymax, const char* yname);
+  template<>  
+  TH2* createHist<TH2>(const char* name, const char* title, int nbinsx, double xmin, double xmax, const char* xname, int nbinsy, double ymin, double ymax, const char* yname){
+    return new TH2D (name,title, nbinsx, xmin, xmax, nbinsy, ymin, ymax);
+  }
+  template<>  
+  RooAbsReal* createHist<RooAbsReal>(const char* name, const char* title, int nbinsx, double xmin, double xmax, const char* xname, int nbinsy, double ymin, double ymax, const char* yname){
+    RooRealVar* x = new RooRealVar(xname,xname,nbinsx,xmin,xmax);
+    RooRealVar* y = new RooRealVar(yname,yname,nbinsy,ymin,ymax);
+    RooArgSet vars(*x,*y);
+    RooDataHist* hist = new RooDataHist (name,title,vars);
+    return new RooHistFunc(name,title,vars,vars,*hist);
+  }
+  template<class Hist> Hist* createHist(const char* name, const char* title, int nbinsx, double xmin, double xmax, const char* xname);  
+  template<> TH1* createHist<TH1>(const char* name, const char* title, int nbinsx, double xmin, double xmax, const char* xname){
+    return new TH1D (name,title, nbinsx, xmin, xmax);
+  }
+  template<> RooAbsReal* createHist<RooAbsReal>(const char* name, const char* title, int nbinsx, double xmin, double xmax, const char* xname){
+    RooRealVar* x = new RooRealVar(xname,xname,nbinsx,xmin,xmax);
+    RooArgSet vars(*x);    
+    RooDataHist* hist = new RooDataHist (name,title,vars);
+    return new RooHistFunc(name,title,vars,vars,*hist);
+  }
+}
+
+
 
 
 #ifdef HAVE_RooUnfoldFoldingFunction
@@ -227,10 +482,10 @@ RooUnfoldResponseT<Hist,Hist2D>::Add (const RooUnfoldResponseT<Hist,Hist2D>& rhs
   assert (_tru != 0 && rhs._tru != 0);
   assert (_res != 0 && rhs._res != 0);
   if (_cached) ClearCache();
-  _mes->Add (rhs._mes);
-  _fak->Add (rhs._fak);
-  _tru->Add (rhs._tru);
-  _res->Add (rhs._res);
+  add(_mes,rhs._mes);
+  add(_fak,rhs._fak);
+  add(_tru,rhs._tru);
+  add(_res,rhs._res);
 }
 
 
@@ -243,7 +498,7 @@ RooUnfoldResponseT<Hist,Hist2D>::Merge (TCollection* others)
     if (RooUnfoldResponseT<Hist,Hist2D>* other= dynamic_cast<RooUnfoldResponseT<Hist,Hist2D>*>(o))
       Add (*other);
   }
-  return Long64_t(_res->GetEntries());
+  return Long64_t(entries(_res));
 }
 
 
@@ -291,29 +546,15 @@ RooUnfoldResponseT<Hist,Hist2D>::Setup (Int_t nm, Double_t mlo, Double_t mhi, In
 {
   // set up simple 1D case
   Reset();
-  Bool_t oldstat= Hist::AddDirectoryStatus();
-  Hist::AddDirectory (kFALSE);
-  _mes= new TH1F ("measured", "Measured", nm, mlo, mhi);
-  _fak= new TH1F ("fakes",    "Fakes",    nm, mlo, mhi);
-  _tru= new TH1F ("truth",    "Truth",    nt, tlo, thi);
+  _mes= createHist<Hist>("measured", "Measured", nm, mlo, mhi,"xm");
+  _fak= createHist<Hist>("fakes",    "Fakes",    nm, mlo, mhi,"xm");
+  _tru= createHist<Hist>("truth",    "Truth",    nt, tlo, thi,"xt");
   _mdim= _tdim= 1;
   _nm= nm;
   _nt= nt;
   SetNameTitleDefault ("response", "Response");
-  _res= new TH2D (GetName(), GetTitle(), nm, mlo, mhi, nt, tlo, thi);
-  Hist::AddDirectory (oldstat);
+  _res= createHist<Hist2D>(GetName(), GetTitle(), nm, mlo, mhi, "xm", nt, tlo, thi, "xt");
   return *this;
-}
-
-template <class Hist, class Hist2D> void
-RooUnfoldResponseT<Hist,Hist2D>::ReplaceAxis (TAxis* dest, const TAxis* source)
-{
-  // Replaces an axis with that of a different histogram
-  TString  name= dest->GetName();
-  TObject* hist= dest->GetParent();
-  source->Copy (*dest);
-  dest->SetName   (name);
-  dest->SetParent (hist);
 }
 
 template <class Hist, class Hist2D> RooUnfoldResponseT<Hist,Hist2D>&
@@ -321,27 +562,19 @@ RooUnfoldResponseT<Hist,Hist2D>::Setup (const Hist* measured, const Hist* truth)
 {
   // set up - measured and truth only used for shape
   Reset();
-  Bool_t oldstat= Hist::AddDirectoryStatus();
-  Hist::AddDirectory (kFALSE);
-  _mes= (Hist*) measured ->Clone();
-  _mes->Reset();
-  _fak= (Hist*) _mes     ->Clone("fakes");
-  _fak->SetTitle("Fakes");
-  _tru= (Hist*) truth    ->Clone();
-  _tru->Reset();
-  _mdim= _mes->GetDimension();
-  _tdim= _tru->GetDimension();
+  _mes= copy(measured,true);
+  _fak= copy(measured,true,"fakes","Fakes");
+  _tru= copy(truth,true,"truth");
+  _mdim= dim(_mes);
+  _tdim= dim(_tru);
   if (_overflow && (_mdim > 1 || _tdim > 1)) {
     cerr << "UseOverflow setting ignored for multi-dimensional distributions" << endl;
     _overflow= 0;
   }
   SetNameTitleDefault();
-  _nm= _mes->GetNbinsX() * _mes->GetNbinsY() * _mes->GetNbinsZ();
-  _nt= _tru->GetNbinsX() * _tru->GetNbinsY() * _tru->GetNbinsZ();
-  _res= new TH2D (GetName(), GetTitle(), _nm, 0.0, Double_t(_nm), _nt, 0.0, Double_t(_nt));
-  if (_mdim==1) ReplaceAxis (_res->GetXaxis(), _mes->GetXaxis());
-  if (_tdim==1) ReplaceAxis (_res->GetYaxis(), _tru->GetXaxis());
-  Hist::AddDirectory (oldstat);
+  _nm= nBins(_mes);
+  _nt= nBins(_tru);
+  _res=createHist<Hist2D>(GetName(), GetTitle(), _nm, 0.0, Double_t(_nm), "xm", _nt, 0.0, Double_t(_nt), "xt");
   return *this;
 }
 
@@ -356,99 +589,48 @@ RooUnfoldResponseT<Hist,Hist2D>::Setup (const Hist* measured, const Hist* truth,
   // "measured" and/or "truth" can be specified as 0 (1D case only) or an empty histograms (no entries) as a shortcut
   // to indicate, respectively, no fakes and/or no inefficiency.
   Reset();
-  Bool_t oldstat= Hist::AddDirectoryStatus();
-  Hist::AddDirectory (kFALSE);
-  _res= (Hist2D*) response->Clone();
+  _res= copy(response,false);
   if (measured) {
-    _mes= (Hist*) measured->Clone();
-    _fak= (Hist*) measured->Clone("fakes");
-    _fak->Reset();
-    _fak->SetTitle("Fakes");
-    _mdim= _mes->GetDimension();
+    _mes= copy(measured,false);
+    _fak= copy(measured,true,"fakes","Fakes");
+    _mdim= dim(_mes);
   } else {
-    _mes= new TH1F ("measured", "Measured", response->GetNbinsX(), 0.0, 1.0);
-    ReplaceAxis (_mes->GetXaxis(), _res->GetXaxis());
-    _fak= (Hist*) _mes->Clone("fakes");
-    _fak->SetTitle("Fakes");
+    _mes= createHist<Hist>("measured", "Measured", nBinsX(response), 0.0, 1.0, "xm");
+    _fak= copy(_mes,false,"fakes","Fakes");
     _mdim= 1;
   }
   if (truth) {
-    _tru= (Hist*)  truth   ->Clone();
-    _tdim= _tru->GetDimension();
+    _tru= copy(truth,false);
+    _tdim= dim(_tru);
   } else {
-    _tru= new TH1F ("truth",    "Truth",    response->GetNbinsY(), 0.0, 1.0);
-    ReplaceAxis (_tru->GetXaxis(), _res->GetYaxis());
+    _tru= createHist<Hist>("truth",    "Truth",    nBinsY(response), 0.0, 1.0, "xt");
     _tdim= 1;
   }
-  Hist::AddDirectory (oldstat);
   if (_overflow && (_mdim > 1 || _tdim > 1)) {
     cerr << "UseOverflow setting ignored for multi-dimensional distributions" << endl;
     _overflow= 0;
   }
-  _nm= _mes->GetNbinsX() * _mes->GetNbinsY() * _mes->GetNbinsZ();
-  _nt= _tru->GetNbinsX() * _tru->GetNbinsY() * _tru->GetNbinsZ();
-  if (_nm != _res->GetNbinsX() || _nt != _res->GetNbinsY()) {
+  _nm= nBins(_mes);
+  _nt= nBins(_tru);
+  if (_nm != nBinsX(_res) || _nt != nBinsY(_res)) {
     cerr << "Warning: RooUnfoldResponseT<class Hist, class Hist2D> measured X truth is " << _nm << " X " << _nt
-         << ", but matrix is " << _res->GetNbinsX()<< " X " << _res->GetNbinsY() << endl;
+         << ", but matrix is " << nBinsX(_res)<< " X " << nBinsY(_res) << endl;
   }
 
-  Int_t first=1, nm= _nm, nt= _nt, s= _res->GetSumw2N();
-  if (_overflow) {
-    first= 0;
-    nm += 2;
-    nt += 2;
-  }
-
-  if (!measured || _mes->GetEntries() == 0.0) {
+  if (!measured || entries(_mes) == 0.0) {
     // Similar to _res->ProjectionX() but without stupid reset of existing histograms
     // Always include under/overflows in sum of truth.
-    for (Int_t i= 0; i<nm; i++) {
-      Double_t nmes= 0.0, wmes= 0.0;
-      for (Int_t j= 0; j<_nt+2; j++) {
-               nmes +=      _res->GetBinContent (i+first, j);
-        if (s) wmes += pow (_res->GetBinError   (i+first, j), 2);
-      }
-      Int_t bin= GetBin (_mes, i, _overflow);
-             _mes->SetBinContent (bin,      nmes );
-      if (s) _mes->SetBinError   (bin, sqrt(wmes));
-    }
+    projectX(_res,_mes,_overflow);
   } else {
     // Fill fakes from the difference of _mes - _res->ProjectionX()
     // Always include under/overflows in sum of truth.
-    Int_t sm= _mes->GetSumw2N(), nfake=0;
-    for (Int_t i= 0; i<nm; i++) {
-      Double_t nmes= 0.0, wmes= 0.0;
-      for (Int_t j= 0; j<_nt+2; j++) {
-               nmes +=      _res->GetBinContent (i+first, j);
-        if (s) wmes += pow (_res->GetBinError   (i+first, j), 2);
-      }
-      Int_t bin= GetBin (_mes, i, _overflow);
-      Double_t fake= _mes->GetBinContent (bin) - nmes;
-      if (fake!=0.0) nfake++;
-      if (!s) wmes= nmes;
-      _fak->SetBinContent (bin, fake);
-      _fak->SetBinError   (bin, sqrt (wmes + (sm ? pow(_mes->GetBinError(bin),2) : _mes->GetBinContent(bin))));
-    }
-#if ROOT_VERSION_CODE >= ROOT_VERSION(5,13,0)
-    _fak->SetEntries (_fak->GetEffectiveEntries());  // 0 entries if 0 fakes
-#else
-    _fak->SetEntries (nfake);  // 0 entries if 0 fakes
-#endif
+    subtractProjectX(_res,_mes,_fak,_overflow);
   }
 
-  if (!truth || _tru->GetEntries() == 0.0) {
+  if (!truth || entries(_tru) == 0.0) {
     // similar to _res->ProjectionY() but without stupid reset of existing histograms
     // Always include under/overflows in sum of measurements.
-    for (Int_t j= 0; j<nt; j++) {
-      Double_t ntru= 0.0, wtru= 0.0;
-      for (Int_t i= 0; i<_nm+2; i++) {
-               ntru +=      _res->GetBinContent (i, j+first);
-        if (s) wtru += pow (_res->GetBinError   (i, j+first), 2);
-      }
-      Int_t bin= GetBin (_tru, j, _overflow);
-             _tru->SetBinContent (bin,      ntru);
-      if (s) _tru->SetBinError   (bin, sqrt(wtru));
-    }
+    projectY(_res,_tru,_overflow);
   }
 
   SetNameTitleDefault();
@@ -475,9 +657,9 @@ RooUnfoldResponseT<Hist,Hist2D>::Fill (Double_t xr, Double_t xt, Double_t w)
   assert (_mes != 0 && _tru != 0);
   assert (_mdim==1 && _tdim==1);
   if (_cached) ClearCache();
-  _mes->Fill (xr, w);
-  _tru->Fill (xt, w);
-  return _res->Fill (xr, xt, w);
+  fill(_mes,xr,w);
+  fill(_tru,xt,w);
+  return fill(_res,xr,xt,w);
 }
 
 template <class Hist, class Hist2D> Int_t
@@ -487,10 +669,9 @@ RooUnfoldResponseT<Hist,Hist2D>::Fill (Double_t xr, Double_t yr, Double_t xt, Do
   assert (_mes != 0 && _tru != 0);
   assert (_mdim==2 && _tdim==2);
   if (_cached) ClearCache();
-  ((Hist2D*)_mes)->Fill (xr, yr, w);
-  ((Hist2D*)_tru)->Fill (xt, yt, w);
-  return _res->Fill (_res->GetXaxis()->GetBinCenter (FindBin (_mes, xr, yr)+1),
-                     _res->GetYaxis()->GetBinCenter (FindBin (_tru, xt, yt)+1), w);
+  fill((Hist2D*)_mes,xr, yr, w);
+  fill((Hist2D*)_tru,xt, yt, w);
+  return fill(_res,GetBinCenterX(_res,FindBin (_mes, xr, yr)+1),GetBinCenterY(_res,FindBin (_tru, xt, yt)+1), w);
 }
 
 template <class Hist, class Hist2D> Int_t
@@ -500,22 +681,21 @@ RooUnfoldResponseT<Hist,Hist2D>::Fill (Double_t xr, Double_t yr, Double_t zr, Do
   assert (_mes != 0 && _tru != 0);
   assert (_mdim==3 && _tdim==3);
   if (_cached) ClearCache();
-  ((TH3*)_mes)->Fill (xr, yr, zr, w);
-  ((TH3*)_tru)->Fill (xt, yt, zt, w);
-  return _res->Fill (_res->GetXaxis()->GetBinCenter (FindBin (_mes, xr, yr, zr)+1),
-                     _res->GetYaxis()->GetBinCenter (FindBin (_tru, xt, yt, zt)+1), w);
+  fill(_mes,xr, yr, zr, w);
+  fill(_tru,xt, yt, zt, w);
+  return fill(_res,GetBinCenterX(_res,FindBin (_mes, xr, yr, zr)+1),GetBinCenterY(_res,FindBin (_tru, xt, yt, zt)+1), w);  
 }
 
 template <class Hist, class Hist2D> Int_t
 RooUnfoldResponseT<Hist,Hist2D>::FindBin(const Hist* h, Double_t x, Double_t y)
 {
   // Get vector index (0..nx*ny-1) for bin containing (x,y) coordinates
-  Int_t nx=   h->GetNbinsX();
-  Int_t ny=   h->GetNbinsY();
-  Int_t binx= h->GetXaxis()->FindBin(x) - 1;
+  Int_t nx=   nBinsX(h);
+  Int_t ny=   nBinsY(h);
+  Int_t binx= findBinX(h,x) - 1;
   if (binx <  0)  return -1;
   if (binx >= nx) return nx*ny;
-  Int_t biny= h->GetYaxis()->FindBin(y) - 1;
+  Int_t biny= findBinY(h,y) - 1;
   if (biny <  0)  return -1;
   if (biny >= ny) return nx*ny;
   return binx + nx*biny;
@@ -525,16 +705,16 @@ template <class Hist, class Hist2D> Int_t
 RooUnfoldResponseT<Hist,Hist2D>::FindBin(const Hist* h, Double_t x, Double_t y, Double_t z)
 {
   // Get vector index (0..nx*ny*nz-1) for bin containing (x,y,z) coordinates
-  Int_t nx=   h->GetNbinsX();
-  Int_t ny=   h->GetNbinsY();
-  Int_t nz=   h->GetNbinsZ();
-  Int_t binx= h->GetXaxis()->FindBin(x) - 1;
+  Int_t nx=   nBinsX(h);
+  Int_t ny=   nBinsY(h);
+  Int_t nz=   nBinsZ(h);
+  Int_t binx= findBinX(h,x) - 1;
   if (binx <  0)  return -1;
   if (binx >= nx) return nx*ny*nz;
-  Int_t biny= h->GetYaxis()->FindBin(y) - 1;
+  Int_t biny= findBinY(h,y) - 1;
   if (biny <  0)  return -1;
   if (biny >= ny) return nx*ny*nz;
-  Int_t binz= h->GetZaxis()->FindBin(z) - 1;
+  Int_t binz= findBinZ(h,z) - 1;
   if (binz <  0)  return -1;
   if (binz >= nz) return nx*ny*nz;
   return binx + nx*(biny + ny*binz);
@@ -545,12 +725,12 @@ RooUnfoldResponseT<Hist,Hist2D>::GetBinDim (const Hist* h, Int_t i)
 {
   // Converts from vector index (0..nx*ny-1) or (0..nx*ny*nz-1) to multi-dimensional histogram
   // global bin number (0..(nx+2)*(ny+2)-1) or (0..(nx+2)*(ny+2)*(nz+2)-1), skipping under/overflow bins.
-  Int_t ndim= h->GetDimension(), nx= h->GetNbinsX();
+  Int_t ndim= dim(h), nx= nBinsX(h);
   if        (ndim == 2) {
 //  cout << i << " -> " << "(" << i%nx+1 << "," << i/nx+1 << ")" << endl;
     return (i%nx+1) + (nx+2)*(i/nx+1);
   } else if (ndim == 3) {
-    Int_t ny= h->GetNbinsY();
+    Int_t ny= nBinsY(h);
 //  cout << i << " -> " << "(" << i%nx+1 << "," << (i/nx)%ny+1 << "," << i/(nx*ny)+1 << ")" << endl;
     return (i%nx+1) + (nx+2)*((i/nx)%ny+1 + (ny+2)*(i/(nx*ny)+1));
   }
@@ -644,12 +824,12 @@ template <class Hist, class Hist2D> Hist2D*
 RooUnfoldResponseT<Hist,Hist2D>::HresponseNoOverflow() const
 {
   const Hist2D* h= Hresponse();
-  Int_t nx= h->GetNbinsX(), ny= h->GetNbinsY(), s= h->GetSumw2N();
+  Int_t nx= nBinsX(h), ny= nBinsY(h), s= sumW2N(h);
   if (_overflow) {  // implies truth/measured both 1D
-    Double_t xlo= h->GetXaxis()->GetXmin(), xhi= h->GetXaxis()->GetXmax(), xb= (xhi-xlo)/nx;
-    Double_t ylo= h->GetYaxis()->GetXmin(), yhi= h->GetYaxis()->GetXmax(), yb= (yhi-ylo)/ny;
+    Double_t xlo= xMin(h), xhi= xMax(h), xb= (xhi-xlo)/nx;
+    Double_t ylo= yMin(h), yhi= yMax(h), yb= (yhi-ylo)/ny;
     nx += 2; ny += 2;
-    Hist2D* hx= new TH2D (h->GetName(), h->GetTitle(), nx, xlo-xb, xhi+xb, ny, ylo-yb, yhi+yb);
+    Hist2D* hx= createHist<Hist2D>(h->GetName(), h->GetTitle(), nx, xlo-xb, xhi+xb, "xm", ny, ylo-yb, yhi+yb, "xt");
     for (Int_t i= 0; i < nx; i++) {
       for (Int_t j= 0; j < ny; j++) {
                hx->SetBinContent (i+1, j+1, h->GetBinContent (i, j));
@@ -1192,7 +1372,7 @@ Int_t    RooUnfoldResponseT<Hist,Hist2D>::GetBin (const Hist* h, Int_t i, Bool_t
 {
   // vector index (0..nx*ny-1) -> multi-dimensional histogram
   // global bin number (0..(nx+2)*(ny+2)-1) skipping under/overflow bins
-  return (h->GetDimension()<2) ? i+(overflow ? 0 : 1) : GetBinDim(h,i);
+  return (dim(h)<2) ? i+(overflow ? 0 : 1) : GetBinDim(h,i);
 }
 
 template<class Hist, class Hist2D>
@@ -1200,6 +1380,17 @@ Double_t RooUnfoldResponseT<Hist,Hist2D>::GetBinContent (const Hist* h, Int_t i,
 {
   // Bin content by vector index
   return h->GetBinContent (GetBin (h, i, overflow));
+}
+
+template<class Hist, class Hist2D>
+Double_t RooUnfoldResponseT<Hist,Hist2D>::GetBinCenterX (const Hist2D* h, Int_t i, Bool_t overflow){
+  // Bin center by vector index
+  return h->GetXaxis()->GetBinCenter(i);
+}
+template<class Hist, class Hist2D>
+Double_t RooUnfoldResponseT<Hist,Hist2D>::GetBinCenterY (const Hist2D* h, Int_t i, Bool_t overflow){
+  // Bin center by vector index
+  return h->GetYaxis()->GetBinCenter(i);
 }
 
 template<class Hist, class Hist2D>
@@ -1272,7 +1463,7 @@ template<class Hist, class Hist2D>
 Double_t RooUnfoldResponseT<Hist,Hist2D>::FakeEntries() const
 {
   // Return number of fake entries
-  return _fak ? _fak->GetEntries() : 0.0;
+  return _fak ? entries(_fak) : 0.0;
 }
 
 template<class Hist, class Hist2D>
@@ -1284,3 +1475,6 @@ Int_t RooUnfoldResponseT<Hist,Hist2D>::FindBin (const Hist* h, Double_t x)
 
 template class RooUnfoldResponseT<TH1,TH2>;
 ClassImp (RooUnfoldResponse);
+
+//template class RooUnfoldResponseT<RooAbsReal,RooAbsReal>;
+//ClassImp (RooAbsRealUnfoldResponse);
