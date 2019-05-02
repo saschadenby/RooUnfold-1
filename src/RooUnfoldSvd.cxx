@@ -35,9 +35,6 @@ END_HTML */
 
 #include "RooUnfoldResponse.h"
 
-#if (defined(HAVE_TSVDUNFOLD) && !HAVE_TSVDUNFOLD) && ROOT_VERSION_CODE < ROOT_VERSION(5,34,0)
-#define TSVDUNFOLD_LEAK 1
-#endif
 
 using std::cout;
 using std::cerr;
@@ -92,9 +89,6 @@ RooUnfoldSvd::Destroy()
 {
   delete _svd;
   delete _meas1d;
-#ifdef TSVDUNFOLD_LEAK
-  delete _meascov;
-#endif
   delete _train1d;
   delete _truth1d;
   delete _reshist;
@@ -122,7 +116,7 @@ RooUnfoldSvd::CopyData (const RooUnfoldSvd& rhs)
   _kreg= rhs._kreg;
 }
 
-TSVDUnfold*
+RooUnfoldSvd::SVDUnfold*
 RooUnfoldSvd::Impl()
 {
   return _svd;
@@ -175,9 +169,9 @@ RooUnfoldSvd::Unfold()
 
   if (_verbose>=1) cout << "SVD init " << _reshist->GetNbinsX() << " x " << _reshist->GetNbinsY()
                         << " bins, kreg=" << _kreg << endl;
-  _svd= new TSVDUnfold (_meas1d, _meascov, _train1d, _truth1d, _reshist);
+  _svd= new SVDUnfold (_meas1d, _meascov, _train1d, _truth1d, _reshist);
 
-  TH1D* rechist= _svd->Unfold (_kreg);
+  TH1* rechist= _svd->Unfold (_kreg);
 
   _rec.ResizeTo (_nt);
   for (Int_t i= 0; i<_nt; i++) {
@@ -187,7 +181,7 @@ RooUnfoldSvd::Unfold()
   if (_verbose>=2) {
     PrintTable (cout, _truth1d, _train1d, 0, _meas1d, rechist, _nb, _nb, kFALSE, kErrors);
     TMatrixD* resmat= RooUnfoldResponse::H2M (_reshist, _nb, _nb);
-    RooUnfoldResponse::PrintMatrix(*resmat,"TSVDUnfold response matrix");
+    RooUnfoldResponse::PrintMatrix(*resmat,"SVDUnfold response matrix");
     delete resmat;
   }
 
@@ -205,7 +199,7 @@ RooUnfoldSvd::GetCov()
   Bool_t oldstat= TH1::AddDirectoryStatus();
   TH1::AddDirectory (kFALSE);
 
-  TH2D *unfoldedCov= 0, *adetCov= 0;
+  TH2 *unfoldedCov= 0, *adetCov= 0;
   //Get the covariance matrix for statistical uncertainties on the measured distribution
   if (_dosys!=2) unfoldedCov= _svd->GetXtau();
   //Get the covariance matrix for statistical uncertainties on the response matrix
@@ -223,9 +217,6 @@ RooUnfoldSvd::GetCov()
   }
 
   delete adetCov;
-#ifdef TSVDUNFOLD_LEAK
-  delete unfoldedCov;
-#endif
   TH1::AddDirectory (oldstat);
 
   _haveCov= true;
@@ -240,7 +231,7 @@ void RooUnfoldSvd::GetWgt()
   TH1::AddDirectory (kFALSE);
 
   //Get the covariance matrix for statistical uncertainties on the measured distribution
-  TH2D* unfoldedWgt= _svd->GetXinv();
+  TH2* unfoldedWgt= _svd->GetXinv();
 
   _wgt.ResizeTo (_nt, _nt);
   for (Int_t i= 0; i<_nt; i++) {
@@ -249,9 +240,6 @@ void RooUnfoldSvd::GetWgt()
     }
   }
 
-#ifdef TSVDUNFOLD_LEAK
-  delete unfoldedWgt;
-#endif
   TH1::AddDirectory (oldstat);
 
   _haveWgt= true;

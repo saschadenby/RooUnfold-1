@@ -170,8 +170,8 @@ RooUnfoldTUnfold::Unfold()
 
   Bool_t oldstat= TH1::AddDirectoryStatus();
   TH1::AddDirectory (kFALSE);
-  TH1D* meas= HistNoOverflow (_meas, _overflow);
-  TH2D* Hres=_res->HresponseNoOverflow();
+  TH1* meas= HistNoOverflow (_meas, _overflow);
+  TH2* Hres=_res->HresponseNoOverflow();
   TH1::AddDirectory (oldstat);
 
   // Add inefficiencies to measured overflow bin
@@ -247,7 +247,7 @@ RooUnfoldTUnfold::Unfold()
   else{
     _unf->DoUnfold(_tau);
   }
-  TH1D reco("_rec","reconstructed dist",_nt,0.0,_nt);
+  TH1F reco("_rec","reconstructed dist",_nt,0.0,_nt);
   _unf->GetOutput(&reco);
   _rec.ResizeTo (_nt);
   for (int i=0;i<_nt;i++){
@@ -273,7 +273,7 @@ RooUnfoldTUnfold::GetCov()
 {
   //Gets Covariance matrix
   if (!_unf) return;
-  TH2D* ematrix= new TH2D ("ematrix","error matrix", _nt, 0.0, _nt, _nt, 0.0, _nt);
+  TH2* ematrix= new TH2D ("ematrix","error matrix", _nt, 0.0, _nt, _nt, 0.0, _nt);
   if (_dosys!=2) _unf->GetEmatrix (ematrix);
   if (_dosys) {
 #ifndef NOTUNFOLDSYS

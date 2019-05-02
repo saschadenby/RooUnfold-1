@@ -11,8 +11,6 @@
 #include "RooUnfoldResponse.h"
 
 class TH1;
-class TH1D;
-class TH2D;
 class TRandom3;
 
 class RooUnfoldIds : public RooUnfold {
@@ -51,8 +49,8 @@ public:
 
    virtual void Reset();
 
-   TH2D* GetUnfoldCovMatrix(const TH2D *cov, Int_t ntoys, Int_t seed = 1);
-   TH2D* GetAdetCovMatrix(Int_t ntoys, Int_t seed = 1);
+   TH2* GetUnfoldCovMatrix(const TH2 *cov, Int_t ntoys, Int_t seed = 1);
+   TH2* GetAdetCovMatrix(Int_t ntoys, Int_t seed = 1);
 
 protected:
    void Assign(const RooUnfoldIds &rhs); // implementation of assignment operator
@@ -85,8 +83,8 @@ protected:
    Double_t _lambdaMmin; // regularize Modification of folding matrix
    Double_t _lambdaS; // regularize background Subtraction
 
-   TH1D *_meas1d, *_train1d, *_truth1d;
-   TH2D *_reshist;
+   TH1 *_meas1d, *_train1d, *_truth1d;
+   TH2 *_reshist;
 
 public:
    ClassDef(RooUnfoldIds, 1)

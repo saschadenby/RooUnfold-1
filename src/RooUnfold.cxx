@@ -941,12 +941,12 @@ TMatrixD RooUnfold::Wreco(ErrorTreatment withError)
     return Wreco_m;
 }
 
-TH1D* RooUnfold::HistNoOverflow (const TH1* h, Bool_t overflow)
+TH1* RooUnfold::HistNoOverflow (const TH1* h, Bool_t overflow)
 {
   if (!overflow) {   // also for 2D+
-    TH1D* hx= RooUnfoldResponse::H2H1D (h, h->GetNbinsX()*h->GetNbinsY()*h->GetNbinsZ());
+    TH1* hx= RooUnfoldResponse::H2H1D (h, h->GetNbinsX()*h->GetNbinsY()*h->GetNbinsZ());
     if (!hx) return hx;
-    // clear under/overflow bins for cloned TH1D
+    // clear under/overflow bins for cloned TH1
     hx->SetBinContent (0,                 0.0);
     hx->SetBinContent (hx->GetNbinsX()+1, 0.0);
     return hx;
@@ -954,7 +954,7 @@ TH1D* RooUnfold::HistNoOverflow (const TH1* h, Bool_t overflow)
   Int_t nb= h->GetNbinsX(), s= h->GetSumw2N();
   Double_t xlo= h->GetXaxis()->GetXmin(), xhi= h->GetXaxis()->GetXmax(), xb= (xhi-xlo)/nb;
   nb += 2;
-  TH1D* hx= new TH1D (h->GetName(), h->GetTitle(), nb, xlo-xb, xhi+xb);
+  TH1* hx= new TH1F (h->GetName(), h->GetTitle(), nb, xlo-xb, xhi+xb);
   for (Int_t i= 0; i < nb; i++) {
            hx->SetBinContent (i+1, h->GetBinContent (i));
     if (s) hx->SetBinError   (i+1, h->GetBinError   (i));

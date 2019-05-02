@@ -17,7 +17,7 @@
 
 class RooUnfoldResponse;
 class TH1;
-class TH1D;
+class TH1;
 class TH2D;
 
 class RooUnfoldDagostini : public RooUnfold {

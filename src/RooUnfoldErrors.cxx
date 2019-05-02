@@ -38,7 +38,7 @@ END_HTML */
 
 #include "TString.h"
 #include "TStyle.h"
-#include "TH1D.h"
+#include "TH1.h"
 #include "TProfile.h"
 #include "TNtuple.h"
 #include "TAxis.h"
@@ -101,7 +101,7 @@ RooUnfoldErrors::Chi2()
 TH1*
 RooUnfoldErrors::RMSResiduals(){
     if (!h_err_res) return h_err_res;
-    //Returns a TH1D of the spread of the reconstructed points//
+    //Returns a TH1 of the spread of the reconstructed points//
     h_err_res->SetMarkerColor(kRed);
     h_err_res->SetMarkerStyle(4);
     h_err_res->SetMinimum(0);
@@ -111,7 +111,7 @@ RooUnfoldErrors::RMSResiduals(){
 TH1* 
 RooUnfoldErrors::UnfoldingError(){
     if (!h_err) return h_err;
-    //Returns a TH1D of the errors from the unfolding// 
+    //Returns a TH1 of the errors from the unfolding// 
     h_err->SetMarkerColor(kBlue);
     h_err->SetLineColor(kBlue);
     h_err->SetMarkerStyle(24);
@@ -156,7 +156,7 @@ RooUnfoldErrors::CreatePlotsWithChi2()
     h_err     = new TProfile ("unferr", "Unfolding errors", ntx, xlo, xhi); 
     h_err_res = new TH1D     ("toyerr", "Toy MC RMS",       ntx, xlo, xhi); 
     hchi2     = new TNtuple  ("chi2", "chi2", "chi2");
-    std::vector<TH1D*> graph_vector(ntx);
+    std::vector<TH1*> graph_vector(ntx);
     for (int a=0; a<ntx; a++) {
       TString graph_name;
       graph_name.Form("resbin%d",a);
@@ -185,7 +185,7 @@ RooUnfoldErrors::CreatePlotsWithChi2()
         delete toy;
     }
     for (int i=0; i<ntx; i++){
-      TH1D* graph= graph_vector[i];
+      TH1* graph= graph_vector[i];
         Double_t n= graph->GetEntries();
         if (n<=0.0) continue;
         Double_t spr= graph->GetRMS();

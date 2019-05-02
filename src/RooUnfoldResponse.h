@@ -36,7 +36,7 @@ class TCollection;
 #undef PrintMatrix
 #endif
 
-template<class Hist>
+template<class Hist, class Hist2D>
 class RooUnfoldResponseT : public TNamed {
 
 public:
@@ -54,8 +54,8 @@ public:
 
   RooUnfoldResponseT(Int_t nb, Double_t xlo, Double_t xhi, const char* name= 0, const char* title= 0);  // constructor -  simple 1D case with same binning, measured vs truth
   RooUnfoldResponseT(Int_t nm, Double_t mlo, Double_t mhi, Int_t nt, Double_t tlo, Double_t thi, const char* name= 0, const char* title= 0);  // constructor -  simple 1D case
-  RooUnfoldResponseT(const TH1* measured, const TH1* truth, const char* name= 0, const char* title= 0);  // constructor - measured and truth only used for shape
-  RooUnfoldResponseT(const TH1* measured, const TH1* truth, const TH2* response, const char* name= 0, const char* title= 0);  // create from already-filled histograms
+  RooUnfoldResponseT(const Hist* measured, const Hist* truth, const char* name= 0, const char* title= 0);  // constructor - measured and truth only used for shape
+  RooUnfoldResponseT(const Hist* measured, const Hist* truth, const Hist2D* response, const char* name= 0, const char* title= 0);  // create from already-filled histograms
 
   // Set up an existing object
 
@@ -63,8 +63,8 @@ public:
   virtual RooUnfoldResponseT& Setup (const RooUnfoldResponseT& rhs);  // set up based on another instance
   virtual RooUnfoldResponseT& Setup (Int_t nb, Double_t xlo, Double_t xhi);  // set up simple 1D case with same binning, measured vs truth
   virtual RooUnfoldResponseT& Setup (Int_t nm, Double_t mlo, Double_t mhi, Int_t nt, Double_t tlo, Double_t thi);  // set up simple 1D case
-  virtual RooUnfoldResponseT& Setup (const TH1* measured, const TH1* truth);  // set up - measured and truth only used for shape
-  virtual RooUnfoldResponseT& Setup (const TH1* measured, const TH1* truth, const TH2* response);  // set up from already-filled histograms
+  virtual RooUnfoldResponseT& Setup (const Hist* measured, const Hist* truth);  // set up - measured and truth only used for shape
+  virtual RooUnfoldResponseT& Setup (const Hist* measured, const Hist* truth, const Hist2D* response);  // set up from already-filled histograms
 
   // Fill with training data
 
@@ -92,15 +92,15 @@ public:
   Int_t        GetNbinsMeasured()     const;   // Total number of bins in the measured distribution
   Int_t        GetNbinsTruth()        const;   // Total number of bins in the truth distribution
 
-  const TH1*   Hmeasured()            const;   // Measured distribution, including fakes
-  TH1*         Hmeasured();                    // Measured distribution, including fakes
-  const TH1*   Hfakes()               const;   // Fakes distribution
-  TH1*         Hfakes();                       // Fakes distribution
-  const TH1*   Htruth()               const;   // Truth distribution, used for normalisation
-  TH1*         Htruth();                       // Truth distribution, used for normalisation
-  const TH2*   Hresponse()            const;   // Response matrix as a 2D-histogram: (x,y)=(measured,truth)
-  TH2*         Hresponse();                    // Response matrix as a 2D-histogram: (x,y)=(measured,truth)
-  TH2D*        HresponseNoOverflow()  const;   // Response matrix with under/overflow bins moved into histogram body
+  const Hist*   Hmeasured()            const;   // Measured distribution, including fakes
+  Hist*         Hmeasured();                    // Measured distribution, including fakes
+  const Hist*   Hfakes()               const;   // Fakes distribution
+  Hist*         Hfakes();                       // Fakes distribution
+  const Hist*   Htruth()               const;   // Truth distribution, used for normalisation
+  Hist*         Htruth();                       // Truth distribution, used for normalisation
+  const Hist2D* Hresponse()            const;   // Response matrix as a 2D-histogram: (x,y)=(measured,truth)
+  Hist2D*       Hresponse();                    // Response matrix as a 2D-histogram: (x,y)=(measured,truth)
+  Hist2D*       HresponseNoOverflow()  const;   // Response matrix with under/overflow bins moved into histogram body
 
   const TVectorD& Vmeasured()         const;   // Measured distribution as a TVectorD
   const TVectorD& Emeasured()         const;   // Measured distribution errors as a TVectorD
@@ -117,21 +117,22 @@ public:
   Double_t FakeEntries() const;                // Return number of bins with fakes
   virtual void Print (Option_t* option="") const;
 
-  static TH1D*     H2H1D(const TH1*  h, Int_t nb);
-  static TVectorD* H2V  (const TH1*  h, Int_t nb, Bool_t overflow= kFALSE);
-  static TVectorD* H2VE (const TH1*  h, Int_t nb, Bool_t overflow= kFALSE);
-  static TMatrixD* H2M  (const TH2*  h, Int_t nx, Int_t ny, const TH1* norm= 0, Bool_t overflow= kFALSE);
-  static TMatrixD* H2ME (const TH2*  h, Int_t nx, Int_t ny, const TH1* norm= 0, Bool_t overflow= kFALSE);
-  static void      V2H  (const TVectorD& v, TH1* h, Int_t nb, Bool_t overflow= kFALSE);
-  static Int_t   FindBin(const TH1*  h, Double_t x);  // return vector index for bin containing (x)
-  static Int_t   FindBin(const TH1*  h, Double_t x, Double_t y);  // return vector index for bin containing (x,y)
-  static Int_t   FindBin(const TH1*  h, Double_t x, Double_t y, Double_t z);  // return vector index for bin containing (x,y,z)
-  static Int_t   GetBin (const TH1*  h, Int_t i, Bool_t overflow= kFALSE);  // vector index (0..nx*ny-1) -> multi-dimensional histogram global bin number (0..(nx+2)*(ny+2)-1) skipping under/overflow bins
-  static Double_t GetBinContent (const TH1* h, Int_t i, Bool_t overflow= kFALSE); // Bin content by vector index
-  static Double_t GetBinError   (const TH1* h, Int_t i, Bool_t overflow= kFALSE); // Bin error   by vector index
+  static Hist*     H2H1D(const Hist*  h, Int_t nb);
+  static Hist*     H2H1D(const Hist2D*  h, Int_t nb);
+  static TVectorD* H2V  (const Hist*  h, Int_t nb, Bool_t overflow= kFALSE);
+  static TVectorD* H2VE (const Hist*  h, Int_t nb, Bool_t overflow= kFALSE);
+  static TMatrixD* H2M  (const Hist2D*  h, Int_t nx, Int_t ny, const Hist* norm= 0, Bool_t overflow= kFALSE);
+  static TMatrixD* H2ME (const Hist2D*  h, Int_t nx, Int_t ny, const Hist* norm= 0, Bool_t overflow= kFALSE);
+  static void      V2H  (const TVectorD& v, Hist* h, Int_t nb, Bool_t overflow= kFALSE);
+  static Int_t   FindBin(const Hist*  h, Double_t x);  // return vector index for bin containing (x)
+  static Int_t   FindBin(const Hist*  h, Double_t x, Double_t y);  // return vector index for bin containing (x,y)
+  static Int_t   FindBin(const Hist*  h, Double_t x, Double_t y, Double_t z);  // return vector index for bin containing (x,y,z)
+  static Int_t   GetBin (const Hist*  h, Int_t i, Bool_t overflow= kFALSE);  // vector index (0..nx*ny-1) -> multi-dimensional histogram global bin number (0..(nx+2)*(ny+2)-1) skipping under/overflow bins
+  static Double_t GetBinContent (const Hist* h, Int_t i, Bool_t overflow= kFALSE); // Bin content by vector index
+  static Double_t GetBinError   (const Hist* h, Int_t i, Bool_t overflow= kFALSE); // Bin error   by vector index
   static void PrintMatrix (const TMatrixD& m, const char* name="matrix", const char* format=0, Int_t cols_per_sheet=10);
 
-  TH1* ApplyToTruth (const TH1* truth= 0, const char* name= "AppliedResponse") const; // If argument is 0, applies itself to its own truth
+  Hist* ApplyToTruth (const Hist* truth= 0, const char* name= "AppliedResponse") const; // If argument is 0, applies itself to its own truth
   TF1* MakeFoldingFunction (TF1* func, Double_t eps=1e-12, Bool_t verbose=false) const;
 
   RooUnfoldResponseT* RunToy() const;
@@ -147,7 +148,7 @@ private:
   virtual Int_t Fake1D (Double_t xr, Double_t w= 1.0);  // Fill fake event into 1D Response Matrix (with weight)
   virtual Int_t Fake2D (Double_t xr, Double_t yr, Double_t w= 1.0);  // Fill fake event into 2D Response Matrix (with weight)
 
-  static Int_t GetBinDim (const TH1* h, Int_t i);
+  static Int_t GetBinDim (const Hist* h, Int_t i);
   static void ReplaceAxis(TAxis* axis, const TAxis* source);
 
   // instance variables
@@ -156,10 +157,10 @@ private:
   Int_t _tdim;     // Number of truth     dimensions
   Int_t _nm;       // Total number of measured  bins (not counting under/overflows)
   Int_t _nt;       // Total number of truth     bins (not counting under/overflows)
-  TH1*  _mes;      // Measured histogram
-  TH1*  _fak;      // Fakes    histogram
-  TH1*  _tru;      // Truth    histogram
-  TH2*  _res;      // Response histogram
+  Hist*  _mes;      // Measured histogram
+  Hist*  _fak;      // Fakes    histogram
+  Hist*  _tru;      // Truth    histogram
+  Hist2D*_res;      // Response histogram
   Int_t _overflow; // Use histogram under/overflows if 1
 
   mutable TVectorD* _vMes;   //! Cached measured vector
@@ -176,6 +177,6 @@ public:
   ClassDefT (RooUnfoldResponseT, 1) // Respose Matrix
 };
 
-typedef RooUnfoldResponseT<TH1> RooUnfoldResponse;
+typedef RooUnfoldResponseT<TH1,TH2> RooUnfoldResponse;
 
 #endif

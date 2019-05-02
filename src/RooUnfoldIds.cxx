@@ -132,7 +132,7 @@ RooUnfoldIds::Unfold()
    if (_verbose >= 1) std::cout << "IDS init " << _reshist->GetNbinsX() << " x " << _reshist->GetNbinsY() << std::endl;
 
    // Perform IDS unfolding
-   TH1D *rechist = dynamic_cast<TH1D*>(GetIDSUnfoldedSpectrum(_train1d, _truth1d, _reshist, _meas1d, _niter));
+   TH1 *rechist = dynamic_cast<TH1*>(GetIDSUnfoldedSpectrum(_train1d, _truth1d, _reshist, _meas1d, _niter));
 
    _rec.ResizeTo(_nt);
    for (Int_t i = 0; i < _nt; ++i) {
@@ -155,15 +155,15 @@ RooUnfoldIds::GetCov()
    Bool_t oldstat = TH1::AddDirectoryStatus();
    TH1::AddDirectory(kFALSE);
 
-   TH2D *meascov = new TH2D("meascov", "meascov", _nb, 0.0, 1.0, _nb, 0.0, 1.0);
+   TH2 *meascov = new TH2D("meascov", "meascov", _nb, 0.0, 1.0, _nb, 0.0, 1.0);
    const TMatrixD& cov = GetMeasuredCov();
    for (Int_t i = 0; i < _nm; ++i)
      for (Int_t j = 0; j < _nm; ++j)
        meascov->SetBinContent(i+1, j+1, cov(i,j));
 
    // Need to fill _cov with unfolded result
-   TH2D *unfoldedCov = GetUnfoldCovMatrix(meascov, _NToys);
-   TH2D *adetCov     = GetAdetCovMatrix(_NToys);
+   TH2 *unfoldedCov = GetUnfoldCovMatrix(meascov, _NToys);
+   TH2 *adetCov     = GetAdetCovMatrix(_NToys);
 
 
    _cov.ResizeTo(_nt, _nt);
@@ -182,8 +182,8 @@ RooUnfoldIds::GetCov()
 }
 
 //______________________________________________________________________________
-TH2D*
-RooUnfoldIds::GetUnfoldCovMatrix(const TH2D *cov, Int_t ntoys, Int_t seed)
+TH2*
+RooUnfoldIds::GetUnfoldCovMatrix(const TH2 *cov, Int_t ntoys, Int_t seed)
 {
    // Determine for given input error matrix covariance matrix of unfolded
    // spectrum from toy simulation given the passed covariance matrix on measured spectrum
@@ -197,8 +197,8 @@ RooUnfoldIds::GetUnfoldCovMatrix(const TH2D *cov, Int_t ntoys, Int_t seed)
    _truth1d = HistNoOverflow(_res->Htruth()   , _overflow); // true
    _reshist = _res->HresponseNoOverflow();
 
-   TH1D* unfres = 0;
-   TH2D* unfcov = (TH2D*)_reshist->Clone("unfcovmat");
+   TH1* unfres = 0;
+   TH2* unfcov = (TH2*)_reshist->Clone("unfcovmat");
    unfcov->SetTitle("Toy covariance matrix");
    for (Int_t i = 1; i <= _nb; ++i)
       for(Int_t j = 1; j <= _nb; ++j)
@@ -241,7 +241,7 @@ RooUnfoldIds::GetUnfoldCovMatrix(const TH2D *cov, Int_t ntoys, Int_t seed)
    }
 
    // Get the mean of the toys first
-   TH1D *toyhist = (TH1D*)_meas1d->Clone("toyhisto");
+   TH1 *toyhist = (TH1*)_meas1d->Clone("toyhisto");
    for (Int_t i = 0; i < ntoys; i++) {
 
       // create a vector of unit Gaussian variables
@@ -258,7 +258,7 @@ RooUnfoldIds::GetUnfoldCovMatrix(const TH2D *cov, Int_t ntoys, Int_t seed)
       }
 
       // Perform IDS unfolding
-      unfres = dynamic_cast<TH1D*>(GetIDSUnfoldedSpectrum(_train1d, _truth1d, _reshist, toyhist, _niter));
+      unfres = dynamic_cast<TH1*>(GetIDSUnfoldedSpectrum(_train1d, _truth1d, _reshist, toyhist, _niter));
 
       for (Int_t j = 0; j < _nb; ++j) {
          toys[i][j] = unfres->GetBinContent(j+1);
@@ -283,7 +283,7 @@ RooUnfoldIds::GetUnfoldCovMatrix(const TH2D *cov, Int_t ntoys, Int_t seed)
 }
 
 //______________________________________________________________________________
-TH2D*
+TH2*
 RooUnfoldIds::GetAdetCovMatrix(Int_t ntoys, Int_t seed)
 {
    // Determine covariance matrix of unfolded spectrum from finite statistics in
@@ -296,8 +296,8 @@ RooUnfoldIds::GetAdetCovMatrix(Int_t ntoys, Int_t seed)
    _truth1d = HistNoOverflow(_res->Htruth()   , _overflow); // true
    _reshist = _res->HresponseNoOverflow();
 
-   TH1D *unfres = 0;
-   TH2D *unfcov = (TH2D*)_reshist->Clone("unfcovmat");
+   TH1 *unfres = 0;
+   TH2 *unfcov = (TH2*)_reshist->Clone("unfcovmat");
    unfcov->SetTitle("Toy covariance matrix");
    for(Int_t i = 1; i <= _nb; ++i)
       for(Int_t j = 1; j <= _nb; ++j)
@@ -316,7 +316,7 @@ RooUnfoldIds::GetAdetCovMatrix(Int_t ntoys, Int_t seed)
       }
    }
 
-   TH2D *toymat = (TH2D*)_reshist->Clone("toymat");
+   TH2 *toymat = (TH2*)_reshist->Clone("toymat");
    Double_t fluc = -1.0;
    for (Int_t i = 0; i < ntoys; ++i) {
       for (Int_t k = 1; k <= _nb; ++k) {
@@ -334,7 +334,7 @@ RooUnfoldIds::GetAdetCovMatrix(Int_t ntoys, Int_t seed)
       }
 
       // Perform IDS unfolding
-      unfres = dynamic_cast<TH1D*>(GetIDSUnfoldedSpectrum(_train1d, _truth1d, toymat, _meas1d, _niter));
+      unfres = dynamic_cast<TH1*>(GetIDSUnfoldedSpectrum(_train1d, _truth1d, toymat, _meas1d, _niter));
 
       for (Int_t j = 0; j < _nb; ++j) {
          toys[i][j] = unfres->GetBinContent(j+1);
