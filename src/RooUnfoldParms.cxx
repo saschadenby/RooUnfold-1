@@ -28,6 +28,7 @@ return an rms. The chi squared values are calculated using the chi2() method in 
 ////////////////////////////////////////////////////////////////
 
 #include "RooUnfoldParms.h"
+#include "RooUnfoldTH1Helpers.h"
 
 #include <cfloat>
 #include <iostream>
@@ -166,7 +167,7 @@ RooUnfoldParms::DoMath()
             TH1* hReco=unf->Hreco(doerror); 
             for (Int_t i= 0; i < nt; i++)
             {
-              sq_err_tot += RooUnfoldResponse::GetBinError (hReco, i, _overflow);
+              sq_err_tot += RooUnfolding::binError (hReco, i, _overflow);
             }
             herr->Fill(k,sq_err_tot/nt);
             if (hTrue)
@@ -174,7 +175,7 @@ RooUnfoldParms::DoMath()
                 Double_t rsqt=0;    
                 Double_t res_tot=0;
                 for (int i=0;i<nt;i++){
-                    Int_t j= RooUnfoldResponse::GetBin (hReco, i, _overflow);
+                  Int_t j= RooUnfolding::bin (hReco, i, _overflow);
                     if (hReco->GetBinContent(j)!=0.0 || (hReco->GetBinError(j)>0.0)) 
                     {
                         Double_t res=hReco->GetBinContent(j) - hTrue->GetBinContent(j);

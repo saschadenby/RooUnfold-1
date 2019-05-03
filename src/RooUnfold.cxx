@@ -107,6 +107,7 @@ END_HTML */
 #include "RooUnfoldDagostini.h"
 #endif
 #include "RooUnfoldIds.h"
+#include "RooUnfoldTH1Helpers.h"
 
 using std::vector;
 using std::cout;
@@ -279,7 +280,7 @@ void RooUnfold::SetMeasured (const TVectorD& meas, const TVectorD& err)
     _measmine->SetTitle (GetTitle());
   }
   for (Int_t i= 0; i<_nm; i++) {
-    Int_t j= RooUnfoldResponse::GetBin (_measmine, i, _overflow);
+    Int_t j= RooUnfolding::bin(_measmine, i, _overflow);
     _measmine->SetBinContent(j, meas[i]);
     _measmine->SetBinError  (j, err [i]);
   }
@@ -480,7 +481,7 @@ Double_t RooUnfold::Chi2(const TH1* hTrue,ErrorTreatment DoChi2)
 
     TVectorD res(_nt);
     for (Int_t i = 0 ; i < _nt; i++) {
-      Int_t it= RooUnfoldResponse::GetBin (hTrue, i, _overflow);
+      Int_t it= RooUnfolding::bin (hTrue, i, _overflow);
       if (hTrue->GetBinContent(it)!=0.0 || hTrue->GetBinError(it)>0.0) {
         res[i] = _rec[i] - hTrue->GetBinContent(it);
       }
@@ -528,15 +529,15 @@ void RooUnfold::PrintTable (std::ostream& o, const TVectorD& vTrainTrue, const T
 {
   if (nm<=0) nm= vTrain    .GetNrows();
   if (nt<=0) nt= vTrainTrue.GetNrows();
-  TH1D hTrainTrue ("", "", nt, 0.0, nt);
-  TH1D hTrain     ("", "", nm, 0.0, nm);
-  TH1D hMeas      ("", "", nm, 0.0, nm);
-  TH1D hReco      ("", "", nt, 0.0, nt);
-  RooUnfoldResponse::V2H (vTrainTrue, &hTrainTrue, nt);
-  RooUnfoldResponse::V2H (vTrain,     &hTrain,     nm);
-  RooUnfoldResponse::V2H (vMeas,      &hMeas,      nm);
-  RooUnfoldResponse::V2H (vReco,      &hReco,      nt);
-  PrintTable (o, &hTrainTrue, &hTrain, 0, &hMeas, &hReco, nm, nt);
+  TH1* hTrainTrue =  RooUnfolding::createHist<TH1>(vTrainTrue, "","", nt,0.0,nt,"xt",false);
+  TH1* hTrain     =  RooUnfolding::createHist<TH1>(vTrain,     "","", nm,0.0,nm,"xm",false);
+  TH1* hMeas      =  RooUnfolding::createHist<TH1>(vMeas,      "","", nm,0.0,nm,"xm",false);
+  TH1* hReco      =  RooUnfolding::createHist<TH1>(vReco,      "","", nt,0.0,nt,"xt",false);
+  PrintTable (o, hTrainTrue, hTrain, 0, hMeas, hReco, nm, nt);
+  delete hTrainTrue;
+  delete hTrain    ;
+  delete hMeas     ;
+  delete hReco     ;
 }
 
 void RooUnfold::PrintTable (std::ostream& o, const TH1* hTrainTrue, const TH1* hTrain,
@@ -574,8 +575,8 @@ void RooUnfold::PrintTable (std::ostream& o, const TH1* hTrainTrue, const TH1* h
   Int_t ndf= 0, first= (_overflow ? 0 : 1);
   Int_t maxbin= _nt < _nm ? _nm : _nt;
   for (Int_t i = 0 ; i < maxbin; i++) {
-    Int_t it= RooUnfoldResponse::GetBin (hReco, i, _overflow);
-    Int_t im= RooUnfoldResponse::GetBin (hMeas, i, _overflow);
+    Int_t it= RooUnfolding::bin(hReco, i, _overflow);
+    Int_t im= RooUnfolding::bin(hMeas, i, _overflow);
 
     if (dim==2 || dim==3) {
       Int_t iw= (dim==2) ? 3 : 2;
@@ -690,7 +691,7 @@ TH1* RooUnfold::Hreco (ErrorTreatment withError)
   if (!_unfolded) return reco;
 
   for (Int_t i= 0; i < _nt; i++) {
-    Int_t j= RooUnfoldResponse::GetBin (reco, i, _overflow);
+    Int_t j= RooUnfolding::bin (reco, i, _overflow);
     reco->SetBinContent (j,             _rec(i));
     if        (withError==kErrors){
       reco->SetBinError (j, sqrt (fabs (_variances(i))));

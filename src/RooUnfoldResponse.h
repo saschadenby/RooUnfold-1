@@ -43,7 +43,6 @@ template<class Hist, class Hist2D>
 class RooUnfoldResponseT : public TNamed {
 
 public:
-
   // Standard methods
 
   RooUnfoldResponseT(); // default constructor
@@ -127,20 +126,9 @@ public:
   static TVectorD* H2VE (const Hist*  h, Int_t nb, Bool_t overflow= kFALSE);
   static TMatrixD* H2M  (const Hist2D*  h, Int_t nx, Int_t ny, const Hist* norm= 0, Bool_t overflow= kFALSE);
   static TMatrixD* H2ME (const Hist2D*  h, Int_t nx, Int_t ny, const Hist* norm= 0, Bool_t overflow= kFALSE);
-  static void      V2H  (const TVectorD& v, Hist* h, Int_t nb, Bool_t overflow= kFALSE);
   static Int_t   FindBin(const Hist*  h, Double_t x);  // return vector index for bin containing (x)
   static Int_t   FindBin(const Hist*  h, Double_t x, Double_t y);  // return vector index for bin containing (x,y)
   static Int_t   FindBin(const Hist*  h, Double_t x, Double_t y, Double_t z);  // return vector index for bin containing (x,y,z)
-  static Int_t   GetBin (const Hist*  h, Int_t i, Bool_t overflow= kFALSE);  // vector index (0..nx*ny-1) -> multi-dimensional histogram global bin number (0..(nx+2)*(ny+2)-1) skipping under/overflow bins
-  static Double_t GetBinContent (const Hist* h, Int_t i, Bool_t overflow= kFALSE); // Bin content by vector index
-  static Double_t SetBinContent (Hist* h, Int_t i, double val, Bool_t overflow= kFALSE); // Bin content by vector index
-  static Double_t GetBinCenterX (const Hist2D* h, Int_t i); // Bin center by vector index  
-  static Double_t GetBinCenterY (const Hist2D* h, Int_t i); // Bin center by vector index  
-  static Double_t GetBinLowEdgeX (const Hist2D* h, Int_t i); // Bin center by vector index  
-  static Double_t GetBinLowEdgeY (const Hist2D* h, Int_t i); // Bin center by vector index  
-  static Double_t GetBinHighEdgeX (const Hist2D* h, Int_t i); // Bin center by vector index  
-  static Double_t GetBinHighEdgeY (const Hist2D* h, Int_t i); // Bin center by vector index  
-  static Double_t GetBinError   (const Hist* h, Int_t i, Bool_t overflow= kFALSE); // Bin error   by vector index
   static void PrintMatrix (const TMatrixD& m, const char* name="matrix", const char* format=0, Int_t cols_per_sheet=10);
 
   Hist* ApplyToTruth (const Hist* truth= 0, const char* name= "AppliedResponse") const; // If argument is 0, applies itself to its own truth
