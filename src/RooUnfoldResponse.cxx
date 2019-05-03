@@ -217,7 +217,7 @@ namespace {
     TH1* hist = (TH1*)(orighist ->Clone());
     if(name) hist->SetName(name);
     if(title) hist->SetTitle(title);
-    hist->Reset();
+    if(reset) hist->Reset();
     return hist;
     TH1::AddDirectory (oldstat);
   }
@@ -227,7 +227,7 @@ namespace {
     TH2* hist = (TH2*)(orighist ->Clone());
     if(name) hist->SetName(name);
     if(title) hist->SetTitle(title);
-    hist->Reset();
+    if(reset) hist->Reset();
     return hist;
     TH1::AddDirectory (oldstat);
   }  
@@ -282,7 +282,11 @@ namespace {
   template<class Hist2D> Hist2D* createHist(const char* name, const char* title, int nbinsx, double xmin, double xmax, const char* xname, int nbinsy, double ymin, double ymax, const char* yname);
   template<>  
   TH2* createHist<TH2>(const char* name, const char* title, int nbinsx, double xmin, double xmax, const char* xname, int nbinsy, double ymin, double ymax, const char* yname){
-    return new TH2D (name,title, nbinsx, xmin, xmax, nbinsy, ymin, ymax);
+    Bool_t oldstat= TH1::AddDirectoryStatus();
+    TH1::AddDirectory (kFALSE);
+    TH2* hist = new TH2D (name,title, nbinsx, xmin, xmax, nbinsy, ymin, ymax);
+    TH1::AddDirectory (oldstat);
+    return hist;
   }
   template<>  
   RooAbsReal* createHist<RooAbsReal>(const char* name, const char* title, int nbinsx, double xmin, double xmax, const char* xname, int nbinsy, double ymin, double ymax, const char* yname){
@@ -294,7 +298,11 @@ namespace {
   }
   template<class Hist> Hist* createHist(const char* name, const char* title, int nbinsx, double xmin, double xmax, const char* xname);  
   template<> TH1* createHist<TH1>(const char* name, const char* title, int nbinsx, double xmin, double xmax, const char* xname){
-    return new TH1D (name,title, nbinsx, xmin, xmax);
+    Bool_t oldstat= TH1::AddDirectoryStatus();
+    TH1::AddDirectory (kFALSE);
+    TH1* hist = new TH1D (name,title, nbinsx, xmin, xmax);
+    TH1::AddDirectory (oldstat);
+    return hist;
   }
   template<> RooAbsReal* createHist<RooAbsReal>(const char* name, const char* title, int nbinsx, double xmin, double xmax, const char* xname){
     RooRealVar* x = new RooRealVar(xname,xname,nbinsx,xmin,xmax);
@@ -507,10 +515,10 @@ RooUnfoldResponseT<Hist,Hist2D>::Reset()
 {
   // Resets object to initial state.
   ClearCache();
-  delete _mes;
-  delete _fak;
-  delete _tru;
-  delete _res;
+  if(_mes) delete _mes;
+  if(_fak) delete _fak;
+  if(_tru) delete _tru;
+  if(_res) delete _res;
   return Setup();
 }
 
@@ -546,14 +554,13 @@ RooUnfoldResponseT<Hist,Hist2D>::Setup (Int_t nm, Double_t mlo, Double_t mhi, In
 {
   // set up simple 1D case
   Reset();
-  _mes= createHist<Hist>("measured", "Measured", nm, mlo, mhi,"xm");
-  _fak= createHist<Hist>("fakes",    "Fakes",    nm, mlo, mhi,"xm");
-  _tru= createHist<Hist>("truth",    "Truth",    nt, tlo, thi,"xt");
   _mdim= _tdim= 1;
   _nm= nm;
   _nt= nt;
-  SetNameTitleDefault ("response", "Response");
-  _res= createHist<Hist2D>(GetName(), GetTitle(), nm, mlo, mhi, "xm", nt, tlo, thi, "xt");
+  _mes= createHist<Hist>("measured", "Measured", nm, mlo, mhi,"xm");
+  _fak= createHist<Hist>("fakes",    "Fakes",    nm, mlo, mhi,"xm");
+  _tru= createHist<Hist>("truth",    "Truth",    nt, tlo, thi,"xt");
+  _res= createHist<Hist2D>("response", "Response", nm, mlo, mhi, "xm", nt, tlo, thi, "xt");
   return *this;
 }
 
@@ -640,13 +647,13 @@ RooUnfoldResponseT<Hist,Hist2D>::Setup (const Hist* measured, const Hist* truth,
 template <class Hist, class Hist2D> void
 RooUnfoldResponseT<Hist,Hist2D>::ClearCache()
 {
-  delete _vMes; _vMes= 0;
-  delete _eMes; _eMes= 0;
-  delete _vFak; _vFak= 0;
-  delete _vTru; _vTru= 0;
-  delete _eTru; _eTru= 0;
-  delete _mRes; _mRes= 0;
-  delete _eRes; _eRes= 0;
+  if(_vMes) delete _vMes; _vMes= 0;
+  if(_eMes) delete _eMes; _eMes= 0;
+  if(_vFak) delete _vFak; _vFak= 0;
+  if(_vTru) delete _vTru; _vTru= 0;
+  if(_eTru) delete _eTru; _eTru= 0;
+  if(_mRes) delete _mRes; _mRes= 0;
+  if(_eRes) delete _eRes; _eRes= 0;
   _cached= false;
 }
 
