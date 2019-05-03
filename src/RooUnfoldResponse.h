@@ -120,8 +120,9 @@ public:
   Double_t FakeEntries() const;                // Return number of bins with fakes
   virtual void Print (Option_t* option="") const;
 
-  static Hist*     H2H1D(const Hist*  h, Int_t nb);
+  template < typename = typename std::enable_if< !std::is_same<Hist,Hist2D>::value > >
   static Hist*     H2H1D(const Hist2D*  h, Int_t nb);
+  static Hist*     H2H1D(const Hist*  h, Int_t nb);
   static TVectorD* H2V  (const Hist*  h, Int_t nb, Bool_t overflow= kFALSE);
   static TVectorD* H2VE (const Hist*  h, Int_t nb, Bool_t overflow= kFALSE);
   static TMatrixD* H2M  (const Hist2D*  h, Int_t nx, Int_t ny, const Hist* norm= 0, Bool_t overflow= kFALSE);
@@ -132,6 +133,7 @@ public:
   static Int_t   FindBin(const Hist*  h, Double_t x, Double_t y, Double_t z);  // return vector index for bin containing (x,y,z)
   static Int_t   GetBin (const Hist*  h, Int_t i, Bool_t overflow= kFALSE);  // vector index (0..nx*ny-1) -> multi-dimensional histogram global bin number (0..(nx+2)*(ny+2)-1) skipping under/overflow bins
   static Double_t GetBinContent (const Hist* h, Int_t i, Bool_t overflow= kFALSE); // Bin content by vector index
+  static Double_t SetBinContent (Hist* h, Int_t i, double val, Bool_t overflow= kFALSE); // Bin content by vector index
   static Double_t GetBinCenterX (const Hist2D* h, Int_t i); // Bin center by vector index  
   static Double_t GetBinCenterY (const Hist2D* h, Int_t i); // Bin center by vector index  
   static Double_t GetBinLowEdgeX (const Hist2D* h, Int_t i); // Bin center by vector index  

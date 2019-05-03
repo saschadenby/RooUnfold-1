@@ -57,6 +57,13 @@ using std::sqrt;
 
 
 namespace {
+  void reset(TH1* h){
+    h->Reset();
+  }
+  void reset(RooAbsReal* r){
+    // TODO
+  }
+
   int findBinX(const TH1* h, double x){
     return h->GetXaxis()->FindBin(x);
   }
@@ -807,7 +814,9 @@ RooUnfoldResponseT<Hist,Hist2D>::Fake (Double_t xr, Double_t yr, Double_t zr, Do
   return ((TH3*)_fak)->Fill (xr, yr, zr, w);
 }
 
-template <class Hist, class Hist2D> Hist*
+template <class Hist, class Hist2D>
+template < typename T >
+Hist*
 RooUnfoldResponseT<Hist,Hist2D>::H2H1D(const Hist2D* h, Int_t nb)
 {
   Hist* h1d= new TH1F(h->GetName(), h->GetTitle(), nb, 0.0, 1.0);
@@ -820,23 +829,21 @@ RooUnfoldResponseT<Hist,Hist2D>::H2H1D(const Hist2D* h, Int_t nb)
   return h1d;
 }
 
-template <class Hist, class Hist2D> Hist*
+template <class Hist, class Hist2D>
+ Hist*
 RooUnfoldResponseT<Hist,Hist2D>::H2H1D(const Hist* h, Int_t nb)
 {
   if (dynamic_cast<const Hist*>(h)) return dynamic_cast<Hist*>(h->Clone());
   return H2H1D((Hist2D*)h,nb);
 }
 
-template <class Hist, class Hist2D> Hist2D*
-RooUnfoldResponseT<Hist,Hist2D>::HresponseNoOverflow() const
-{
-  const Hist2D* h= Hresponse();
+TH2* copyHistogram(const TH2* h, bool includeOverflow){
   Int_t nx= nBinsX(h), ny= nBinsY(h), s= sumW2N(h);
-  if (_overflow) {  // implies truth/measured both 1D
+  if (includeOverflow) {  // implies truth/measured both 1D
     Double_t xlo= xMin(h), xhi= xMax(h), xb= (xhi-xlo)/nx;
     Double_t ylo= yMin(h), yhi= yMax(h), yb= (yhi-ylo)/ny;
     nx += 2; ny += 2;
-    Hist2D* hx= createHist<Hist2D>(h->GetName(), h->GetTitle(), nx, xlo-xb, xhi+xb, "xm", ny, ylo-yb, yhi+yb, "xt");
+    TH2* hx= new TH2D(h->GetName(), h->GetTitle(), nx, xlo-xb, xhi+xb, ny, ylo-yb, yhi+yb);
     for (Int_t i= 0; i < nx; i++) {
       for (Int_t j= 0; j < ny; j++) {
                hx->SetBinContent (i+1, j+1, h->GetBinContent (i, j));
@@ -845,7 +852,7 @@ RooUnfoldResponseT<Hist,Hist2D>::HresponseNoOverflow() const
     }
     return hx;
   } else if (dynamic_cast<const TH2D*>(h)) {
-    Hist2D* hx= dynamic_cast<TH2D*>(h->Clone());
+    TH2* hx= dynamic_cast<TH2*>(h->Clone());
     // clear under/overflows
     for (Int_t i= 0; i <= nx+1; i++) {
       hx->SetBinContent (i, 0,    0.0);
@@ -859,15 +866,26 @@ RooUnfoldResponseT<Hist,Hist2D>::HresponseNoOverflow() const
   } else {
     Double_t xlo= h->GetXaxis()->GetXmin(), xhi= h->GetXaxis()->GetXmax();
     Double_t ylo= h->GetYaxis()->GetXmin(), yhi= h->GetYaxis()->GetXmax();
-    Hist2D* hx= new TH2D (h->GetName(), h->GetTitle(), nx, xlo, xhi, ny, ylo, yhi);
+    TH2* hx= new TH2D (h->GetName(), h->GetTitle(), nx, xlo, xhi, ny, ylo, yhi);
     for (Int_t i= 0; i < nx+2; i++) {
       for (Int_t j= 0; j < ny+2; j++) {
                hx->SetBinContent (i, j, h->GetBinContent (i, j));
-        if (s) hx->SetBinError   (i, j, h->GetBinError   (i, j));
+               if (s) hx->SetBinError   (i, j, h->GetBinError   (i, j));
       }
     }
     return hx;
   }
+}
+
+RooAbsReal* copyHistogram(const RooAbsReal* h, bool includeOverflow){
+  // TODO
+  return 0;
+}
+
+template <class Hist, class Hist2D> Hist2D*
+RooUnfoldResponseT<Hist,Hist2D>::HresponseNoOverflow() const
+{
+  return copyHistogram(Hresponse(),_overflow);
 }
 
 template <class Hist, class Hist2D> TVectorD*
@@ -887,11 +905,11 @@ template <class Hist, class Hist2D> void
 RooUnfoldResponseT<Hist,Hist2D>::V2H (const TVectorD& v, Hist* h, Int_t nb, Bool_t overflow)
 {
   // Sets the bin content of the histogram as that element of the input vector
-  h->Reset();  // in particular, ensure under/overflows are reset
+  reset(h);  // in particular, ensure under/overflows are reset
   if (overflow) nb += 2;
   for (Int_t i= 0; i < nb; i++) {
     Int_t j= GetBin (h, i, overflow);
-    h->SetBinContent (j, v(i));
+    SetBinContent (h, j, v(i));
   }
 }
 
@@ -927,7 +945,7 @@ RooUnfoldResponseT<Hist,Hist2D>::H2M  (const Hist2D* h, Int_t nx, Int_t ny, cons
       if (fac != 0.0) fac= 1.0/fac;
     }
     for (Int_t i= 0; i < nx; i++) {
-      (*m)(i,j)= h->GetBinContent(i+first,j+first) * fac;
+      (*m)(i,j)= GetBinContent (h,i+first,j+first) * fac;
     }
   }
   return m;
@@ -953,7 +971,7 @@ RooUnfoldResponseT<Hist,Hist2D>::H2ME (const Hist2D* h, Int_t nx, Int_t ny, cons
     }
     for (Int_t i= 0; i < nx; i++) {
       // Assume Poisson norm, Multinomial P(mes|tru)
-      (*m)(i,j)= h->GetBinError(i+first,j+first) * fac;
+      (*m)(i,j)= GetBinError(h,i+first,j+first) * fac;
     }
   }
   return m;
@@ -1387,6 +1405,13 @@ Double_t RooUnfoldResponseT<Hist,Hist2D>::GetBinContent (const Hist* h, Int_t i,
 {
   // Bin content by vector index
   return h->GetBinContent (GetBin (h, i, overflow));
+}
+
+template<class Hist, class Hist2D>
+Double_t RooUnfoldResponseT<Hist,Hist2D>::SetBinContent (Hist* h, Int_t i, double val, Bool_t overflow)
+{
+  // Bin content by vector index
+  h->SetBinContent (GetBin (h, i, overflow),val);
 }
 
 template<class Hist, class Hist2D>
