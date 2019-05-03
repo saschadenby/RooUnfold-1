@@ -1383,14 +1383,34 @@ Double_t RooUnfoldResponseT<Hist,Hist2D>::GetBinContent (const Hist* h, Int_t i,
 }
 
 template<class Hist, class Hist2D>
-Double_t RooUnfoldResponseT<Hist,Hist2D>::GetBinCenterX (const Hist2D* h, Int_t i, Bool_t overflow){
+Double_t RooUnfoldResponseT<Hist,Hist2D>::GetBinCenterX (const Hist2D* h, Int_t i){
   // Bin center by vector index
   return h->GetXaxis()->GetBinCenter(i);
 }
 template<class Hist, class Hist2D>
-Double_t RooUnfoldResponseT<Hist,Hist2D>::GetBinCenterY (const Hist2D* h, Int_t i, Bool_t overflow){
+Double_t RooUnfoldResponseT<Hist,Hist2D>::GetBinCenterY (const Hist2D* h, Int_t i){
   // Bin center by vector index
   return h->GetYaxis()->GetBinCenter(i);
+}
+template<class Hist, class Hist2D>
+Double_t RooUnfoldResponseT<Hist,Hist2D>::GetBinLowEdgeX (const Hist2D* h, Int_t i){
+  // Bin center by vector index
+  return h->GetXaxis()->GetBinLowEdge(i);
+}
+template<class Hist, class Hist2D>
+Double_t RooUnfoldResponseT<Hist,Hist2D>::GetBinLowEdgeY (const Hist2D* h, Int_t i){
+  // Bin center by vector index
+  return h->GetYaxis()->GetBinLowEdge(i);
+}
+template<class Hist, class Hist2D>
+Double_t RooUnfoldResponseT<Hist,Hist2D>::GetBinHighEdgeX (const Hist2D* h, Int_t i){
+  // Bin center by vector index
+  return h->GetXaxis()->GetBinLowEdge(i+1);
+}
+template<class Hist, class Hist2D>
+Double_t RooUnfoldResponseT<Hist,Hist2D>::GetBinHighEdgeY (const Hist2D* h, Int_t i){
+  // Bin center by vector index
+  return h->GetYaxis()->GetBinLowEdge(i+1);
 }
 
 template<class Hist, class Hist2D>
