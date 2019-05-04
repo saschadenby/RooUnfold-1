@@ -3,6 +3,7 @@
 #include <iostream>
 #include <ostream>
 #include <sstream>
+#include <iomanip>
 
 #include "TH1.h"
 #include "TH2.h"
