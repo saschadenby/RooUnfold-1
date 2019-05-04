@@ -33,6 +33,7 @@ END_HTML */
 #include "TVectorD.h"
 #include "TMatrixD.h"
 
+#include "RooUnfoldTH1Helpers.h"
 #include "RooUnfoldResponse.h"
 
 
@@ -146,10 +147,10 @@ RooUnfoldSvd::Unfold()
   _train1d= HistNoOverflow (_res->Hmeasured(), _overflow);
   _truth1d= HistNoOverflow (_res->Htruth(),    _overflow);
   _reshist= _res->HresponseNoOverflow();
-  Resize (_meas1d,  _nb);
-  Resize (_train1d, _nb);
-  Resize (_truth1d, _nb);
-  Resize (_reshist, _nb, _nb);
+  RooUnfolding::resize (_meas1d,  _nb);
+  RooUnfolding::resize (_train1d, _nb);
+  RooUnfolding::resize (_truth1d, _nb);
+  RooUnfolding::resize (_reshist, _nb, _nb);
 
   // Subtract fakes from measured distribution
   if (_res->FakeEntries()) {
@@ -179,7 +180,7 @@ RooUnfoldSvd::Unfold()
   }
 
   if (_verbose>=2) {
-    PrintTable (cout, _truth1d, _train1d, 0, _meas1d, rechist, _nb, _nb, kFALSE, kErrors);
+    printTable (cout, _truth1d, _train1d, 0, _meas1d, rechist, _nb, _nb, kFALSE, kErrors);
     TMatrixD* resmat= RooUnfoldResponse::H2M (_reshist, _nb, _nb);
     RooUnfoldResponse::PrintMatrix(*resmat,"SVDUnfold response matrix");
     delete resmat;

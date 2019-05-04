@@ -6,6 +6,7 @@
 
 #include "RooUnfoldIds.h"
 #include "RooUnfoldResponse.h"
+#include "RooUnfoldTH1Helpers.h"
 
 #include <iostream>
 
@@ -115,10 +116,10 @@ RooUnfoldIds::Unfold()
    _truth1d = HistNoOverflow(_res->Htruth()   , _overflow); // true
    _reshist = _res->HresponseNoOverflow();
 
-   Resize(_meas1d,  _nb);
-   Resize(_train1d, _nb);
-   Resize(_truth1d, _nb);
-   Resize(_reshist, _nb, _nb);
+   RooUnfolding::resize(_meas1d,  _nb);
+   RooUnfolding::resize(_train1d, _nb);
+   RooUnfolding::resize(_truth1d, _nb);
+   RooUnfolding::resize(_reshist, _nb, _nb);
 
    // Something about fakes here?
    if (_res->FakeEntries()) {

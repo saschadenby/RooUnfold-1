@@ -5,6 +5,7 @@
 #pragma link off all functions;
 
 #pragma link C++ class RooUnfold-;
+#pragma link C++ class RooAbsRealUnfold-;
 #pragma link C++ class RooUnfoldBayes+;
 #pragma link C++ class RooUnfoldSvd-;
 #pragma link C++ class RooUnfoldBinByBin+;

@@ -102,14 +102,6 @@ public:
   RooUnfoldT<Hist,Hist2D>* RunToy() const;
   void Print(Option_t* opt="") const;
 
-  static void PrintTable (std::ostream& o, const Hist* hTrainTrue, const Hist* hTrain,
-                          const Hist* hTrue, const Hist* hMeas, const Hist* hReco,
-                          Int_t _nm=0, Int_t _nt=0, Bool_t _overflow=kFALSE,
-                          RooUnfolding::ErrorTreatment withError=RooUnfolding::kDefault, Double_t chi_squ=-999.0);
-
-  static void PrintTable (std::ostream& o, const TVectorD& vTrainTrue, const TVectorD& vTrain,
-                          const TVectorD& vMeas, const TVectorD& vReco, Int_t nm, Int_t nt);
-
 protected:
   void Assign (const RooUnfoldT<Hist,Hist2D>& rhs); // implementation of assignment operator
   virtual void SetNameTitleDefault();
@@ -125,7 +117,6 @@ protected:
   static Hist*    HistNoOverflow (const Hist* h, Bool_t overflow);
   static TMatrixD& ABAT (const TMatrixD& a, const TMatrixD& b, TMatrixD& c);
   static TMatrixD& ABAT (const TMatrixD& a, const TVectorD& b, TMatrixD& c);
-  static Hist*     Resize (Hist* h, Int_t nx, Int_t ny=-1, Int_t nz=-1);
   static Int_t    InvertMatrix (const TMatrixD& mat, TMatrixD& inv, const char* name="matrix", Int_t verbose=1);
 
 private:
@@ -173,5 +164,5 @@ public:
 };
 
 typedef RooUnfoldT<TH1,TH2> RooUnfold;
-
+typedef RooUnfoldT<RooAbsReal,RooAbsReal> RooAbsRealUnfold;
 #endif

@@ -30,16 +30,28 @@ namespace RooUnfolding {
   int fill(TH1* hist, double x, double y, double w);
   int fill(TH1* hist, double x, double y, double z, double w);
   int fill(TH2* hist, double x, double y, double w);
-  TH1* copy(const TH1* orighist, bool reset, const char* name = 0, const char* title = 0);
-  TH2* copy(const TH2* orighist, bool reset, const char* name = 0, const char* title = 0);
+  TH1* copy(const TH1* orighist, bool reset = false, const char* name = 0, const char* title = 0);
+  TH2* copy(const TH2* orighist, bool reset = false, const char* name = 0, const char* title = 0);
   void binXYZ(const TH1* tru, int i, int& jx, int& jy, int& jz);
   double binError(const TH1* h, int i, bool overflow);
   double binContent (const TH1* h, int i, bool overflow);
   void setBinContent (TH1* h, int i, double val, bool overflow);
   void setBinContent (TH1* h, int i, int j, double val, bool overflow);
-  TH1* h2h1d(TH1* h, int nb);  
-  TH1* h2h1d(TH2* h, int nb);
+  TH1* h2h1d(const TH1* h, int nb);  
+  TH1* h2h1d(const TH2* h, int nb);
   TH2* copyHistogram(const TH2* h, bool includeOverflow);
   const char* varname(const TH1* h, Dimension d);
+  void setContents(TH1* h,const std::vector<double>& values,const std::vector<double>& errors, bool overflow);
+  template<class V> V subtract(const TVectorD& orig, const TH1* hist, bool overflow);
+
+
+  void printTable (std::ostream& o, const TH1* hTrainTrue, const TH1* hTrain,
+                   const TH1* hTrue, const TH1* hMeas, const TH1* hReco,
+                   Int_t _nm=0, Int_t _nt=0, Bool_t _overflow=kFALSE,
+                   RooUnfolding::ErrorTreatment withError=RooUnfolding::kDefault, Double_t chi_squ=-999.0);
+
+  TH1* histNoOverflow (const TH1* h, Bool_t overflow);
+  TH1* resize (TH1* h, Int_t nx, Int_t ny = 0, Int_t nz = 0);  
+  
 }
 #endif

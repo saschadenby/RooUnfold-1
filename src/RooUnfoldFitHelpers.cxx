@@ -116,7 +116,7 @@ namespace RooUnfolding {
     RooDataHist* hist = new RooDataHist (name,title,vars);
     return new RooHistFunc(name,title,vars,vars,*hist);
   }
-  RooAbsReal* h2h1d(RooAbsReal* h, int nb){
+  RooAbsReal* h2h1d(const RooAbsReal* h, int nb){
     // TODO
     return 0;
   }
@@ -131,6 +131,29 @@ namespace RooUnfolding {
   const char* varname(const RooAbsReal* h, Dimension d){
     // TODO
     return "";
+  }
+  RooAbsReal* histNoOverflow(const RooAbsReal* h, bool overflow){
+    // overflow not supported anyway, do nothing
+    return copy(h);
+  }
+
+  void setContents(RooAbsReal* h,const std::vector<double>& values,const std::vector<double>& errors, bool overflow){
+    // TODO
+  }
+  template<> TVectorD subtract<TVectorD>(const TVectorD& orig, const RooAbsReal* hist, bool overflow) {
+    // TODO
+    TVectorD res;
+    return res;
+  }
+  void printTable (std::ostream& o, const RooAbsReal* hTrainTrue, const RooAbsReal* hTrain,
+                   const RooAbsReal* hTrue, const RooAbsReal* hMeas, const RooAbsReal* hReco,
+                   Int_t _nm, Int_t _nt, Bool_t _overflow,
+                   RooUnfolding::ErrorTreatment withError, Double_t chi_squ){
+    // TODO
+  }
+  RooAbsReal* resize (RooAbsReal* h, Int_t nx, Int_t ny, Int_t nz){
+    // TOOD
+    return h;
   }
 }  
 

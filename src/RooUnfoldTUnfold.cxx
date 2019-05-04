@@ -41,6 +41,10 @@ END_HTML */
 #include "TSpline.h"
 
 #include "RooUnfoldResponse.h"
+#include "RooUnfoldHelpers.h"
+#include "RooUnfoldTH1Helpers.h"
+
+using namespace RooUnfolding;
 
 using std::cout;
 using std::cerr;
@@ -257,7 +261,7 @@ RooUnfoldTUnfold::Unfold()
   if (_verbose>=2) {
     TH1* train1d= HistNoOverflow (_res->Hmeasured(), _overflow);
     TH1* truth1d= HistNoOverflow (_res->Htruth(),    _overflow);
-    PrintTable (cout, truth1d, train1d, 0, meas, &reco, _nm, _nt, kTRUE);
+    printTable (cout, truth1d, train1d, 0, meas, &reco, _nm, _nt, kTRUE);
     delete truth1d;
     delete train1d;
   }

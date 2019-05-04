@@ -108,6 +108,7 @@ END_HTML */
 #endif
 #include "RooUnfoldIds.h"
 #include "RooUnfoldTH1Helpers.h"
+#include "RooUnfoldFitHelpers.h"
 
 using std::vector;
 using std::cout;
@@ -163,38 +164,38 @@ RooUnfoldT<Hist,Hist2D>::New (RooUnfolding::Algorithm alg, const RooUnfoldRespon
     case kNone:
       unfold= new RooUnfoldT<Hist,Hist2D>         (res, meas);
       break;
-    case kBayes:
-      unfold= new RooUnfoldBayes    (res, meas);
-      break;
-    case kSVD:
-      unfold= new RooUnfoldSvd      (res, meas);
-      break;
-    case kBinByBin:
-      unfold= new RooUnfoldBinByBin (res, meas);
-      break;
-    case kTUnfold:
-#ifndef NOTUNFOLD
-      unfold= new RooUnfoldTUnfold  (res,meas);
-      break;
-#else
-      cerr << "TUnfold library is not available" << endl;
-      return 0;
-#endif
-    case kInvert:
-      unfold = new RooUnfoldInvert  (res,meas);
-      break;
-    case kDagostini:
-#ifdef HAVE_DAGOSTINI
-      unfold = new RooUnfoldDagostini (res,meas);
-      break;
-#else
-      cerr << "RooUnfoldDagostini is not available" << endl;
-      return 0;
-#endif
-    case kIDS:
-      unfold= new RooUnfoldIds      (res, meas);
-      break;
-    default:
+//    case kBayes:
+//      unfold= new RooUnfoldBayes    (res, meas);
+//      break;
+//    case kSVD:
+//      unfold= new RooUnfoldSvd      (res, meas);
+//      break;
+//    case kBinByBin:
+//      unfold= new RooUnfoldBinByBin (res, meas);
+//      break;
+//    case kTUnfold:
+//#ifndef NOTUNFOLD
+//      unfold= new RooUnfoldTUnfold  (res,meas);
+//      break;
+//#else
+//      cerr << "TUnfold library is not available" << endl;
+//      return 0;
+//#endif
+//    case kInvert:
+//      unfold = new RooUnfoldInvert  (res,meas);
+//      break;
+//    case kDagostini:
+//#ifdef HAVE_DAGOSTINI
+//      unfold = new RooUnfoldDagostini (res,meas);
+//      break;
+//#else
+//      cerr << "RooUnfoldDagostini is not available" << endl;
+//      return 0;
+//#endif
+//    case kIDS:
+//      unfold= new RooUnfoldIds      (res, meas);
+//      break;
+//    default:
       cerr << "Unknown RooUnfold method " << Int_t(alg) << endl;
       return 0;
   }
@@ -297,19 +298,12 @@ template<class Hist,class Hist2D> void
 RooUnfoldT<Hist,Hist2D>::SetMeasured (const TVectorD& meas, const TVectorD& err)
 {
   // Set measured distribution and errors. Should be called after setting response matrix.
-  if (!_measmine) {
-    Bool_t oldstat= TH1::AddDirectoryStatus();
-    TH1::AddDirectory (kFALSE);
-    _measmine= (TH1*) _res->Hmeasured()->Clone (GetName());
-    TH1::AddDirectory (oldstat);
-    _measmine->Reset();
-    _measmine->SetTitle (GetTitle());
+  
+  const Hist* orig = _res->Hmeasured();
+  if (_measmine) {
+    delete _measmine;
   }
-  for (Int_t i= 0; i<_nm; i++) {
-    Int_t j= RooUnfolding::bin(_measmine, i, _overflow);
-    _measmine->SetBinContent(j, meas[i]);
-    _measmine->SetBinError  (j, err [i]);
-  }
+  _measmine = RooUnfolding::createHist<Hist>(meas,GetName(),GetTitle(),nBins(orig,X),min(orig,X),max(orig,X),varname(orig,X));
   SetMeasured (_measmine);
 }
 
@@ -459,16 +453,16 @@ RooUnfoldT<Hist,Hist2D>::UnfoldWithErrors (ErrorTreatment withError, bool getWei
   if (!_unfolded) {
     if (_fail) return false;
     const Hist* rmeas= _res->Hmeasured();
-    if (_meas->GetDimension() != rmeas->GetDimension() ||
-        _meas->GetNbinsX()    != rmeas->GetNbinsX()    ||
-        _meas->GetNbinsY()    != rmeas->GetNbinsY()    ||
-        _meas->GetNbinsZ()    != rmeas->GetNbinsZ()) {
-      cerr << "Warning: measured "              << _meas->GetNbinsX();
-      if (_meas->GetDimension()>=2) cerr << "x" << _meas->GetNbinsY();
-      if (_meas->GetDimension()>=3) cerr << "x" << _meas->GetNbinsZ();
-      cerr << "-bin histogram does not match "  << rmeas->GetNbinsX();
-      if (rmeas->GetDimension()>=2) cerr << "x" << rmeas->GetNbinsY();
-      if (rmeas->GetDimension()>=3) cerr << "x" << rmeas->GetNbinsZ();
+    if (dim(_meas) != dim(rmeas) ||
+        nBins(_meas,X)    != nBins(rmeas,X)    ||
+        nBins(_meas,Y)    != nBins(rmeas,Y)    ||
+        nBins(_meas,Z)    != nBins(rmeas,Z)) {
+      cerr << "Warning: measured "              << nBins(_meas,X);
+      if (dim(_meas)>=2) cerr << "x" << nBins(_meas,Y);
+      if (dim(_meas)>=3) cerr << "x" << nBins(_meas,Z);
+      cerr << "-bin histogram does not match "  << nBins(rmeas,X);
+      if (dim(rmeas)>=2) cerr << "x" << nBins(rmeas,Y);
+      if (dim(rmeas)>=3) cerr << "x" << nBins(rmeas,Z);
       cerr << "-bin measured histogram from RooUnfoldResponseT<Hist,Hist2D>" << endl;
     }
     Unfold();
@@ -517,13 +511,7 @@ RooUnfoldT<Hist,Hist2D>::Chi2(const Hist* hTrue,ErrorTreatment DoChi2)
 
     if (!UnfoldWithErrors (DoChi2)) return -1.0;
 
-    TVectorD res(_nt);
-    for (Int_t i = 0 ; i < _nt; i++) {
-      Int_t it= RooUnfolding::bin (hTrue, i, _overflow);
-      if (hTrue->GetBinContent(it)!=0.0 || hTrue->GetBinError(it)>0.0) {
-        res[i] = _rec[i] - hTrue->GetBinContent(it);
-      }
-    }
+    TVectorD res = subtract<TVectorD>(_rec,hTrue,_overflow);
 
     Double_t chi2= 0.0;
     if (DoChi2==kCovariance || DoChi2==kCovToy) {
@@ -557,152 +545,10 @@ RooUnfoldT<Hist,Hist2D>::PrintTable (std::ostream& o, const Hist* hTrue, ErrorTr
   if (!_unfolded) return;
   Double_t chi_squ= -999.0;
   if (hTrue && (withError==kCovariance || withError==kCovToy)) chi_squ = Chi2(hTrue,withError);
-  PrintTable (o, response()->Htruth(), response()->Hmeasured(), hTrue, Hmeasured(), hReco,
+  printTable (o, response()->Htruth(), response()->Hmeasured(), hTrue, Hmeasured(), hReco,
               _nm, _nt, _overflow, withError, chi_squ);
 }
 
-
-template<class Hist,class Hist2D> void
-RooUnfoldT<Hist,Hist2D>::PrintTable (std::ostream& o, const TVectorD& vTrainTrue, const TVectorD& vTrain,
-                            const TVectorD& vMeas, const TVectorD& vReco,
-                            Int_t nm, Int_t nt)
-{
-  if (nm<=0) nm= vTrain    .GetNrows();
-  if (nt<=0) nt= vTrainTrue.GetNrows();
-  Hist* hTrainTrue =  RooUnfolding::createHist<Hist>(vTrainTrue, "","", nt,0.0,nt,"xt",false);
-  Hist* hTrain     =  RooUnfolding::createHist<Hist>(vTrain,     "","", nm,0.0,nm,"xm",false);
-  Hist* hMeas      =  RooUnfolding::createHist<Hist>(vMeas,      "","", nm,0.0,nm,"xm",false);
-  Hist* hReco      =  RooUnfolding::createHist<Hist>(vReco,      "","", nt,0.0,nt,"xt",false);
-  PrintTable (o, hTrainTrue, hTrain, 0, hMeas, hReco, nm, nt);
-  delete hTrainTrue;
-  delete hTrain    ;
-  delete hMeas     ;
-  delete hReco     ;
-}
-
-template<class Hist,class Hist2D> void
-RooUnfoldT<Hist,Hist2D>::PrintTable (std::ostream& o, const Hist* hTrainTrue, const Hist* hTrain,
-                            const Hist* hTrue, const Hist* hMeas, const Hist* hReco,
-                            Int_t _nm, Int_t _nt, Bool_t _overflow,
-                            ErrorTreatment withError, Double_t chi_squ)
-{
-  // Prints entries from truth, measured, and reconstructed data for each bin.
-  if (withError==kDefault) withError= hReco->GetSumw2N() ? kErrors : kNoError;
-  if (_nm<=0) _nm= hTrain    ->GetNbinsX();
-  if (_nt<=0) _nt= hTrainTrue->GetNbinsX();
-  std::ostringstream fmt;
-  fmt.copyfmt (o);
-  Int_t dim= hReco->GetDimension(), ntxb= hReco->GetNbinsX()+2, ntyb= hReco->GetNbinsY()+2;
-  if (hMeas->GetDimension() != dim || hMeas->GetNbinsX()+2 != ntxb || hMeas->GetNbinsY()+2 != ntyb) dim= 1;
-  Int_t iwid= (dim==3) ? 8 : (dim==2) ? 7 : 5;
-  const char* xwid= (dim==3) ? "===" : (dim==2) ? "==" : "";
-  o << "===============================================================================" << xwid << endl
-    << setw(iwid) << ""      << setw(9) << "Train" << setw(9) << "Train"    << setw(9) << "Test"  << setw(9) << "Test"  << setw(9) << "Unfolded";
-  if (withError)
-    o << setw(10)<<"Error on"<<setw(9) << "Diff" << setw(9) << "Pull" << endl;
-  else
-    o << setw(9) << "Diff" << endl;
-  o << setw(iwid) << "Bin"   << setw(9) << "Truth" << setw(9) << "Measured" << setw(9) << "Truth" << setw(9) << "Input" << setw(9) << "Output";
-  if (withError)
-    o << setw(10)<<"Unfolding";
-  o << endl;
-  o << "===============================================================================" << xwid << endl;
-  Double_t true_train_tot=0;
-  Double_t meas_train_tot=0;
-  Double_t true_test_tot=0;
-  Double_t meas_test_tot=0;
-  Double_t unf_tot=0;
-  Double_t chi2= 0.0;
-  Int_t ndf= 0, first= (_overflow ? 0 : 1);
-  Int_t maxbin= _nt < _nm ? _nm : _nt;
-  for (Int_t i = 0 ; i < maxbin; i++) {
-    Int_t it= RooUnfolding::bin(hReco, i, _overflow);
-    Int_t im= RooUnfolding::bin(hMeas, i, _overflow);
-
-    if (dim==2 || dim==3) {
-      Int_t iw= (dim==2) ? 3 : 2;
-      Int_t ix= it%ntxb;
-      Int_t iy= ((it-ix)/ntxb)%ntyb;
-      o << setw(iw) << ix << ',' << setw(iw) << iy;
-      if (dim==3) o << ',' << setw(iw) << ((it-ix)/ntxb - iy)/ntyb;
-    } else
-      o << setw(iwid) << i+first;
-    o << std::fixed << setprecision(0);
-    true_train_tot+=hTrainTrue->GetBinContent(it);
-    meas_train_tot+=hTrain->GetBinContent(im);
-    if (hTrue) true_test_tot+=hTrue->GetBinContent(it);
-    meas_test_tot+=hMeas->GetBinContent(im);
-    unf_tot+=hReco->GetBinContent(it);
-    if (i<_nt){
-      o << ' ' << setw(8) << hTrainTrue->GetBinContent(it);
-    }
-    else
-      o << setw(9) << ' ';
-    if (i<_nm)
-      o << ' ' << setw(8) << hTrain->GetBinContent(im);
-    else
-      o << setw(9) << ' ';
-    if (hTrue && i<_nt)
-      o << ' ' << setw(8) << hTrue->GetBinContent(it);
-    else
-      o << setw(9) << ' ';
-    if (i<_nm)
-      o << ' ' << setw(8) << hMeas->GetBinContent(im);
-    else
-      o << setw(9) << ' ';
-    o << setprecision(1);
-    if (i<_nt) {
-      Double_t y= hReco->GetBinContent(it), yerr = hReco->GetBinError(it);
-      o << ' ' << setw(8) << y;
-      if (withError)
-        o << ' ' << setw(9) << yerr;
-      if (hTrue &&
-          (                       y!=0.0 || (withError &&                   yerr>0.0)) &&
-          (hTrue->GetBinContent(it)!=0.0 || (withError && hTrue->GetBinError(it)>0.0))) {
-        Double_t ydiff= y - hTrue->GetBinContent(it);
-        o << ' ' << setw(8) << ydiff;
-        if (withError && yerr>0.0) {
-          ndf++;
-          Double_t ypull = ydiff/yerr;
-          chi2 += ypull*ypull;
-          o << ' ' << setw(8) << ypull;
-        }
-      }
-    }
-    o << endl;
-
-  }
-
-  o << "===============================================================================" << xwid << endl
-    << setw(iwid) << "" << std::fixed << setprecision(0)
-    << ' ' << setw(8) << true_train_tot
-    << ' ' << setw(8) << meas_train_tot;
-  if (hTrue)
-    o << ' ' << setw(8) << true_test_tot;
-  else
-    o << setw(9) << ' ';
-  Double_t toterr= 0.0;
-  if (meas_test_tot>0.0 && meas_train_tot>0.0) toterr= sqrt(meas_test_tot)*true_train_tot/meas_train_tot;
-  o << ' ' << setw(8) << meas_test_tot << setprecision(1)
-    << ' ' << setw(8) << unf_tot;
-  if (withError) 
-  o << ' ' << setw(9) << toterr;
-  o << ' ' << setw(8) << unf_tot-true_test_tot;
-  if(withError && toterr>0.0)
-  o << ' ' << setw(8) <<(unf_tot-true_test_tot)/toterr;
-  o << endl
-    << "===============================================================================" << xwid << endl;
-  o.copyfmt (fmt);
-  if (hTrue) {
-    if (chi_squ!=-999.0) {
-      o << "Chi^2/NDF=" << chi_squ << "/" << ndf << " (bin-by-bin Chi^2=" << chi2 << ")" << endl;
-    } else {
-      o << "Bin-by-bin Chi^2/NDF=" << chi2 << "/" << ndf << endl;
-      chi_squ= chi2;
-    }
-    if (chi_squ<=0.0) cerr << "Warning: Invalid Chi^2 Value" << endl;
-  }
-}
 
 template<class Hist,class Hist2D> void
 RooUnfoldT<Hist,Hist2D>::SetNameTitleDefault()
@@ -727,24 +573,27 @@ RooUnfoldT<Hist,Hist2D>::Hreco (ErrorTreatment withError)
     2: Errors from the square root of of the covariance matrix given by the unfolding
     3: Errors from the square root of the covariance matrix from the variation of the results in toy MC tests
     */
-  Hist* reco= (TH1*) _res->Htruth()->Clone(GetName());
-  reco->Reset();
-  reco->SetTitle (GetTitle());
+  Hist* reco= copy(_res->Htruth(),true,GetName(),GetTitle());
   if (!UnfoldWithErrors (withError)) withError= kNoError;
   if (!_unfolded) return reco;
 
+  std::vector<double> values;  
+  std::vector<double> errors;
+
+  //Int_t j= RooUnfolding::bin (reco, i, _overflow);
+
   for (Int_t i= 0; i < _nt; i++) {
-    Int_t j= RooUnfolding::bin (reco, i, _overflow);
-    reco->SetBinContent (j,             _rec(i));
+    values.push_back(_rec(i));
     if        (withError==kErrors){
-      reco->SetBinError (j, sqrt (fabs (_variances(i))));
+      errors.push_back(abs (_variances(i)));
     } else if (withError==kCovariance){
-      reco->SetBinError (j, sqrt (fabs (_cov(i,i))));
+      errors.push_back(sqrt (fabs (_cov(i,i))));
     } else if (withError==kCovToy){
-      reco->SetBinError (j, sqrt (fabs (_err_mat(i,i))));
+      errors.push_back(sqrt (fabs (_err_mat(i,i))));
     }
   }
-
+  setContents(reco,values,errors,_overflow);
+  
   return reco;
 }
 
@@ -837,22 +686,22 @@ RooUnfoldT<Hist,Hist2D>::Print(Option_t* /*opt*/) const
        << "\", regularisation parameter=" << GetRegParm() << ", ";
   if (_haveCovMes) cout << "with measurement covariance, ";
   if (_dosys)      cout << "calculate systematic errors, ";
-  if (_meas->GetDimension()==1) cout << _nm;
+  if (dim(_meas)==1) cout << _nm;
   else {
-    cout <<        _meas->GetNbinsX()
-         << "x" << _meas->GetNbinsY();
-    if (_meas->GetDimension()>=3)
-    cout << "x" << _meas->GetNbinsZ();
+    cout <<        nBins(_meas,X)
+         << "x" << nBins(_meas,Y);
+    if (dim(_meas)>=3)
+      cout << "x" << nBins(_meas,Z);
     cout << " (" << _nm << ")";
   }
   cout << " bins measured, ";
   const Hist* rtrue= _res->Htruth();
-  if (rtrue->GetDimension()==1) cout << _nt;
+  if (dim(rtrue)==1) cout << _nt;
   else {
-    cout <<        rtrue->GetNbinsX()
-         << "x" << rtrue->GetNbinsY();
-    if (rtrue->GetDimension()>=3)
-    cout << "x" << rtrue->GetNbinsZ();
+    cout <<        nBins(rtrue,X)
+         << "x" << nBins(rtrue,Y);
+    if (dim(rtrue)>=3)
+      cout << "x" << nBins(rtrue,Z);
     cout << " (" << _nt << ")";
   }
   cout << " bins truth";
@@ -999,125 +848,7 @@ RooUnfoldT<Hist,Hist2D>::Wreco(ErrorTreatment withError)
 template<class Hist,class Hist2D> Hist*
 RooUnfoldT<Hist,Hist2D>::HistNoOverflow (const Hist* h, Bool_t overflow)
 {
-  if (!overflow) {   // also for 2D+
-    Hist* hx= RooUnfoldResponseT<Hist,Hist2D>::H2H1D (h, h->GetNbinsX()*h->GetNbinsY()*h->GetNbinsZ());
-    if (!hx) return hx;
-    // clear under/overflow bins for cloned Hist
-    hx->SetBinContent (0,                 0.0);
-    hx->SetBinContent (hx->GetNbinsX()+1, 0.0);
-    return hx;
-  }
-  Int_t nb= h->GetNbinsX(), s= h->GetSumw2N();
-  Double_t xlo= h->GetXaxis()->GetXmin(), xhi= h->GetXaxis()->GetXmax(), xb= (xhi-xlo)/nb;
-  nb += 2;
-  Hist* hx= new TH1F (h->GetName(), h->GetTitle(), nb, xlo-xb, xhi+xb);
-  for (Int_t i= 0; i < nb; i++) {
-           hx->SetBinContent (i+1, h->GetBinContent (i));
-    if (s) hx->SetBinError   (i+1, h->GetBinError   (i));
-  }
-  return hx;
-}
-
-template<class Hist,class Hist2D> Hist*
-RooUnfoldT<Hist,Hist2D>::Resize (Hist* h, Int_t nx, Int_t ny, Int_t nz)
-{
-  // Resize a histogram with a different number of bins.
-  // Contents and errors are copied to the same bin numbers (the overflow bin
-  // is copied to the new overflow bin) in the new histogram.
-  // If the new histogram is larger than the old, the extra bins are zeroed.
-  Int_t mx= h->GetNbinsX(), my= h->GetNbinsY(), mz= h->GetNbinsZ();
-  Int_t nd= h->GetDimension();
-  if (nx<0 || nd<1) nx= mx;
-  if (ny<0 || nd<2) ny= my;
-  if (nz<0 || nd<3) nz= mz;
-  Hist* hc= (TH1*) h->Clone("resize_tmp");
-
-  bool mod= false;
-  if (nx!=mx) {
-    Double_t xlo= h->GetXaxis()->GetXmin(), xhi= h->GetXaxis()->GetXmax();
-    h->GetXaxis()->Set (nx, xlo, xlo+((xhi-xlo)/mx)*nx);
-    mod= true;
-  }
-  if (ny!=my) {
-    Double_t ylo= h->GetYaxis()->GetXmin(), yhi= h->GetYaxis()->GetXmax();
-    h->GetYaxis()->Set (ny, ylo, ylo+((yhi-ylo)/my)*ny);
-    mod= true;
-  }
-  if (nz!=mz) {
-    Double_t zlo= h->GetZaxis()->GetXmin(), zhi= h->GetZaxis()->GetXmax();
-    h->GetZaxis()->Set (nz, zlo, zlo+((zhi-zlo)/mz)*nz);
-    mod= true;
-  }
-
-  if (mod) {
-    h->SetBinsLength();  // Just copies array, which isn't right for overflows or 2D/3D
-    Int_t s= h->GetSumw2N();
-    Int_t ox= mx+1, oy= my+1, oz= mz+1;  // old overflow bin
-    Int_t px= nx+1, py= ny+1, pz= nz+1;  // new overflow bin
-
-    if        (nd==1) {
-
-      for (Int_t i= 0; i<=nx; i++) {
-               h->SetBinContent (i, i>mx ? 0.0 : hc->GetBinContent (i));
-        if (s) h->SetBinError   (i, i>mx ? 0.0 : hc->GetBinError   (i));
-      }
-             h->SetBinContent (px, h->GetBinContent (ox));
-      if (s) h->SetBinError   (px, h->GetBinError   (ox));
-
-    } else if (nd==2) {
-
-      for (Int_t i= 0; i<=nx; i++) {
-        for (Int_t j= 0; j<=ny; j++) {
-                 h->SetBinContent (i, j, i>mx||j>my ? 0.0 : hc->GetBinContent (i, j));
-          if (s) h->SetBinError   (i, j, i>mx||j>my ? 0.0 : hc->GetBinError   (i, j));
-        }
-               h->SetBinContent (i, py, i>mx ? 0.0 : hc->GetBinContent (i, oy));
-        if (s) h->SetBinError   (i, py, i>mx ? 0.0 : hc->GetBinError   (i, oy));
-      }
-      for (Int_t j= 0; j<=ny; j++) {
-               h->SetBinContent (px, j, j>my ? 0.0 : hc->GetBinContent (ox, j));
-        if (s) h->SetBinError   (px, j, j>my ? 0.0 : hc->GetBinError   (ox, j));
-      }
-             h->SetBinContent (px, py, hc->GetBinContent (ox, oy));
-      if (s) h->SetBinError   (px, py, hc->GetBinError   (ox, oy));
-
-    } else if (nd==3) {
-
-      for (Int_t i= 0; i<=nx; i++) {
-        for (Int_t j= 0; j<=ny; j++) {
-          for (Int_t k= 0; k<=nz; k++) {
-                   h->SetBinContent (i, j, k, i>mx||j>my||k>mz ? 0.0 : hc->GetBinContent (i, j, k));
-            if (s) h->SetBinError   (i, j, k, i>mx||j>my||k>mz ? 0.0 : hc->GetBinError   (i, j, k));
-          }
-                 h->SetBinContent (i, j, pz, i>mx||j>my ? 0.0 : hc->GetBinContent (i, j, oz));
-          if (s) h->SetBinError   (i, j, pz, i>mx||j>my ? 0.0 : hc->GetBinError   (i, j, oz));
-        }
-               h->SetBinContent (i, py, pz, i>mx ? 0.0 : hc->GetBinContent (i, oy, oz));
-        if (s) h->SetBinError   (i, py, pz, i>mx ? 0.0 : hc->GetBinError   (i, oy, oz));
-      }
-      for (Int_t j= 0; j<=ny; j++) {
-        for (Int_t k= 0; k<=nz; k++) {
-                 h->SetBinContent (px, j, k, j>my||k>mz ? 0.0 : hc->GetBinContent (ox, j, k));
-          if (s) h->SetBinError   (px, j, k, j>my||k>mz ? 0.0 : hc->GetBinError   (ox, j, k));
-        }
-               h->SetBinContent (px, j, pz, j>my ? 0.0 : hc->GetBinContent (ox, j, oz));
-        if (s) h->SetBinError   (px, j, pz, j>my ? 0.0 : hc->GetBinError   (ox, j, oz));
-      }
-      for (Int_t k= 0; k<=nz; k++) {
-        for (Int_t i= 0; i<=nx; i++) {
-                 h->SetBinContent (i, py, k, i>mx||k>mz ? 0.0 : hc->GetBinContent (i, oy, k));
-          if (s) h->SetBinError   (i, py, k, i>mx||k>mz ? 0.0 : hc->GetBinError   (i, oy, k));
-        }
-               h->SetBinContent (px, py, k, k>mz ? 0.0 : hc->GetBinContent (ox, oy, k));
-        if (s) h->SetBinError   (px, py, k, k>mz ? 0.0 : hc->GetBinError   (ox, oy, k));
-      }
-             h->SetBinContent (px, py, pz, hc->GetBinContent (ox, oy, oz));
-      if (s) h->SetBinError   (px, py, pz, hc->GetBinError   (ox, oy, oz));
-
-    }
-  }
-  delete hc;
-  return h;
+  return histNoOverflow(h,overflow);
 }
 
 template<class Hist,class Hist2D> TMatrixD&
@@ -1358,5 +1089,8 @@ Int_t RooUnfoldT<Hist,Hist2D>::SystematicsIncluded() const
 
 template class RooUnfoldT<TH1,TH2>;
 ClassImp (RooUnfold);
+
+template class RooUnfoldT<RooAbsReal,RooAbsReal>;
+ClassImp (RooAbsRealUnfold);
 
 
