@@ -4,6 +4,26 @@
 #include <TVectorD.h>
 
 namespace RooUnfolding {
+
+  enum Algorithm {       // Selection of unfolding algorithm:
+    kNone,               //   no unfolding (dummy routines in RooUnfold)
+    kBayes,              //   RooUnfoldBayes
+    kSVD,                //   RooUnfoldSvd
+    kBinByBin,           //   RooUnfoldBinByBin
+    kTUnfold,            //   RooUnfoldTUnfold
+    kInvert,             //   RooUnfoldInvert
+    kDagostini,          //   RooUnfoldDagostini
+    kIDS                 //   RooUnfoldIds
+  };
+
+  enum ErrorTreatment {  // Error treatment:
+    kNoError,            //   no error treatment: returns sqrt(N)
+    kErrors,             //   bin-by-bin errors (diagonal covariance matrix)
+    kCovariance,         //   covariance matrix from unfolding
+    kCovToy,             //   covariance matrix from toy MC
+    kDefault=-1          //   not specified
+  };
+  
   enum Dimension { X, Y, Z };
 
   template<class Hist> Hist* createHist(const char* name, const char* title, int nbinsx, double xmin, double xmax, const char* xname);  

@@ -118,9 +118,24 @@ using std::setprecision;
 using std::sqrt;
 using std::fabs;
 
-ClassImp (RooUnfold);
+template<class Hist,class Hist2D> const typename RooUnfoldT<Hist,Hist2D>::Algorithm RooUnfoldT<Hist,Hist2D>::kNone = RooUnfolding::kNone;
+template<class Hist,class Hist2D> const typename RooUnfoldT<Hist,Hist2D>::Algorithm RooUnfoldT<Hist,Hist2D>::kBayes = RooUnfolding::kBayes;
+template<class Hist,class Hist2D> const typename RooUnfoldT<Hist,Hist2D>::Algorithm RooUnfoldT<Hist,Hist2D>::kSVD = RooUnfolding::kSVD;
+template<class Hist,class Hist2D> const typename RooUnfoldT<Hist,Hist2D>::Algorithm RooUnfoldT<Hist,Hist2D>::kBinByBin = RooUnfolding::kBinByBin;
+template<class Hist,class Hist2D> const typename RooUnfoldT<Hist,Hist2D>::Algorithm RooUnfoldT<Hist,Hist2D>::kTUnfold = RooUnfolding::kTUnfold;
+template<class Hist,class Hist2D> const typename RooUnfoldT<Hist,Hist2D>::Algorithm RooUnfoldT<Hist,Hist2D>::kInvert = RooUnfolding::kInvert;
+template<class Hist,class Hist2D> const typename RooUnfoldT<Hist,Hist2D>::Algorithm RooUnfoldT<Hist,Hist2D>::kDagostini = RooUnfolding::kDagostini;
+template<class Hist,class Hist2D> const typename RooUnfoldT<Hist,Hist2D>::Algorithm RooUnfoldT<Hist,Hist2D>::kIDS = RooUnfolding::kIDS; 
+template<class Hist,class Hist2D> const typename RooUnfoldT<Hist,Hist2D>::ErrorTreatment RooUnfoldT<Hist,Hist2D>::kNoError = RooUnfolding::kNoError;
+template<class Hist,class Hist2D> const typename RooUnfoldT<Hist,Hist2D>::ErrorTreatment RooUnfoldT<Hist,Hist2D>::kErrors = RooUnfolding::kErrors;
+template<class Hist,class Hist2D> const typename RooUnfoldT<Hist,Hist2D>::ErrorTreatment RooUnfoldT<Hist,Hist2D>::kCovariance = RooUnfolding::kCovariance;
+template<class Hist,class Hist2D> const typename RooUnfoldT<Hist,Hist2D>::ErrorTreatment RooUnfoldT<Hist,Hist2D>::kCovToy = RooUnfolding::kCovToy;
+template<class Hist,class Hist2D> const typename RooUnfoldT<Hist,Hist2D>::ErrorTreatment RooUnfoldT<Hist,Hist2D>::kDefault = RooUnfolding::kDefault;
 
-RooUnfold::RooUnfold (const RooUnfoldResponse* res, const TH1* meas, const char* name, const char* title)
+using namespace RooUnfolding;
+
+template<class Hist,class Hist2D>
+RooUnfoldT<Hist,Hist2D>::RooUnfoldT (const RooUnfoldResponseT<Hist,Hist2D>* res, const Hist* meas, const char* name, const char* title)
   : TNamed (name, title)
 {
   // Constructor with response matrix object and measured unfolding input histogram.
@@ -130,7 +145,8 @@ RooUnfold::RooUnfold (const RooUnfoldResponse* res, const TH1* meas, const char*
   Setup (res, meas);
 }
 
-RooUnfold* RooUnfold::New (Algorithm alg, const RooUnfoldResponse* res, const TH1* meas,Double_t regparm,
+template<class Hist,class Hist2D> RooUnfoldT<Hist,Hist2D>*
+RooUnfoldT<Hist,Hist2D>::New (RooUnfolding::Algorithm alg, const RooUnfoldResponseT<Hist,Hist2D>* res, const Hist* meas,Double_t regparm,
                            const char* name, const char* title)
 {
     /*Unfolds according to the value of the alg enum:
@@ -142,10 +158,10 @@ RooUnfold* RooUnfold::New (Algorithm alg, const RooUnfoldResponse* res, const TH
     5 = kInvert:   Unfold using inversion of response matrix
     7 = kIDS:      Unfold using iterative dynamically stabilized (IDS) method
     */
-  RooUnfold* unfold;
+  RooUnfoldT<Hist,Hist2D>* unfold;
   switch (alg) {
     case kNone:
-      unfold= new RooUnfold         (res, meas);
+      unfold= new RooUnfoldT<Hist,Hist2D>         (res, meas);
       break;
     case kBayes:
       unfold= new RooUnfoldBayes    (res, meas);
@@ -190,15 +206,17 @@ RooUnfold* RooUnfold::New (Algorithm alg, const RooUnfoldResponse* res, const TH
   return unfold;
 }
 
-RooUnfold* RooUnfold::Clone (const char* newname) const
+template<class Hist,class Hist2D> RooUnfoldT<Hist,Hist2D>*
+RooUnfoldT<Hist,Hist2D>::Clone (const char* newname) const
 {
   // Creates a copy of the unfold object
-  RooUnfold* unfold= new RooUnfold(*this);
+  RooUnfoldT<Hist,Hist2D>* unfold= new RooUnfoldT<Hist,Hist2D>(*this);
   if (newname) unfold->SetName(newname);
   return unfold;
 }
 
-void RooUnfold::Destroy()
+template<class Hist,class Hist2D> void
+RooUnfoldT<Hist,Hist2D>::Destroy()
 {
   delete _measmine;
   delete _vMes;
@@ -208,7 +226,8 @@ void RooUnfold::Destroy()
   delete _resmine;
 }
 
-RooUnfold::RooUnfold (const RooUnfold& rhs)
+template<class Hist,class Hist2D>
+RooUnfoldT<Hist,Hist2D>::RooUnfoldT (const RooUnfoldT<Hist,Hist2D>& rhs)
   : TNamed (rhs.GetName(), rhs.GetTitle())
 {
   // Copy constructor.
@@ -216,7 +235,8 @@ RooUnfold::RooUnfold (const RooUnfold& rhs)
   CopyData (rhs);
 }
 
-void RooUnfold::Assign (const RooUnfold& rhs)
+template<class Hist,class Hist2D> void
+RooUnfoldT<Hist,Hist2D>::Assign (const RooUnfoldT<Hist,Hist2D>& rhs)
 {
   if (this == &rhs) return;
   Reset();
@@ -224,20 +244,23 @@ void RooUnfold::Assign (const RooUnfold& rhs)
   CopyData (rhs);
 }
 
-void RooUnfold::CopyData (const RooUnfold& rhs)
+template<class Hist,class Hist2D> void
+RooUnfoldT<Hist,Hist2D>::CopyData (const RooUnfoldT<Hist,Hist2D>& rhs)
 {
   Setup (rhs.response(), rhs.Hmeasured());
   SetVerbose (rhs.verbose());
   SetNToys   (rhs.NToys());
 }
 
-void RooUnfold::Reset()
+template<class Hist,class Hist2D> void
+RooUnfoldT<Hist,Hist2D>::Reset()
 {
   Destroy();
   Init();
 }
 
-void RooUnfold::Init()
+template<class Hist,class Hist2D> void
+RooUnfoldT<Hist,Hist2D>::Init()
 {
   _res= _resmine= 0;
   _vMes= _eMes= 0;
@@ -252,7 +275,8 @@ void RooUnfold::Init()
   GetSettings();
 }
 
-RooUnfold& RooUnfold::Setup (const RooUnfoldResponse* res, const TH1* meas)
+template<class Hist,class Hist2D> RooUnfoldT<Hist,Hist2D>&
+RooUnfoldT<Hist,Hist2D>::Setup (const RooUnfoldResponseT<Hist,Hist2D>* res, const Hist* meas)
 {
   Reset();
   SetResponse (res);
@@ -260,7 +284,8 @@ RooUnfold& RooUnfold::Setup (const RooUnfoldResponse* res, const TH1* meas)
   return *this;
 }
 
-void RooUnfold::SetMeasured (const TH1* meas)
+template<class Hist,class Hist2D> void
+RooUnfoldT<Hist,Hist2D>::SetMeasured (const Hist* meas)
 {
   // Set measured distribution and errors. RooUnfold does not own the histogram.
   _meas= meas;
@@ -268,7 +293,8 @@ void RooUnfold::SetMeasured (const TH1* meas)
   delete _eMes; _eMes= 0;
 }
 
-void RooUnfold::SetMeasured (const TVectorD& meas, const TVectorD& err)
+template<class Hist,class Hist2D> void
+RooUnfoldT<Hist,Hist2D>::SetMeasured (const TVectorD& meas, const TVectorD& err)
 {
   // Set measured distribution and errors. Should be called after setting response matrix.
   if (!_measmine) {
@@ -287,14 +313,16 @@ void RooUnfold::SetMeasured (const TVectorD& meas, const TVectorD& err)
   SetMeasured (_measmine);
 }
 
-void RooUnfold::SetMeasured (const TVectorD& meas, const TMatrixD& cov)
+template<class Hist,class Hist2D> void
+RooUnfoldT<Hist,Hist2D>::SetMeasured (const TVectorD& meas, const TMatrixD& cov)
 {
   // Set measured distribution and its covariance matrix. Should be called after setting response matrix.
   SetMeasuredCov (cov);
   SetMeasured (meas, Emeasured());
 }
 
-void RooUnfold::SetMeasuredCov (const TMatrixD& cov)
+template<class Hist,class Hist2D> void
+RooUnfoldT<Hist,Hist2D>::SetMeasuredCov (const TMatrixD& cov)
 {
   // Set covariance matrix on measured distribution.
   delete _covL; _covL= 0;
@@ -309,7 +337,8 @@ void RooUnfold::SetMeasuredCov (const TMatrixD& cov)
   _haveCovMes= true;
 }
 
-const TMatrixD& RooUnfold::GetMeasuredCov() const
+template<class Hist,class Hist2D> const TMatrixD&
+RooUnfoldT<Hist,Hist2D>::GetMeasuredCov() const
 {
   // Get covariance matrix on measured distribution.
   if (_covMes) return *_covMes;
@@ -323,7 +352,8 @@ const TMatrixD& RooUnfold::GetMeasuredCov() const
 }
 
 
-void RooUnfold::SetResponse (const RooUnfoldResponse* res)
+template<class Hist,class Hist2D> void
+RooUnfoldT<Hist,Hist2D>::SetResponse (const RooUnfoldResponseT<Hist,Hist2D>* res)
 {
   // Set response matrix for unfolding.
   delete _resmine; _resmine= 0;
@@ -338,14 +368,16 @@ void RooUnfold::SetResponse (const RooUnfoldResponse* res)
   SetNameTitleDefault();
 }
 
-void RooUnfold::SetResponse (RooUnfoldResponse* res, Bool_t takeOwnership)
+template<class Hist,class Hist2D> void
+RooUnfoldT<Hist,Hist2D>::SetResponse (RooUnfoldResponseT<Hist,Hist2D>* res, Bool_t takeOwnership)
 {
-  // Set response matrix for unfolding, optionally taking ownership of the RooUnfoldResponse object
+  // Set response matrix for unfolding, optionally taking ownership of the RooUnfoldResponseT<Hist,Hist2D> object
   SetResponse (res);
   if (takeOwnership) _resmine= res;
 }
 
-void RooUnfold::Unfold()
+template<class Hist,class Hist2D> void
+RooUnfoldT<Hist,Hist2D>::Unfold()
 {
   // Dummy unfolding - just copies input
   cout << "********************** " << ClassName() << ": dummy unfolding - just copy input **********************" << endl;
@@ -357,7 +389,8 @@ void RooUnfold::Unfold()
   _unfolded= true;
 }
 
-void RooUnfold::GetErrors()
+template<class Hist,class Hist2D> void
+RooUnfoldT<Hist,Hist2D>::GetErrors()
 {
     //Creates vector of diagonals of covariance matrices.
     //This may be overridden if it can be computed more quickly without the covariance matrix.
@@ -370,7 +403,8 @@ void RooUnfold::GetErrors()
     _haveErrors= true;
 }
 
-void RooUnfold::GetCov()
+template<class Hist,class Hist2D> void
+RooUnfoldT<Hist,Hist2D>::GetCov()
 {
     //Dummy routine to get covariance matrix. It should be overridden by derived classes.
   const TMatrixD& covmeas= GetMeasuredCov();
@@ -382,7 +416,8 @@ void RooUnfold::GetCov()
   _haveCov= true;
 }
 
-void RooUnfold::GetWgt()
+template<class Hist,class Hist2D> void
+RooUnfoldT<Hist,Hist2D>::GetWgt()
 {
   // Creates weight matrix
   // This may be overridden if it can be computed directly without the need for inverting the matrix
@@ -392,7 +427,8 @@ void RooUnfold::GetWgt()
   _haveWgt= true;
 }
 
-void RooUnfold::GetErrMat()
+template<class Hist,class Hist2D> void
+RooUnfoldT<Hist,Hist2D>::GetErrMat()
 {
   // Get covariance matrix from the variation of the results in toy MC tests
   if (_NToys<=1) return;
@@ -400,7 +436,7 @@ void RooUnfold::GetErrMat()
   TVectorD xisum (_nt);
   TMatrixD xijsum(_nt,_nt);
   for (Int_t k=0; k<_NToys; k++){
-    RooUnfold* unfold= RunToy();
+    RooUnfoldT<Hist,Hist2D>* unfold= RunToy();
     const TVectorD& x= unfold->Vreco();
     for (Int_t i=0; i<_nt;i++){
       Double_t xi= x[i];
@@ -417,11 +453,12 @@ void RooUnfold::GetErrMat()
   _have_err_mat=true;
 }
 
-Bool_t RooUnfold::UnfoldWithErrors (ErrorTreatment withError, bool getWeights)
+template<class Hist,class Hist2D> Bool_t
+RooUnfoldT<Hist,Hist2D>::UnfoldWithErrors (ErrorTreatment withError, bool getWeights)
 {
   if (!_unfolded) {
     if (_fail) return false;
-    const TH1* rmeas= _res->Hmeasured();
+    const Hist* rmeas= _res->Hmeasured();
     if (_meas->GetDimension() != rmeas->GetDimension() ||
         _meas->GetNbinsX()    != rmeas->GetNbinsX()    ||
         _meas->GetNbinsY()    != rmeas->GetNbinsY()    ||
@@ -432,7 +469,7 @@ Bool_t RooUnfold::UnfoldWithErrors (ErrorTreatment withError, bool getWeights)
       cerr << "-bin histogram does not match "  << rmeas->GetNbinsX();
       if (rmeas->GetDimension()>=2) cerr << "x" << rmeas->GetNbinsY();
       if (rmeas->GetDimension()>=3) cerr << "x" << rmeas->GetNbinsZ();
-      cerr << "-bin measured histogram from RooUnfoldResponse" << endl;
+      cerr << "-bin measured histogram from RooUnfoldResponseT<Hist,Hist2D>" << endl;
     }
     Unfold();
     if (!_unfolded) {
@@ -467,7 +504,8 @@ Bool_t RooUnfold::UnfoldWithErrors (ErrorTreatment withError, bool getWeights)
   return ok;
 }
 
-Double_t RooUnfold::Chi2(const TH1* hTrue,ErrorTreatment DoChi2)
+template<class Hist,class Hist2D> Double_t
+RooUnfoldT<Hist,Hist2D>::Chi2(const Hist* hTrue,ErrorTreatment DoChi2)
 {
     /*Calculates Chi squared. Method depends on value of DoChi2
     0: sum of (residuals/error)squared
@@ -509,12 +547,13 @@ Double_t RooUnfold::Chi2(const TH1* hTrue,ErrorTreatment DoChi2)
 }
 
 
-void RooUnfold::PrintTable (std::ostream& o, const TH1* hTrue, ErrorTreatment withError)
+template<class Hist,class Hist2D> void
+RooUnfoldT<Hist,Hist2D>::PrintTable (std::ostream& o, const Hist* hTrue, ErrorTreatment withError)
 {
   // Prints entries from truth, measured, and reconstructed data for each bin.
   if (withError==kDefault) withError= _withError;
   if (withError==kDefault) withError= kErrors;
-  const TH1* hReco= Hreco (withError);
+  const Hist* hReco= Hreco (withError);
   if (!_unfolded) return;
   Double_t chi_squ= -999.0;
   if (hTrue && (withError==kCovariance || withError==kCovToy)) chi_squ = Chi2(hTrue,withError);
@@ -523,16 +562,17 @@ void RooUnfold::PrintTable (std::ostream& o, const TH1* hTrue, ErrorTreatment wi
 }
 
 
-void RooUnfold::PrintTable (std::ostream& o, const TVectorD& vTrainTrue, const TVectorD& vTrain,
+template<class Hist,class Hist2D> void
+RooUnfoldT<Hist,Hist2D>::PrintTable (std::ostream& o, const TVectorD& vTrainTrue, const TVectorD& vTrain,
                             const TVectorD& vMeas, const TVectorD& vReco,
                             Int_t nm, Int_t nt)
 {
   if (nm<=0) nm= vTrain    .GetNrows();
   if (nt<=0) nt= vTrainTrue.GetNrows();
-  TH1* hTrainTrue =  RooUnfolding::createHist<TH1>(vTrainTrue, "","", nt,0.0,nt,"xt",false);
-  TH1* hTrain     =  RooUnfolding::createHist<TH1>(vTrain,     "","", nm,0.0,nm,"xm",false);
-  TH1* hMeas      =  RooUnfolding::createHist<TH1>(vMeas,      "","", nm,0.0,nm,"xm",false);
-  TH1* hReco      =  RooUnfolding::createHist<TH1>(vReco,      "","", nt,0.0,nt,"xt",false);
+  Hist* hTrainTrue =  RooUnfolding::createHist<Hist>(vTrainTrue, "","", nt,0.0,nt,"xt",false);
+  Hist* hTrain     =  RooUnfolding::createHist<Hist>(vTrain,     "","", nm,0.0,nm,"xm",false);
+  Hist* hMeas      =  RooUnfolding::createHist<Hist>(vMeas,      "","", nm,0.0,nm,"xm",false);
+  Hist* hReco      =  RooUnfolding::createHist<Hist>(vReco,      "","", nt,0.0,nt,"xt",false);
   PrintTable (o, hTrainTrue, hTrain, 0, hMeas, hReco, nm, nt);
   delete hTrainTrue;
   delete hTrain    ;
@@ -540,8 +580,9 @@ void RooUnfold::PrintTable (std::ostream& o, const TVectorD& vTrainTrue, const T
   delete hReco     ;
 }
 
-void RooUnfold::PrintTable (std::ostream& o, const TH1* hTrainTrue, const TH1* hTrain,
-                            const TH1* hTrue, const TH1* hMeas, const TH1* hReco,
+template<class Hist,class Hist2D> void
+RooUnfoldT<Hist,Hist2D>::PrintTable (std::ostream& o, const Hist* hTrainTrue, const Hist* hTrain,
+                            const Hist* hTrue, const Hist* hMeas, const Hist* hReco,
                             Int_t _nm, Int_t _nt, Bool_t _overflow,
                             ErrorTreatment withError, Double_t chi_squ)
 {
@@ -663,7 +704,8 @@ void RooUnfold::PrintTable (std::ostream& o, const TH1* hTrainTrue, const TH1* h
   }
 }
 
-void RooUnfold::SetNameTitleDefault()
+template<class Hist,class Hist2D> void
+RooUnfoldT<Hist,Hist2D>::SetNameTitleDefault()
 {
   if (!_res) return;
   const char* s= GetName();
@@ -676,7 +718,8 @@ void RooUnfold::SetNameTitleDefault()
   }
 }
 
-TH1* RooUnfold::Hreco (ErrorTreatment withError)
+template<class Hist,class Hist2D> Hist*
+RooUnfoldT<Hist,Hist2D>::Hreco (ErrorTreatment withError)
 {
     /*Creates reconstructed distribution. Error calculation varies by withError:
     0: No errors
@@ -684,7 +727,7 @@ TH1* RooUnfold::Hreco (ErrorTreatment withError)
     2: Errors from the square root of of the covariance matrix given by the unfolding
     3: Errors from the square root of the covariance matrix from the variation of the results in toy MC tests
     */
-  TH1* reco= (TH1*) _res->Htruth()->Clone(GetName());
+  Hist* reco= (TH1*) _res->Htruth()->Clone(GetName());
   reco->Reset();
   reco->SetTitle (GetTitle());
   if (!UnfoldWithErrors (withError)) withError= kNoError;
@@ -705,7 +748,8 @@ TH1* RooUnfold::Hreco (ErrorTreatment withError)
   return reco;
 }
 
-void RooUnfold::GetSettings()
+template<class Hist,class Hist2D> void
+RooUnfoldT<Hist,Hist2D>::GetSettings()
 {
     //Gets maximum and minimum parameters and step size
     _minparm=0;
@@ -714,38 +758,43 @@ void RooUnfold::GetSettings()
     _defaultparm=0;
 }
 
-Double_t RooUnfold::GetMinParm() const
+template<class Hist,class Hist2D> Double_t
+RooUnfoldT<Hist,Hist2D>::GetMinParm() const
 {
     //Get minimum regularisation parameter for unfolding method
     return _minparm;
 }
 
-Double_t RooUnfold::GetMaxParm() const
+template<class Hist,class Hist2D> Double_t
+RooUnfoldT<Hist,Hist2D>::GetMaxParm() const
 {
     //Get maximum regularisation parameter for unfolding method
     return _maxparm;
 }
 
-Double_t RooUnfold::GetStepSizeParm() const
+template<class Hist,class Hist2D> Double_t
+RooUnfoldT<Hist,Hist2D>::GetStepSizeParm() const
 {
     //Get suggested step size for unfolding distribution
     return _stepsizeparm;
 }
 
-Double_t RooUnfold::GetDefaultParm() const
+template<class Hist,class Hist2D> Double_t
+RooUnfoldT<Hist,Hist2D>::GetDefaultParm() const
 {
     //Get suggested regularisation parameter.
     return _defaultparm;
 }
 
-RooUnfold* RooUnfold::RunToy() const
+template<class Hist,class Hist2D> RooUnfoldT<Hist,Hist2D>*
+RooUnfoldT<Hist,Hist2D>::RunToy() const
 {
   // Returns new RooUnfold object with smeared measurements and
   // (if IncludeSystematics) response matrix for use as a toy.
   // Use multiple toys to find spread of unfolding results.
   TString name= GetName();
   name += "_toy";
-  RooUnfold* unfold = Clone(name);
+  RooUnfoldT<Hist,Hist2D>* unfold = Clone(name);
 
   // Make new smeared response matrix
   if (_dosys) unfold->SetResponse (_res->RunToy(), kTRUE);
@@ -759,7 +808,7 @@ RooUnfold* RooUnfold::RunToy() const
       c.Decompose();
       TMatrixD U(c.GetU());
       _covL= new TMatrixD (TMatrixD::kTransposed, U);
-      if (_verbose>=2) RooUnfoldResponse::PrintMatrix(*_covL,"decomposed measurement covariance matrix");
+      if (_verbose>=2) RooUnfoldResponseT<Hist,Hist2D>::PrintMatrix(*_covL,"decomposed measurement covariance matrix");
     }
     TVectorD newmeas(_nm);
     for (Int_t i= 0; i<_nm; i++) newmeas[i]= gRandom->Gaus(0.0,1.0);
@@ -781,7 +830,8 @@ RooUnfold* RooUnfold::RunToy() const
   return unfold;
 }
 
-void RooUnfold::Print(Option_t* /*opt*/) const
+template<class Hist,class Hist2D> void
+RooUnfoldT<Hist,Hist2D>::Print(Option_t* /*opt*/) const
 {
   cout << ClassName() << "::" << GetName() << " \"" << GetTitle()
        << "\", regularisation parameter=" << GetRegParm() << ", ";
@@ -796,7 +846,7 @@ void RooUnfold::Print(Option_t* /*opt*/) const
     cout << " (" << _nm << ")";
   }
   cout << " bins measured, ";
-  const TH1* rtrue= _res->Htruth();
+  const Hist* rtrue= _res->Htruth();
   if (rtrue->GetDimension()==1) cout << _nt;
   else {
     cout <<        rtrue->GetNbinsX()
@@ -810,7 +860,8 @@ void RooUnfold::Print(Option_t* /*opt*/) const
   cout << endl;
 }
 
-TMatrixD RooUnfold::CutZeros(const TMatrixD& ereco)
+template<class Hist,class Hist2D> TMatrixD
+RooUnfoldT<Hist,Hist2D>::CutZeros(const TMatrixD& ereco)
 {
     //Removes row & column if all their elements are 0.
     vector<int> diags;
@@ -842,7 +893,8 @@ TMatrixD RooUnfold::CutZeros(const TMatrixD& ereco)
     return ereco_cut;
 }
 
-TMatrixD RooUnfold::Ereco(ErrorTreatment withError)
+template<class Hist,class Hist2D> TMatrixD
+RooUnfoldT<Hist,Hist2D>::Ereco(ErrorTreatment withError)
 {
     /*Returns covariance matrices for error calculation of type withError
     0: Errors are the square root of the bin content
@@ -876,7 +928,8 @@ TMatrixD RooUnfold::Ereco(ErrorTreatment withError)
     return Ereco_m;
 }
 
-TVectorD RooUnfold::ErecoV(ErrorTreatment withError)
+template<class Hist,class Hist2D> TVectorD
+RooUnfoldT<Hist,Hist2D>::ErecoV(ErrorTreatment withError)
 {
     /*Returns vector of unfolding errors computed according to the withError flag:
     0: Errors are the square root of the bin content
@@ -914,7 +967,8 @@ TVectorD RooUnfold::ErecoV(ErrorTreatment withError)
     return Ereco_v;
 }
 
-TMatrixD RooUnfold::Wreco(ErrorTreatment withError)
+template<class Hist,class Hist2D> TMatrixD
+RooUnfoldT<Hist,Hist2D>::Wreco(ErrorTreatment withError)
 {
     TMatrixD Wreco_m(_nt,_nt);
     if (!UnfoldWithErrors (withError, true)) return Wreco_m;
@@ -942,12 +996,13 @@ TMatrixD RooUnfold::Wreco(ErrorTreatment withError)
     return Wreco_m;
 }
 
-TH1* RooUnfold::HistNoOverflow (const TH1* h, Bool_t overflow)
+template<class Hist,class Hist2D> Hist*
+RooUnfoldT<Hist,Hist2D>::HistNoOverflow (const Hist* h, Bool_t overflow)
 {
   if (!overflow) {   // also for 2D+
-    TH1* hx= RooUnfoldResponse::H2H1D (h, h->GetNbinsX()*h->GetNbinsY()*h->GetNbinsZ());
+    Hist* hx= RooUnfoldResponseT<Hist,Hist2D>::H2H1D (h, h->GetNbinsX()*h->GetNbinsY()*h->GetNbinsZ());
     if (!hx) return hx;
-    // clear under/overflow bins for cloned TH1
+    // clear under/overflow bins for cloned Hist
     hx->SetBinContent (0,                 0.0);
     hx->SetBinContent (hx->GetNbinsX()+1, 0.0);
     return hx;
@@ -955,7 +1010,7 @@ TH1* RooUnfold::HistNoOverflow (const TH1* h, Bool_t overflow)
   Int_t nb= h->GetNbinsX(), s= h->GetSumw2N();
   Double_t xlo= h->GetXaxis()->GetXmin(), xhi= h->GetXaxis()->GetXmax(), xb= (xhi-xlo)/nb;
   nb += 2;
-  TH1* hx= new TH1F (h->GetName(), h->GetTitle(), nb, xlo-xb, xhi+xb);
+  Hist* hx= new TH1F (h->GetName(), h->GetTitle(), nb, xlo-xb, xhi+xb);
   for (Int_t i= 0; i < nb; i++) {
            hx->SetBinContent (i+1, h->GetBinContent (i));
     if (s) hx->SetBinError   (i+1, h->GetBinError   (i));
@@ -963,7 +1018,8 @@ TH1* RooUnfold::HistNoOverflow (const TH1* h, Bool_t overflow)
   return hx;
 }
 
-TH1* RooUnfold::Resize (TH1* h, Int_t nx, Int_t ny, Int_t nz)
+template<class Hist,class Hist2D> Hist*
+RooUnfoldT<Hist,Hist2D>::Resize (Hist* h, Int_t nx, Int_t ny, Int_t nz)
 {
   // Resize a histogram with a different number of bins.
   // Contents and errors are copied to the same bin numbers (the overflow bin
@@ -974,7 +1030,7 @@ TH1* RooUnfold::Resize (TH1* h, Int_t nx, Int_t ny, Int_t nz)
   if (nx<0 || nd<1) nx= mx;
   if (ny<0 || nd<2) ny= my;
   if (nz<0 || nd<3) nz= mz;
-  TH1* hc= (TH1*) h->Clone("resize_tmp");
+  Hist* hc= (TH1*) h->Clone("resize_tmp");
 
   bool mod= false;
   if (nx!=mx) {
@@ -1064,7 +1120,8 @@ TH1* RooUnfold::Resize (TH1* h, Int_t nx, Int_t ny, Int_t nz)
   return h;
 }
 
-TMatrixD& RooUnfold::ABAT (const TMatrixD& a, const TMatrixD& b, TMatrixD& c)
+template<class Hist,class Hist2D> TMatrixD&
+RooUnfoldT<Hist,Hist2D>::ABAT (const TMatrixD& a, const TMatrixD& b, TMatrixD& c)
 {
   // Fills C such that C = A * B * A^T. Note that C cannot be the same object as A.
   TMatrixD d (b, TMatrixD::kMultTranspose, a);
@@ -1072,7 +1129,8 @@ TMatrixD& RooUnfold::ABAT (const TMatrixD& a, const TMatrixD& b, TMatrixD& c)
   return c;
 }
 
-TMatrixD& RooUnfold::ABAT (const TMatrixD& a, const TVectorD& b, TMatrixD& c)
+template<class Hist,class Hist2D> TMatrixD&
+RooUnfoldT<Hist,Hist2D>::ABAT (const TMatrixD& a, const TVectorD& b, TMatrixD& c)
 {
   // Fills C such that C = A * B * A^T, where B is a diagonal matrix specified by the vector.
   // Note that C cannot be the same object as A.
@@ -1082,7 +1140,8 @@ TMatrixD& RooUnfold::ABAT (const TMatrixD& a, const TVectorD& b, TMatrixD& c)
   return c;
 }
 
-Int_t RooUnfold::InvertMatrix(const TMatrixD& mat, TMatrixD& inv, const char* name, Int_t verbose)
+template<class Hist,class Hist2D> Int_t
+RooUnfoldT<Hist,Hist2D>::InvertMatrix(const TMatrixD& mat, TMatrixD& inv, const char* name, Int_t verbose)
 {
   // Invert a matrix using Single Value Decomposition: inv = mat^-1.
   // Can use InvertMatrix(mat,mat) to invert in-place.
@@ -1118,7 +1177,7 @@ Int_t RooUnfold::InvertMatrix(const TMatrixD& mat, TMatrixD& inv, const char* na
 #endif
   if (verbose>=1) {
     TMatrixD I (mat, TMatrixD::kMult, inv);
-    if (verbose>=3) RooUnfoldResponse::PrintMatrix(I,"V*V^-1");
+    if (verbose>=3) RooUnfoldResponseT<Hist,Hist2D>::PrintMatrix(I,"V*V^-1");
     Double_t m= 0.0;
     for (Int_t i= 0; i<I.GetNrows(); i++) {
       Double_t d= fabs(I(i,i)-1.0);
@@ -1133,7 +1192,8 @@ Int_t RooUnfold::InvertMatrix(const TMatrixD& mat, TMatrixD& inv, const char* na
   return ok;
 }
 
-void RooUnfold::Streamer (TBuffer &R__b)
+template<class Hist,class Hist2D> void
+RooUnfoldT<Hist,Hist2D>::Streamer (TBuffer &R__b)
 {
   // Stream an object of class RooUnfold.
   if (R__b.IsReading()) {
@@ -1141,9 +1201,162 @@ void RooUnfold::Streamer (TBuffer &R__b)
     // We own them and we don't want them to disappear when the file is closed.
     Bool_t oldstat= TH1::AddDirectoryStatus();
     TH1::AddDirectory (kFALSE);
-    RooUnfold::Class()->ReadBuffer  (R__b, this);
+    RooUnfoldT<Hist,Hist2D>::Class()->ReadBuffer  (R__b, this);
     TH1::AddDirectory (oldstat);
   } else {
-    RooUnfold::Class()->WriteBuffer (R__b, this);
+    RooUnfoldT<Hist,Hist2D>::Class()->WriteBuffer (R__b, this);
   }
 }
+
+template<class Hist,class Hist2D>
+RooUnfoldT<Hist,Hist2D>::RooUnfoldT()
+  : TNamed()
+{
+  // Default constructor. Use Setup() to prepare for unfolding.
+  Init();
+}
+
+template<class Hist,class Hist2D> 
+RooUnfoldT<Hist,Hist2D>::RooUnfoldT (const char*    name, const char*    title)
+  : TNamed(name,title)
+{
+  // Basic named constructor. Use Setup() to prepare for unfolding.
+  Init();
+}
+
+template<class Hist,class Hist2D> 
+RooUnfoldT<Hist,Hist2D>::RooUnfoldT (const TString& name, const TString& title)
+  : TNamed(name,title)
+{
+  // Basic named constructor. Use Setup() to prepare for unfolding.
+  Init();
+}
+
+template<class Hist,class Hist2D> 
+RooUnfoldT<Hist,Hist2D>::~RooUnfoldT()
+{
+  Destroy();
+}
+
+template<class Hist,class Hist2D> 
+RooUnfoldT<Hist,Hist2D>& RooUnfoldT<Hist,Hist2D>::operator= (const RooUnfoldT<Hist,Hist2D>& rhs)
+{
+  // Assignment operator for copying RooUnfold settings.
+  Assign(rhs);
+  return *this;
+}
+
+template<class Hist,class Hist2D> 
+Int_t RooUnfoldT<Hist,Hist2D>::verbose() const
+{
+  // Get verbosity setting which controls amount of information to be printed
+  return _verbose;
+}
+
+template<class Hist,class Hist2D> 
+Int_t RooUnfoldT<Hist,Hist2D>::NToys()     const
+{
+  // Get number of toys used in kCovToy error calculation.
+  return _NToys;
+}
+
+template<class Hist,class Hist2D> 
+Int_t RooUnfoldT<Hist,Hist2D>::Overflow()  const
+{
+  // Histogram under/overflow bins are used?
+  return _overflow;
+}
+
+template<class Hist,class Hist2D> 
+const RooUnfoldResponseT<Hist,Hist2D>* RooUnfoldT<Hist,Hist2D>::response()  const
+{
+   // Response matrix object
+  return _res;
+}
+
+template<class Hist,class Hist2D> 
+const Hist*               RooUnfoldT<Hist,Hist2D>::Hmeasured() const
+{
+  // Measured Distribution as a histogram
+  return _meas;
+}
+
+template<class Hist,class Hist2D> 
+TVectorD&                RooUnfoldT<Hist,Hist2D>::Vreco()
+{
+  // Unfolded (reconstructed) distribution as a vector
+  if (!_unfolded) {
+    if (!_fail) Unfold();
+    if (!_unfolded) {
+      _fail= true;
+      if (_nt > 0 && _rec.GetNrows() == 0) _rec.ResizeTo(_nt);   // need something
+    }
+  }
+  return _rec;
+}
+
+template<class Hist,class Hist2D> 
+const TVectorD&          RooUnfoldT<Hist,Hist2D>::Vmeasured() const
+{
+  // Measured distribution as a vector.
+  if (!_vMes)
+    _vMes= RooUnfoldResponseT<Hist,Hist2D>::H2V  (_meas, _res->GetNbinsMeasured(), _overflow);
+  return *_vMes;
+}
+
+template<class Hist,class Hist2D> 
+const TVectorD&          RooUnfoldT<Hist,Hist2D>::Emeasured() const
+{
+  // Measured errors as a vector.
+  if (!_eMes)
+    _eMes= RooUnfoldResponseT<Hist,Hist2D>::H2VE (_meas, _res->GetNbinsMeasured(), _overflow);
+  return *_eMes;
+}
+
+template<class Hist,class Hist2D> 
+void  RooUnfoldT<Hist,Hist2D>::SetVerbose (Int_t level)
+{
+  // Set verbosity level which controls amount of information to be printed
+  _verbose= level;
+}
+
+template<class Hist,class Hist2D> 
+void  RooUnfoldT<Hist,Hist2D>::SetNToys (Int_t toys)
+{
+  // Set number of toys used in kCovToy error calculation.
+  _NToys= toys;
+}
+
+template<class Hist,class Hist2D> 
+void  RooUnfoldT<Hist,Hist2D>::SetRegParm (Double_t)
+{
+  // Set Regularisation parameter
+}
+
+template<class Hist,class Hist2D> 
+Double_t RooUnfoldT<Hist,Hist2D>::GetRegParm() const
+{
+  // Get regularisation parameter.
+  return -1;
+}
+
+template<class Hist,class Hist2D> 
+void RooUnfoldT<Hist,Hist2D>::IncludeSystematics (Int_t dosys)
+{
+  // Include systematic errors from response matrix?
+  // Use dosys=2 to exclude measurement errors.
+  if (dosys!=_dosys) _haveWgt= _haveErrors= _haveCov= _have_err_mat= kFALSE;
+  _dosys= dosys;
+}
+
+template<class Hist,class Hist2D> 
+Int_t RooUnfoldT<Hist,Hist2D>::SystematicsIncluded() const
+{
+  // return setting for whether to include systematic errors from response matrix
+  return _dosys;
+}
+
+template class RooUnfoldT<TH1,TH2>;
+ClassImp (RooUnfold);
+
+
