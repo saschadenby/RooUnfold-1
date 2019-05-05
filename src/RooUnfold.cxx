@@ -207,6 +207,69 @@ RooUnfoldT<Hist,Hist2D>::New (RooUnfolding::Algorithm alg, const RooUnfoldRespon
   return unfold;
 }
 
+
+template<> RooUnfoldT<TH1,TH2>*
+RooUnfoldT<TH1,TH2>::New (RooUnfolding::Algorithm alg, const RooUnfoldResponseT<TH1,TH2>* res, const TH1* meas,Double_t regparm,
+                           const char* name, const char* title)
+{
+    /*Unfolds according to the value of the alg enum:
+    0 = kNone:     dummy unfolding
+    1 = kBayes:    Unfold via iterative application of Bayes theorem
+    2 = kSVD:      Unfold using singlar value decomposition (SVD)
+    3 = kBinByBin: Unfold bin by bin.
+    4 = kTUnfold:  Unfold with TUnfold
+    5 = kInvert:   Unfold using inversion of response matrix
+    7 = kIDS:      Unfold using iterative dynamically stabilized (IDS) method
+    */
+  RooUnfold* unfold;
+  switch (alg) {
+    case kNone:
+      unfold= new RooUnfold         (res, meas);
+      break;
+    case kBayes:
+      unfold= new RooUnfoldBayes    (res, meas);
+      break;
+    case kSVD:
+      unfold= new RooUnfoldSvd      (res, meas);
+      break;
+    case kBinByBin:
+      unfold= new RooUnfoldBinByBin (res, meas);
+      break;
+    case kTUnfold:
+#ifndef NOTUNFOLD
+      unfold= new RooUnfoldTUnfold  (res,meas);
+      break;
+#else
+      cerr << "TUnfold library is not available" << endl;
+      return 0;
+#endif
+    case kInvert:
+      unfold = new RooUnfoldInvert  (res,meas);
+      break;
+    case kDagostini:
+#ifdef HAVE_DAGOSTINI
+      unfold = new RooUnfoldDagostini (res,meas);
+      break;
+#else
+      cerr << "RooUnfoldDagostini is not available" << endl;
+      return 0;
+#endif
+    case kIDS:
+      unfold= new RooUnfoldIds      (res, meas);
+      break;
+    default:
+      cerr << "Unknown RooUnfold method " << Int_t(alg) << endl;
+      return 0;
+  }
+  if (name)  unfold->SetName  (name);
+  if (title) unfold->SetTitle (title);
+  if (regparm != -1e30){
+    unfold->SetRegParm(regparm);
+  }
+  return unfold;
+}
+
+
 template<class Hist,class Hist2D> RooUnfoldT<Hist,Hist2D>*
 RooUnfoldT<Hist,Hist2D>::Clone (const char* newname) const
 {
