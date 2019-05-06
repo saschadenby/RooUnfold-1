@@ -281,6 +281,7 @@ RooUnfoldResponseT<Hist,Hist2D>::Setup()
   _vMes= _eMes= _vFak= _vTru= _eTru= 0;
   _mRes= _eRes= 0;
   _nm= _nt= _mdim= _tdim= 0;
+  SetNameTitleDefault ("response", "Response");
   _cached= false;
   return *this;
 }

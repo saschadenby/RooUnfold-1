@@ -10,7 +10,7 @@
 #include "TH3.h"
 
 namespace{
-    const TAxis* getAxis(const TH1* h, RooUnfolding::Dimension d){
+  const TAxis* getAxis(const TH1* h, RooUnfolding::Dimension d){
     if(d==RooUnfolding::X) return h->GetXaxis();
     if(d==RooUnfolding::Y) return h->GetYaxis();
     if(d==RooUnfolding::Z) return h->GetZaxis();
@@ -114,9 +114,9 @@ namespace RooUnfolding {
         nmes +=      _res->GetBinContent (i, j);
         if (s) wmes += pow (_res->GetBinError   (i, j), 2);
       }
-      Int_t bin= RooUnfolding::bin (_mes, i, overflow);
-      _mes->SetBinContent (bin,      nmes );
-      if (s) _mes->SetBinError   (bin, sqrt(wmes));
+      Int_t b= RooUnfolding::bin (_mes, i, overflow);
+      _mes->SetBinContent (b,      nmes );
+      if (s) _mes->SetBinError   (b, sqrt(wmes));
     }
   }
   void subtractProjectX(TH2* _res, TH1* _mes, TH1* _fak, bool overflow){
@@ -128,12 +128,12 @@ namespace RooUnfolding {
         nmes +=      _res->GetBinContent (i, j);
         if (s) wmes += pow (_res->GetBinError   (i, j), 2);
       }
-      Int_t bin= RooUnfolding::bin (_mes, i, overflow);
-      Double_t fake= _mes->GetBinContent (bin) - nmes;
+      Int_t b= RooUnfolding::bin (_mes, i, overflow);
+      Double_t fake= _mes->GetBinContent (b) - nmes;
       if (fake!=0.0) nfake++;
       if (!s) wmes= nmes;
-      _fak->SetBinContent (bin, fake);
-      _fak->SetBinError   (bin, sqrt (wmes + (sm ? pow(_mes->GetBinError(bin),2) : _mes->GetBinContent(bin))));
+      _fak->SetBinContent (b, fake);
+      _fak->SetBinError   (b, sqrt (wmes + (sm ? pow(_mes->GetBinError(b),2) : _mes->GetBinContent(b))));
     }
 #if ROOT_VERSION_CODE >= ROOT_VERSION(5,13,0)
     _fak->SetEntries (_fak->GetEffectiveEntries());  // 0 entries if 0 fakes
@@ -288,9 +288,9 @@ namespace RooUnfolding {
 
   void setContents(TH1* h,const std::vector<double>& values,const std::vector<double>& errors, bool overflow){
     for (Int_t i= 0; i < values.size(); i++) {
-      Int_t j= RooUnfolding::bin (h, i, overflow);
-      h->SetBinContent(j,values[i]);
-      h->SetBinError(j,errors[i]);
+      Int_t b= RooUnfolding::bin (h, i, overflow);
+      h->SetBinContent(b,values[i]);
+      h->SetBinError(b,errors[i]);
     }
   }
 
@@ -306,269 +306,275 @@ namespace RooUnfolding {
     return res;
   }
 
-void printTable (std::ostream& o, const TVectorD& vTrainTrue, const TVectorD& vTrain,
-                            const TVectorD& vMeas, const TVectorD& vReco,
-                            Int_t nm, Int_t nt)
-{
-  if (nm<=0) nm= vTrain    .GetNrows();
-  if (nt<=0) nt= vTrainTrue.GetNrows();
-  TH1* hTrainTrue =  RooUnfolding::createHist<TH1>(vTrainTrue, "","", nt,0.0,nt,"xt",false);
-  TH1* hTrain     =  RooUnfolding::createHist<TH1>(vTrain,     "","", nm,0.0,nm,"xm",false);
-  TH1* hMeas      =  RooUnfolding::createHist<TH1>(vMeas,      "","", nm,0.0,nm,"xm",false);
-  TH1* hReco      =  RooUnfolding::createHist<TH1>(vReco,      "","", nt,0.0,nt,"xt",false);
-  printTable (o, hTrainTrue, hTrain, 0, hMeas, hReco, nm, nt);
-  delete hTrainTrue;
-  delete hTrain    ;
-  delete hMeas     ;
-  delete hReco     ;
-}
+  void printTable (std::ostream& o, const TVectorD& vTrainTrue, const TVectorD& vTrain,
+                   const TVectorD& vMeas, const TVectorD& vReco,
+                   Int_t nm, Int_t nt)
+  {
+    if (nm<=0) nm= vTrain    .GetNrows();
+    if (nt<=0) nt= vTrainTrue.GetNrows();
+    TH1* hTrainTrue =  RooUnfolding::createHist<TH1>(vTrainTrue, "","", nt,0.0,nt,"xt",false);
+    TH1* hTrain     =  RooUnfolding::createHist<TH1>(vTrain,     "","", nm,0.0,nm,"xm",false);
+    TH1* hMeas      =  RooUnfolding::createHist<TH1>(vMeas,      "","", nm,0.0,nm,"xm",false);
+    TH1* hReco      =  RooUnfolding::createHist<TH1>(vReco,      "","", nt,0.0,nt,"xt",false);
+    printTable (o, hTrainTrue, hTrain, 0, hMeas, hReco, nm, nt);
+    delete hTrainTrue;
+    delete hTrain    ;
+    delete hMeas     ;
+    delete hReco     ;
+  }
 
-void printTable (std::ostream& o, const TH1* hTrainTrue, const TH1* hTrain,
-                            const TH1* hTrue, const TH1* hMeas, const TH1* hReco,
-                            Int_t _nm, Int_t _nt, Bool_t _overflow,
-                            ErrorTreatment withError, Double_t chi_squ)
-{
-  // Prints entries from truth, measured, and reconstructed data for each bin.
-  if (withError==kDefault) withError= hReco->GetSumw2N() ? kErrors : kNoError;
-  if (_nm<=0) _nm= hTrain    ->GetNbinsX();
-  if (_nt<=0) _nt= hTrainTrue->GetNbinsX();
-  std::ostringstream fmt;
-  fmt.copyfmt (o);
-  Int_t dim= hReco->GetDimension(), ntxb= hReco->GetNbinsX()+2, ntyb= hReco->GetNbinsY()+2;
-  if (hMeas->GetDimension() != dim || hMeas->GetNbinsX()+2 != ntxb || hMeas->GetNbinsY()+2 != ntyb) dim= 1;
-  Int_t iwid= (dim==3) ? 8 : (dim==2) ? 7 : 5;
-  const char* xwid= (dim==3) ? "===" : (dim==2) ? "==" : "";
-  o << "===============================================================================" << xwid << std::endl
-    << std::setw(iwid) << ""      << std::setw(9) << "Train" << std::setw(9) << "Train"    << std::setw(9) << "Test"  << std::setw(9) << "Test"  << std::setw(9) << "Unfolded";
-  if (withError)
-    o << std::setw(10)<<"Error on"<<std::setw(9) << "Diff" << std::setw(9) << "Pull" << std::endl;
-  else
-    o << std::setw(9) << "Diff" << std::endl;
-  o << std::setw(iwid) << "Bin"   << std::setw(9) << "Truth" << std::setw(9) << "Measured" << std::setw(9) << "Truth" << std::setw(9) << "Input" << std::setw(9) << "Output";
-  if (withError)
-    o << std::setw(10)<<"Unfolding";
-  o << std::endl;
-  o << "===============================================================================" << xwid << std::endl;
-  Double_t true_train_tot=0;
-  Double_t meas_train_tot=0;
-  Double_t true_test_tot=0;
-  Double_t meas_test_tot=0;
-  Double_t unf_tot=0;
-  Double_t chi2= 0.0;
-  Int_t ndf= 0, first= (_overflow ? 0 : 1);
-  Int_t maxbin= _nt < _nm ? _nm : _nt;
-  for (Int_t i = 0 ; i < maxbin; i++) {
-    Int_t it= RooUnfolding::bin(hReco, i, _overflow);
-    Int_t im= RooUnfolding::bin(hMeas, i, _overflow);
+  void printTable (std::ostream& o, const TH1* hTrainTrue, const TH1* hTrain,
+                   const TH1* hTrue, const TH1* hMeas, const TH1* hReco,
+                   Int_t _nm, Int_t _nt, Bool_t _overflow,
+                   ErrorTreatment withError, Double_t chi_squ)
+  {
+    // Prints entries from truth, measured, and reconstructed data for each bin.
+    if (withError==kDefault) withError= hReco->GetSumw2N() ? kErrors : kNoError;
+    if (_nm<=0) _nm= hTrain    ->GetNbinsX();
+    if (_nt<=0) _nt= hTrainTrue->GetNbinsX();
+    std::ostringstream fmt;
+    fmt.copyfmt (o);
+    Int_t dim= hReco->GetDimension(), ntxb= hReco->GetNbinsX()+2, ntyb= hReco->GetNbinsY()+2;
+    if (hMeas->GetDimension() != dim || hMeas->GetNbinsX()+2 != ntxb || hMeas->GetNbinsY()+2 != ntyb) dim= 1;
+    Int_t iwid= (dim==3) ? 8 : (dim==2) ? 7 : 5;
+    const char* xwid= (dim==3) ? "===" : (dim==2) ? "==" : "";
+    o << "===============================================================================" << xwid << std::endl
+      << std::setw(iwid) << ""      << std::setw(9) << "Train" << std::setw(9) << "Train"    << std::setw(9) << "Test"  << std::setw(9) << "Test"  << std::setw(9) << "Unfolded";
+    if (withError)
+      o << std::setw(10)<<"Error on"<<std::setw(9) << "Diff" << std::setw(9) << "Pull" << std::endl;
+    else
+      o << std::setw(9) << "Diff" << std::endl;
+    o << std::setw(iwid) << "Bin"   << std::setw(9) << "Truth" << std::setw(9) << "Measured" << std::setw(9) << "Truth" << std::setw(9) << "Input" << std::setw(9) << "Output";
+    if (withError)
+      o << std::setw(10)<<"Unfolding";
+    o << std::endl;
+    o << "===============================================================================" << xwid << std::endl;
+    Double_t true_train_tot=0;
+    Double_t meas_train_tot=0;
+    Double_t true_test_tot=0;
+    Double_t meas_test_tot=0;
+    Double_t unf_tot=0;
+    Double_t chi2= 0.0;
+    Int_t ndf= 0, first= (_overflow ? 0 : 1);
+    Int_t maxbin= _nt < _nm ? _nm : _nt;
+    for (Int_t i = 0 ; i < maxbin; i++) {
+      Int_t it= RooUnfolding::bin(hReco, i, _overflow);
+      Int_t im= RooUnfolding::bin(hMeas, i, _overflow);
 
-    if (dim==2 || dim==3) {
-      Int_t iw= (dim==2) ? 3 : 2;
-      Int_t ix= it%ntxb;
-      Int_t iy= ((it-ix)/ntxb)%ntyb;
-      o << std::setw(iw) << ix << ',' << std::setw(iw) << iy;
-      if (dim==3) o << ',' << std::setw(iw) << ((it-ix)/ntxb - iy)/ntyb;
-    } else
-      o << std::setw(iwid) << i+first;
-    o << std::fixed << std::setprecision(0);
-    true_train_tot+=hTrainTrue->GetBinContent(it);
-    meas_train_tot+=hTrain->GetBinContent(im);
-    if (hTrue) true_test_tot+=hTrue->GetBinContent(it);
-    meas_test_tot+=hMeas->GetBinContent(im);
-    unf_tot+=hReco->GetBinContent(it);
-    if (i<_nt){
-      o << ' ' << std::setw(8) << hTrainTrue->GetBinContent(it);
-    }
-    else
-      o << std::setw(9) << ' ';
-    if (i<_nm)
-      o << ' ' << std::setw(8) << hTrain->GetBinContent(im);
-    else
-      o << std::setw(9) << ' ';
-    if (hTrue && i<_nt)
-      o << ' ' << std::setw(8) << hTrue->GetBinContent(it);
-    else
-      o << std::setw(9) << ' ';
-    if (i<_nm)
-      o << ' ' << std::setw(8) << hMeas->GetBinContent(im);
-    else
-      o << std::setw(9) << ' ';
-    o << std::setprecision(1);
-    if (i<_nt) {
-      Double_t y= hReco->GetBinContent(it), yerr = hReco->GetBinError(it);
-      o << ' ' << std::setw(8) << y;
-      if (withError)
-        o << ' ' << std::setw(9) << yerr;
-      if (hTrue &&
-          (                       y!=0.0 || (withError &&                   yerr>0.0)) &&
-          (hTrue->GetBinContent(it)!=0.0 || (withError && hTrue->GetBinError(it)>0.0))) {
-        Double_t ydiff= y - hTrue->GetBinContent(it);
-        o << ' ' << std::setw(8) << ydiff;
-        if (withError && yerr>0.0) {
-          ndf++;
-          Double_t ypull = ydiff/yerr;
-          chi2 += ypull*ypull;
-          o << ' ' << std::setw(8) << ypull;
+      if (dim==2 || dim==3) {
+        Int_t iw= (dim==2) ? 3 : 2;
+        Int_t ix= it%ntxb;
+        Int_t iy= ((it-ix)/ntxb)%ntyb;
+        o << std::setw(iw) << ix << ',' << std::setw(iw) << iy;
+        if (dim==3) o << ',' << std::setw(iw) << ((it-ix)/ntxb - iy)/ntyb;
+      } else
+        o << std::setw(iwid) << i+first;
+      o << std::fixed << std::setprecision(0);
+      true_train_tot+=hTrainTrue->GetBinContent(it);
+      meas_train_tot+=hTrain->GetBinContent(im);
+      if (hTrue) true_test_tot+=hTrue->GetBinContent(it);
+      meas_test_tot+=hMeas->GetBinContent(im);
+      unf_tot+=hReco->GetBinContent(it);
+      if (i<_nt){
+        o << ' ' << std::setw(8) << hTrainTrue->GetBinContent(it);
+      }
+      else
+        o << std::setw(9) << ' ';
+      if (i<_nm)
+        o << ' ' << std::setw(8) << hTrain->GetBinContent(im);
+      else
+        o << std::setw(9) << ' ';
+      if (hTrue && i<_nt)
+        o << ' ' << std::setw(8) << hTrue->GetBinContent(it);
+      else
+        o << std::setw(9) << ' ';
+      if (i<_nm)
+        o << ' ' << std::setw(8) << hMeas->GetBinContent(im);
+      else
+        o << std::setw(9) << ' ';
+      o << std::setprecision(1);
+      if (i<_nt) {
+        Double_t y= hReco->GetBinContent(it), yerr = hReco->GetBinError(it);
+        o << ' ' << std::setw(8) << y;
+        if (withError)
+          o << ' ' << std::setw(9) << yerr;
+        if (hTrue &&
+            (                       y!=0.0 || (withError &&                   yerr>0.0)) &&
+            (hTrue->GetBinContent(it)!=0.0 || (withError && hTrue->GetBinError(it)>0.0))) {
+          Double_t ydiff= y - hTrue->GetBinContent(it);
+          o << ' ' << std::setw(8) << ydiff;
+          if (withError && yerr>0.0) {
+            ndf++;
+            Double_t ypull = ydiff/yerr;
+            chi2 += ypull*ypull;
+            o << ' ' << std::setw(8) << ypull;
+          }
         }
       }
-    }
-    o << std::endl;
+      o << std::endl;
 
+    }
+
+    o << "===============================================================================" << xwid << std::endl
+      << std::setw(iwid) << "" << std::fixed << std::setprecision(0)
+      << ' ' << std::setw(8) << true_train_tot
+      << ' ' << std::setw(8) << meas_train_tot;
+    if (hTrue)
+      o << ' ' << std::setw(8) << true_test_tot;
+    else
+      o << std::setw(9) << ' ';
+    Double_t toterr= 0.0;
+    if (meas_test_tot>0.0 && meas_train_tot>0.0) toterr= sqrt(meas_test_tot)*true_train_tot/meas_train_tot;
+    o << ' ' << std::setw(8) << meas_test_tot << std::setprecision(1)
+      << ' ' << std::setw(8) << unf_tot;
+    if (withError) 
+      o << ' ' << std::setw(9) << toterr;
+    o << ' ' << std::setw(8) << unf_tot-true_test_tot;
+    if(withError && toterr>0.0)
+      o << ' ' << std::setw(8) <<(unf_tot-true_test_tot)/toterr;
+    o << std::endl
+      << "===============================================================================" << xwid << std::endl;
+    o.copyfmt (fmt);
+    if (hTrue) {
+      if (chi_squ!=-999.0) {
+        o << "Chi^2/NDF=" << chi_squ << "/" << ndf << " (bin-by-bin Chi^2=" << chi2 << ")" << std::endl;
+      } else {
+        o << "Bin-by-bin Chi^2/NDF=" << chi2 << "/" << ndf << std::endl;
+        chi_squ= chi2;
+      }
+      if (chi_squ<=0.0) std::cerr << "Warning: Invalid Chi^2 Value" << std::endl;
+    }
   }
 
-  o << "===============================================================================" << xwid << std::endl
-    << std::setw(iwid) << "" << std::fixed << std::setprecision(0)
-    << ' ' << std::setw(8) << true_train_tot
-    << ' ' << std::setw(8) << meas_train_tot;
-  if (hTrue)
-    o << ' ' << std::setw(8) << true_test_tot;
-  else
-    o << std::setw(9) << ' ';
-  Double_t toterr= 0.0;
-  if (meas_test_tot>0.0 && meas_train_tot>0.0) toterr= sqrt(meas_test_tot)*true_train_tot/meas_train_tot;
-  o << ' ' << std::setw(8) << meas_test_tot << std::setprecision(1)
-    << ' ' << std::setw(8) << unf_tot;
-  if (withError) 
-  o << ' ' << std::setw(9) << toterr;
-  o << ' ' << std::setw(8) << unf_tot-true_test_tot;
-  if(withError && toterr>0.0)
-  o << ' ' << std::setw(8) <<(unf_tot-true_test_tot)/toterr;
-  o << std::endl
-    << "===============================================================================" << xwid << std::endl;
-  o.copyfmt (fmt);
-  if (hTrue) {
-    if (chi_squ!=-999.0) {
-      o << "Chi^2/NDF=" << chi_squ << "/" << ndf << " (bin-by-bin Chi^2=" << chi2 << ")" << std::endl;
-    } else {
-      o << "Bin-by-bin Chi^2/NDF=" << chi2 << "/" << ndf << std::endl;
-      chi_squ= chi2;
+  TH1* histNoOverflow (const TH1* h, Bool_t overflow){
+    if (!overflow) {   // also for 2D+
+      TH1* hx= h2h1d (h, h->GetNbinsX()*h->GetNbinsY()*h->GetNbinsZ());
+      if (!hx) return hx;
+      // clear under/overflow bins for cloned Hist
+      hx->SetBinContent (0,                 0.0);
+      hx->SetBinContent (hx->GetNbinsX()+1, 0.0);
+      return hx;
     }
-    if (chi_squ<=0.0) std::cerr << "Warning: Invalid Chi^2 Value" << std::endl;
-  }
-}
-
-TH1* histNoOverflow (const TH1* h, Bool_t overflow){
-  if (!overflow) {   // also for 2D+
-    TH1* hx= h2h1d (h, h->GetNbinsX()*h->GetNbinsY()*h->GetNbinsZ());
-    if (!hx) return hx;
-    // clear under/overflow bins for cloned Hist
-    hx->SetBinContent (0,                 0.0);
-    hx->SetBinContent (hx->GetNbinsX()+1, 0.0);
+    Int_t nb= h->GetNbinsX(), s= h->GetSumw2N();
+    Double_t xlo= h->GetXaxis()->GetXmin(), xhi= h->GetXaxis()->GetXmax(), xb= (xhi-xlo)/nb;
+    nb += 2;
+    TH1* hx= new TH1F (h->GetName(), h->GetTitle(), nb, xlo-xb, xhi+xb);
+    for (Int_t i= 0; i < nb; i++) {
+      hx->SetBinContent (i+1, h->GetBinContent (i));
+      if (s) hx->SetBinError   (i+1, h->GetBinError   (i));
+    }
     return hx;
   }
-  Int_t nb= h->GetNbinsX(), s= h->GetSumw2N();
-  Double_t xlo= h->GetXaxis()->GetXmin(), xhi= h->GetXaxis()->GetXmax(), xb= (xhi-xlo)/nb;
-  nb += 2;
-  TH1* hx= new TH1F (h->GetName(), h->GetTitle(), nb, xlo-xb, xhi+xb);
-  for (Int_t i= 0; i < nb; i++) {
-    hx->SetBinContent (i+1, h->GetBinContent (i));
-    if (s) hx->SetBinError   (i+1, h->GetBinError   (i));
-  }
-  return hx;
-}
 
 
-TH1* resize (TH1* h, Int_t nx, Int_t ny, Int_t nz)
-{
-  // Resize a histogram with a different number of bins.
-  // Contents and errors are copied to the same bin numbers (the overflow bin
-  // is copied to the new overflow bin) in the new histogram.
-  // If the new histogram is larger than the old, the extra bins are zeroed.
-  Int_t mx= h->GetNbinsX(), my= h->GetNbinsY(), mz= h->GetNbinsZ();
-  Int_t nd= h->GetDimension();
-  if (nx<0 || nd<1) nx= mx;
-  if (ny<0 || nd<2) ny= my;
-  if (nz<0 || nd<3) nz= mz;
-  TH1* hc= (TH1*) h->Clone("resize_tmp");
+  TH1* resize (TH1* h, Int_t nx, Int_t ny, Int_t nz)
+  {
+    // Resize a histogram with a different number of bins.
+    // Contents and errors are copied to the same bin numbers (the overflow bin
+    // is copied to the new overflow bin) in the new histogram.
+    // If the new histogram is larger than the old, the extra bins are zeroed.
+    Int_t mx= h->GetNbinsX(), my= h->GetNbinsY(), mz= h->GetNbinsZ();
+    Int_t nd= h->GetDimension();
+    if (nx<0 || nd<1) nx= mx;
+    if (ny<0 || nd<2) ny= my;
+    if (nz<0 || nd<3) nz= mz;
+    TH1* hc= (TH1*) h->Clone("resize_tmp");
 
-  bool mod= false;
-  if (nx!=mx) {
-    Double_t xlo= h->GetXaxis()->GetXmin(), xhi= h->GetXaxis()->GetXmax();
-    h->GetXaxis()->Set (nx, xlo, xlo+((xhi-xlo)/mx)*nx);
-    mod= true;
-  }
-  if (ny!=my) {
-    Double_t ylo= h->GetYaxis()->GetXmin(), yhi= h->GetYaxis()->GetXmax();
-    h->GetYaxis()->Set (ny, ylo, ylo+((yhi-ylo)/my)*ny);
-    mod= true;
-  }
-  if (nz!=mz) {
-    Double_t zlo= h->GetZaxis()->GetXmin(), zhi= h->GetZaxis()->GetXmax();
-    h->GetZaxis()->Set (nz, zlo, zlo+((zhi-zlo)/mz)*nz);
-    mod= true;
-  }
+    bool mod= false;
+    if (nx!=mx) {
+      Double_t xlo= h->GetXaxis()->GetXmin(), xhi= h->GetXaxis()->GetXmax();
+      h->GetXaxis()->Set (nx, xlo, xlo+((xhi-xlo)/mx)*nx);
+      mod= true;
+    }
+    if (ny!=my) {
+      Double_t ylo= h->GetYaxis()->GetXmin(), yhi= h->GetYaxis()->GetXmax();
+      h->GetYaxis()->Set (ny, ylo, ylo+((yhi-ylo)/my)*ny);
+      mod= true;
+    }
+    if (nz!=mz) {
+      Double_t zlo= h->GetZaxis()->GetXmin(), zhi= h->GetZaxis()->GetXmax();
+      h->GetZaxis()->Set (nz, zlo, zlo+((zhi-zlo)/mz)*nz);
+      mod= true;
+    }
 
-  if (mod) {
-    h->SetBinsLength();  // Just copies array, which isn't right for overflows or 2D/3D
-    Int_t s= h->GetSumw2N();
-    Int_t ox= mx+1, oy= my+1, oz= mz+1;  // old overflow bin
-    Int_t px= nx+1, py= ny+1, pz= nz+1;  // new overflow bin
+    if (mod) {
+      h->SetBinsLength();  // Just copies array, which isn't right for overflows or 2D/3D
+      Int_t s= h->GetSumw2N();
+      Int_t ox= mx+1, oy= my+1, oz= mz+1;  // old overflow bin
+      Int_t px= nx+1, py= ny+1, pz= nz+1;  // new overflow bin
 
-    if        (nd==1) {
+      if        (nd==1) {
 
-      for (Int_t i= 0; i<=nx; i++) {
-               h->SetBinContent (i, i>mx ? 0.0 : hc->GetBinContent (i));
-        if (s) h->SetBinError   (i, i>mx ? 0.0 : hc->GetBinError   (i));
-      }
-             h->SetBinContent (px, h->GetBinContent (ox));
-      if (s) h->SetBinError   (px, h->GetBinError   (ox));
-
-    } else if (nd==2) {
-
-      for (Int_t i= 0; i<=nx; i++) {
-        for (Int_t j= 0; j<=ny; j++) {
-                 h->SetBinContent (i, j, i>mx||j>my ? 0.0 : hc->GetBinContent (i, j));
-          if (s) h->SetBinError   (i, j, i>mx||j>my ? 0.0 : hc->GetBinError   (i, j));
+        for (Int_t i= 0; i<=nx; i++) {
+          h->SetBinContent (i, i>mx ? 0.0 : hc->GetBinContent (i));
+          if (s) h->SetBinError   (i, i>mx ? 0.0 : hc->GetBinError   (i));
         }
-               h->SetBinContent (i, py, i>mx ? 0.0 : hc->GetBinContent (i, oy));
-        if (s) h->SetBinError   (i, py, i>mx ? 0.0 : hc->GetBinError   (i, oy));
-      }
-      for (Int_t j= 0; j<=ny; j++) {
-               h->SetBinContent (px, j, j>my ? 0.0 : hc->GetBinContent (ox, j));
-        if (s) h->SetBinError   (px, j, j>my ? 0.0 : hc->GetBinError   (ox, j));
-      }
-             h->SetBinContent (px, py, hc->GetBinContent (ox, oy));
-      if (s) h->SetBinError   (px, py, hc->GetBinError   (ox, oy));
+        h->SetBinContent (px, h->GetBinContent (ox));
+        if (s) h->SetBinError   (px, h->GetBinError   (ox));
 
-    } else if (nd==3) {
+      } else if (nd==2) {
 
-      for (Int_t i= 0; i<=nx; i++) {
+        for (Int_t i= 0; i<=nx; i++) {
+          for (Int_t j= 0; j<=ny; j++) {
+            h->SetBinContent (i, j, i>mx||j>my ? 0.0 : hc->GetBinContent (i, j));
+            if (s) h->SetBinError   (i, j, i>mx||j>my ? 0.0 : hc->GetBinError   (i, j));
+          }
+          h->SetBinContent (i, py, i>mx ? 0.0 : hc->GetBinContent (i, oy));
+          if (s) h->SetBinError   (i, py, i>mx ? 0.0 : hc->GetBinError   (i, oy));
+        }
+        for (Int_t j= 0; j<=ny; j++) {
+          h->SetBinContent (px, j, j>my ? 0.0 : hc->GetBinContent (ox, j));
+          if (s) h->SetBinError   (px, j, j>my ? 0.0 : hc->GetBinError   (ox, j));
+        }
+        h->SetBinContent (px, py, hc->GetBinContent (ox, oy));
+        if (s) h->SetBinError   (px, py, hc->GetBinError   (ox, oy));
+
+      } else if (nd==3) {
+
+        for (Int_t i= 0; i<=nx; i++) {
+          for (Int_t j= 0; j<=ny; j++) {
+            for (Int_t k= 0; k<=nz; k++) {
+              h->SetBinContent (i, j, k, i>mx||j>my||k>mz ? 0.0 : hc->GetBinContent (i, j, k));
+              if (s) h->SetBinError   (i, j, k, i>mx||j>my||k>mz ? 0.0 : hc->GetBinError   (i, j, k));
+            }
+            h->SetBinContent (i, j, pz, i>mx||j>my ? 0.0 : hc->GetBinContent (i, j, oz));
+            if (s) h->SetBinError   (i, j, pz, i>mx||j>my ? 0.0 : hc->GetBinError   (i, j, oz));
+          }
+          h->SetBinContent (i, py, pz, i>mx ? 0.0 : hc->GetBinContent (i, oy, oz));
+          if (s) h->SetBinError   (i, py, pz, i>mx ? 0.0 : hc->GetBinError   (i, oy, oz));
+        }
         for (Int_t j= 0; j<=ny; j++) {
           for (Int_t k= 0; k<=nz; k++) {
-                   h->SetBinContent (i, j, k, i>mx||j>my||k>mz ? 0.0 : hc->GetBinContent (i, j, k));
-            if (s) h->SetBinError   (i, j, k, i>mx||j>my||k>mz ? 0.0 : hc->GetBinError   (i, j, k));
+            h->SetBinContent (px, j, k, j>my||k>mz ? 0.0 : hc->GetBinContent (ox, j, k));
+            if (s) h->SetBinError   (px, j, k, j>my||k>mz ? 0.0 : hc->GetBinError   (ox, j, k));
           }
-                 h->SetBinContent (i, j, pz, i>mx||j>my ? 0.0 : hc->GetBinContent (i, j, oz));
-          if (s) h->SetBinError   (i, j, pz, i>mx||j>my ? 0.0 : hc->GetBinError   (i, j, oz));
+          h->SetBinContent (px, j, pz, j>my ? 0.0 : hc->GetBinContent (ox, j, oz));
+          if (s) h->SetBinError   (px, j, pz, j>my ? 0.0 : hc->GetBinError   (ox, j, oz));
         }
-               h->SetBinContent (i, py, pz, i>mx ? 0.0 : hc->GetBinContent (i, oy, oz));
-        if (s) h->SetBinError   (i, py, pz, i>mx ? 0.0 : hc->GetBinError   (i, oy, oz));
-      }
-      for (Int_t j= 0; j<=ny; j++) {
         for (Int_t k= 0; k<=nz; k++) {
-                 h->SetBinContent (px, j, k, j>my||k>mz ? 0.0 : hc->GetBinContent (ox, j, k));
-          if (s) h->SetBinError   (px, j, k, j>my||k>mz ? 0.0 : hc->GetBinError   (ox, j, k));
+          for (Int_t i= 0; i<=nx; i++) {
+            h->SetBinContent (i, py, k, i>mx||k>mz ? 0.0 : hc->GetBinContent (i, oy, k));
+            if (s) h->SetBinError   (i, py, k, i>mx||k>mz ? 0.0 : hc->GetBinError   (i, oy, k));
+          }
+          h->SetBinContent (px, py, k, k>mz ? 0.0 : hc->GetBinContent (ox, oy, k));
+          if (s) h->SetBinError   (px, py, k, k>mz ? 0.0 : hc->GetBinError   (ox, oy, k));
         }
-               h->SetBinContent (px, j, pz, j>my ? 0.0 : hc->GetBinContent (ox, j, oz));
-        if (s) h->SetBinError   (px, j, pz, j>my ? 0.0 : hc->GetBinError   (ox, j, oz));
-      }
-      for (Int_t k= 0; k<=nz; k++) {
-        for (Int_t i= 0; i<=nx; i++) {
-                 h->SetBinContent (i, py, k, i>mx||k>mz ? 0.0 : hc->GetBinContent (i, oy, k));
-          if (s) h->SetBinError   (i, py, k, i>mx||k>mz ? 0.0 : hc->GetBinError   (i, oy, k));
-        }
-               h->SetBinContent (px, py, k, k>mz ? 0.0 : hc->GetBinContent (ox, oy, k));
-        if (s) h->SetBinError   (px, py, k, k>mz ? 0.0 : hc->GetBinError   (ox, oy, k));
-      }
-             h->SetBinContent (px, py, pz, hc->GetBinContent (ox, oy, oz));
-      if (s) h->SetBinError   (px, py, pz, hc->GetBinError   (ox, oy, oz));
+        h->SetBinContent (px, py, pz, hc->GetBinContent (ox, oy, oz));
+        if (s) h->SetBinError   (px, py, pz, hc->GetBinError   (ox, oy, oz));
 
+      }
     }
+    delete hc;
+    return h;
   }
-  delete hc;
-  return h;
-}
 
+  void printHistogram(const TH1* hist){
+    std::cout << hist->GetName() << " ( " << hist->GetNbinsX() << " bins)" << std::endl;
+    for(int i=0; i<hist->GetNbinsX()+2; ++i){
+      std::cout << hist->GetBinContent(i) << "+/-" << hist->GetBinError(i) << std::endl;
+    }
 
+  }
 
 
   

@@ -37,6 +37,7 @@ namespace RooUnfolding {
   const char* varname(const RooAbsReal* h, Dimension d);
   void setContents(RooAbsReal* h,const std::vector<double>& values,const std::vector<double>& errors, bool overflow);
   template<class V> V subtract(const TVectorD& orig, const RooAbsReal* hist, bool overflow);
+  void printHistogram(const RooAbsReal* h);  
   void printTable (std::ostream& o, const RooAbsReal* hTrainTrue, const RooAbsReal* hTrain,
                    const RooAbsReal* hTrue, const RooAbsReal* hMeas, const RooAbsReal* hReco,
                    Int_t _nm=0, Int_t _nt=0, Bool_t _overflow=kFALSE,

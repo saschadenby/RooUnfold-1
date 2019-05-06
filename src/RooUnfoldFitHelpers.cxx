@@ -155,6 +155,10 @@ namespace RooUnfolding {
     // TOOD
     return h;
   }
+
+  void printHistogram(const RooAbsReal* h){
+    // TODO
+  }
 }  
 
   

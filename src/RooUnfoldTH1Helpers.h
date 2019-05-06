@@ -44,7 +44,7 @@ namespace RooUnfolding {
   void setContents(TH1* h,const std::vector<double>& values,const std::vector<double>& errors, bool overflow);
   template<class V> V subtract(const TVectorD& orig, const TH1* hist, bool overflow);
 
-
+  void printHistogram(const TH1* h);
   void printTable (std::ostream& o, const TH1* hTrainTrue, const TH1* hTrain,
                    const TH1* hTrue, const TH1* hMeas, const TH1* hReco,
                    Int_t _nm=0, Int_t _nt=0, Bool_t _overflow=kFALSE,

@@ -648,7 +648,7 @@ RooUnfoldT<Hist,Hist2D>::Hreco (ErrorTreatment withError)
   for (Int_t i= 0; i < _nt; i++) {
     values.push_back(_rec(i));
     if        (withError==kErrors){
-      errors.push_back(abs (_variances(i)));
+      errors.push_back(sqrt( fabs (_variances(i))));
     } else if (withError==kCovariance){
       errors.push_back(sqrt (fabs (_cov(i,i))));
     } else if (withError==kCovToy){
