@@ -295,7 +295,7 @@ namespace RooUnfolding {
   }
 
   template<> TVectorD subtract<TVectorD>(const TVectorD& orig, const TH1* hist, bool overflow){
-    const int n = hist->GetNbinsX();
+    const int n = nBins(hist);
     TVectorD res(n);
     for (Int_t i = 0 ; i < n; i++) {
       Int_t it= RooUnfolding::bin (hist, i, overflow);

@@ -30,7 +30,10 @@ namespace RooUnfolding {
   template<class Hist2D> Hist2D* createHist(const char* name, const char* title, int nbinsx, double xmin, double xmax, const char* xname, int nbinsy, double ymin, double ymax, const char* yname);
   template<class Hist> Hist* createHist(const TVectorD& vec, const char* name, const char* title, int nbinsx, double xmin, double xmax, const char* xname, bool overflow=false);
   void printTable (std::ostream& o, const TVectorD& vTrainTrue, const TVectorD& vTrain,
-                   const TVectorD& vMeas, const TVectorD& vReco, Int_t nm, Int_t nt);  
+                   const TVectorD& vMeas, const TVectorD& vReco, Int_t nm, Int_t nt);
+
+  void printVector(const char* name, const TVectorD& vec);
+  
 }
 
 #endif
