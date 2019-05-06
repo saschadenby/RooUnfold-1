@@ -34,6 +34,7 @@ END_HTML */
 #include "TMatrixD.h"
 
 #include "RooUnfoldTH1Helpers.h"
+#include "RooUnfoldFitHelpers.h"
 #include "RooUnfoldResponse.h"
 
 using namespace RooUnfolding;
@@ -46,7 +47,7 @@ ClassImp (RooUnfoldSvd);
 
 template<class Hist,class Hist2D>
 RooUnfoldSvdT<Hist,Hist2D>::RooUnfoldSvdT (const RooUnfoldSvdT<Hist,Hist2D>& rhs)
-  : RooUnfold (rhs)
+  : RooUnfoldT<Hist,Hist2D> (rhs)
 {
   // Copy constructor.
   Init();
@@ -56,7 +57,7 @@ RooUnfoldSvdT<Hist,Hist2D>::RooUnfoldSvdT (const RooUnfoldSvdT<Hist,Hist2D>& rhs
 template<class Hist,class Hist2D>
 RooUnfoldSvdT<Hist,Hist2D>::RooUnfoldSvdT (const RooUnfoldResponseT<Hist,Hist2D>* res, const Hist* meas, Int_t kreg,
                             const char* name, const char* title)
-  : RooUnfold (res, meas, name, title), _kreg(kreg ? kreg : res->GetNbinsTruth()/2)
+  : RooUnfoldT<Hist,Hist2D> (res, meas, name, title), _kreg(kreg ? kreg : res->GetNbinsTruth()/2)
 {
   // Constructor with response matrix object and measured unfolding input histogram.
   // The regularisation parameter is kreg.
@@ -66,7 +67,7 @@ RooUnfoldSvdT<Hist,Hist2D>::RooUnfoldSvdT (const RooUnfoldResponseT<Hist,Hist2D>
 template<class Hist,class Hist2D>
 RooUnfoldSvdT<Hist,Hist2D>::RooUnfoldSvdT (const RooUnfoldResponseT<Hist,Hist2D>* res, const Hist* meas, Int_t kreg, Int_t ntoyssvd,
                             const char* name, const char* title)
-  : RooUnfold (res, meas, name, title), _kreg(kreg ? kreg : res->GetNbinsTruth()/2)
+  : RooUnfoldT<Hist,Hist2D> (res, meas, name, title), _kreg(kreg ? kreg : res->GetNbinsTruth()/2)
 {
   // Constructor with old ntoyssvd argument. No longer required.
   Init();
@@ -86,7 +87,7 @@ RooUnfoldSvdT<Hist,Hist2D>::Reset()
 {
   Destroy();
   Init();
-  RooUnfold::Reset();
+  RooUnfoldT<Hist,Hist2D>::Reset();
 }
 
 template<class Hist,class Hist2D> void
@@ -111,7 +112,7 @@ RooUnfoldSvdT<Hist,Hist2D>::Init()
 template<class Hist,class Hist2D> void
 RooUnfoldSvdT<Hist,Hist2D>::Assign (const RooUnfoldSvdT<Hist,Hist2D>& rhs)
 {
-  RooUnfold::Assign (rhs);
+  RooUnfoldT<Hist,Hist2D>::Assign (rhs);
   CopyData (rhs);
 }
 
@@ -162,25 +163,20 @@ RooUnfoldSvdT<Hist,Hist2D>::Unfold()
     Double_t fac= this->_res->Vmeasured().Sum();
     if (fac!=0.0) fac=  this->Vmeasured().Sum() / fac;
     if (this->_verbose>=1) cout << "Subtract " << fac*fakes.Sum() << " fakes from measured distribution" << endl;
-    for (Int_t i= 1; i<=this->_nm; i++)
-      this->_meas1d->SetBinContent (i, this->_meas1d->GetBinContent(i)-(fac*fakes[i-1]));
+    subtract(this->_meas1d,fakes,fac);
   }
 
-  this->_meascov= new TH2D ("meascov", "meascov", this->_nb, 0.0, 1.0, this->_nb, 0.0, 1.0);
   const TMatrixD& cov= this->GetMeasuredCov();
-  for (Int_t i= 0; i<this->_nm; i++)
-    for (Int_t j= 0; j<this->_nm; j++)
-      this->_meascov->SetBinContent (i+1, j+1, cov(i,j));
 
-  if (this->_verbose>=1) cout << "SVD init " << this->_reshist->GetNbinsX() << " x " << this->_reshist->GetNbinsY()
+  if (this->_verbose>=1) cout << "SVD init " << nBins(this->_reshist,X) << " x " << nBins(this->_reshist,Y)
                         << " bins, kreg=" << this->_kreg << endl;
-  this->_svd= new SVDUnfold (this->_meas1d, this->_meascov, this->_train1d, this->_truth1d, this->_reshist);
+  this->_svd= new SVDUnfold (this->_meas1d, cov, this->_train1d, this->_truth1d, this->_reshist);
 
   Hist* rechist= this->_svd->Unfold (this->_kreg);
 
   this->_rec.ResizeTo (this->_nt);
   for (Int_t i= 0; i<this->_nt; i++) {
-    this->_rec[i]= rechist->GetBinContent(i+1);
+    this->_rec[i]= binContent(rechist,i,this->_overflow);
   }
 
   if (this->_verbose>=2) {
@@ -201,29 +197,15 @@ template<class Hist,class Hist2D> void
 RooUnfoldSvdT<Hist,Hist2D>::GetCov()
 {
   if (!this->_svd) return;
-  Bool_t oldstat= TH1::AddDirectoryStatus();
-  TH1::AddDirectory (kFALSE);
 
-  TH2 *unfoldedCov= 0, *adetCov= 0;
   //Get the covariance matrix for statistical uncertainties on the measured distribution
-  if (this->_dosys!=2) unfoldedCov= this->_svd->GetXtau();
+  if (this->_dosys!=2) this->_cov = this->_svd->GetXtau();
   //Get the covariance matrix for statistical uncertainties on the response matrix
   //Uses Poisson or Gaussian-distributed toys, depending on response matrix histogram's Sumw2 setting.
-  if (this->_dosys)        adetCov= this->_svd->GetAdetCovMatrix (this->_NToys);
 
-  this->_cov.ResizeTo (this->_nt, this->_nt);
-  for (Int_t i= 0; i<this->_nt; i++) {
-    for (Int_t j= 0; j<this->_nt; j++) {
-      Double_t v  = 0;
-      if (unfoldedCov) v  = unfoldedCov->GetBinContent(i+1,j+1);
-      if (adetCov)     v += adetCov    ->GetBinContent(i+1,j+1);
-      this->_cov(i,j)= v;
-    }
+  if (this->_dosys){
+    add(this->_cov,this->_svd->GetAdetCovMatrix (this->_NToys));
   }
-
-  delete adetCov;
-  TH1::AddDirectory (oldstat);
-
   this->_haveCov= true;
 }
 
@@ -231,30 +213,19 @@ template<class Hist,class Hist2D> void
 RooUnfoldSvdT<Hist,Hist2D>::GetWgt()
 {
   // Get weight matrix
-  if (this->_dosys) RooUnfold::GetWgt();   // can't add sys errors to weight, so calculate weight from covariance
+  if (this->_dosys) RooUnfoldT<Hist,Hist2D>::GetWgt();   // can't add sys errors to weight, so calculate weight from covariance
   if (!this->_svd) return;
-  Bool_t oldstat= TH1::AddDirectoryStatus();
-  TH1::AddDirectory (kFALSE);
 
   //Get the covariance matrix for statistical uncertainties on the measured distribution
-  TH2* unfoldedWgt= this->_svd->GetXinv();
-
-  this->_wgt.ResizeTo (this->_nt, this->_nt);
-  for (Int_t i= 0; i<this->_nt; i++) {
-    for (Int_t j= 0; j<this->_nt; j++) {
-      this->_wgt(i,j)= unfoldedWgt->GetBinContent(i+1,j+1);
-    }
-  }
-
-  TH1::AddDirectory (oldstat);
-
+  this->_wgt = this->_svd->GetXinv();
+  
   this->_haveWgt= true;
 }
 
 template<class Hist,class Hist2D> void
 RooUnfoldSvdT<Hist,Hist2D>::GetSettings(){
     this->_minparm=0;
-    this->_maxparm= this->_meas ? this->_meas->GetNbinsX() : 0;
+    this->_maxparm= this->_meas ? nBins(this->_meas,X) : 0;
     this->_stepsizeparm=1;
     this->_defaultparm=this->_maxparm/2;
 }
@@ -277,7 +248,7 @@ RooUnfoldSvdT<Hist,Hist2D>::Streamer (TBuffer &R__b)
 
 template<class Hist,class Hist2D>
 RooUnfoldSvdT<Hist,Hist2D>::RooUnfoldSvdT()
-  : RooUnfold()
+  : RooUnfoldT<Hist,Hist2D>()
 {
   // Default constructor. Use Setup() to prepare for unfolding.
   Init();
@@ -285,7 +256,7 @@ RooUnfoldSvdT<Hist,Hist2D>::RooUnfoldSvdT()
 
 template<class Hist,class Hist2D>
 RooUnfoldSvdT<Hist,Hist2D>::RooUnfoldSvdT (const char* name, const char* title)
-  : RooUnfold(name,title)
+  : RooUnfoldT<Hist,Hist2D>(name,title)
 {
   // Basic named constructor. Use Setup() to prepare for unfolding.
   Init();
@@ -293,7 +264,7 @@ RooUnfoldSvdT<Hist,Hist2D>::RooUnfoldSvdT (const char* name, const char* title)
 
 template<class Hist,class Hist2D>
 RooUnfoldSvdT<Hist,Hist2D>::RooUnfoldSvdT (const TString& name, const TString& title)
-  : RooUnfold(name,title)
+  : RooUnfoldT<Hist,Hist2D>(name,title)
 {
   // Basic named constructor. Use Setup() to prepare for unfolding.
   Init();
@@ -345,4 +316,7 @@ RooUnfoldSvdT<Hist,Hist2D>::GetRegParm() const
 
 template class RooUnfoldSvdT<TH1,TH2>;
 ClassImp (RooUnfoldSvd);
+
+template class RooUnfoldSvdT<RooAbsReal,RooAbsReal>;
+ClassImp (RooFitUnfoldSvd);
 

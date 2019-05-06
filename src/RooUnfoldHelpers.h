@@ -33,6 +33,7 @@ namespace RooUnfolding {
                    const TVectorD& vMeas, const TVectorD& vReco, Int_t nm, Int_t nt);
 
   void printVector(const char* name, const TVectorD& vec);
+  void add(TMatrixD& target, const TMatrixD& addition);
   
 }
 

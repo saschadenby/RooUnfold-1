@@ -13,4 +13,11 @@ namespace RooUnfolding {
     }
   }
 
+  void add(TMatrixD& target, const TMatrixD& addition){
+    for(int i=0; i<addition.GetNrows(); ++i){
+      for(int j=0; j<addition.GetNcols(); ++j){
+        target(i,j) = target(i,j) + addition(i,j);
+      }
+    }
+  }
 }

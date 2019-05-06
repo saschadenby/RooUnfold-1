@@ -192,6 +192,11 @@ namespace RooUnfolding {
     // Bin content by vector index
     return h->GetBinContent (bin (h, i, overflow));
   }
+  double binContent (const TH1* h, int i, int j, Bool_t overflow)
+  {
+    // Bin content by vector index
+    return h->GetBinContent (bin (h, i, j, overflow));
+  }
   void setBinContent (TH1* h, int i, double val, Bool_t overflow)
   {
     // Bin content by vector index
@@ -232,6 +237,53 @@ namespace RooUnfolding {
     }
     return h1d;
   }
+
+
+  void h2m  (const TH2* h, TMatrixD& m){
+    // sets Matrix to values of bins in a 2D input histogram    
+    m.ResizeTo(h->GetNbinsX(),h->GetNbinsY());
+    for (Int_t i= 0; i < h->GetNbinsX(); ++i) {
+      for (Int_t j= 0; j < h->GetNbinsY(); ++j) {
+        m(i,j)= h->GetBinContent(i+1,j+1);
+      }
+    }
+  }
+  void h2v  (const TH1* h, TVectorD& v){
+    // sets Vector to values of bins in an input histogram    
+    v.ResizeTo(h->GetNbinsX());
+    for (Int_t i= 0; i < h->GetNbinsX(); ++i) {
+      v[i] = h->GetBinContent(i+1);
+    }
+  }
+  void h2ve  (const TH1* h, TVectorD& v){
+    // sets Vector to values of bins in an input histogram    
+    v.ResizeTo(h->GetNbinsX());
+    for (Int_t i= 0; i < h->GetNbinsX(); ++i) {
+      v[i] = h->GetBinError(i+1);
+    }
+  }    
+  void h2me  (const TH2* h, TMatrixD& m){
+    // sets Matrix to errors of bins in a 2D input histogram    
+    m.ResizeTo(h->GetNbinsX(),h->GetNbinsY());
+    for (Int_t i= 0; i < h->GetNbinsX(); ++i) {
+      for (Int_t j= 0; j < h->GetNbinsY(); ++j) {
+        m(i,j)= h->GetBinError(i+1,j+1);
+      }
+    }
+  }  
+  TMatrixD h2m  (const TH2* h){
+    // Returns Matrix of values of bins in a 2D input histogram
+    TMatrixD m(h->GetNbinsX(),h->GetNbinsY());
+    h2m(h,m);
+    return m;
+  }
+  TVectorD h2v  (const TH1* h){
+    // Returns Vector of values of bins in an input histogram
+    TVectorD v(h->GetNbinsX());
+    h2v(h,v);
+    return v;
+  }
+  
 
   TH2* copyHistogram(const TH2* h, bool includeOverflow){
     Int_t nx= nBins(h,RooUnfolding::X), ny= nBins(h,RooUnfolding::Y), s= sumW2N(h);
@@ -576,9 +628,13 @@ namespace RooUnfolding {
 
   }
 
-
-  
+  void subtract(TH1* hist, const TVectorD& vec, double fac){
+    for (Int_t i= 1; i<=hist->GetNbinsX()+1; i++){
+      hist->SetBinContent (i, hist->GetBinContent(i)-(fac*vec[i-1]));
+    }
+  }
 }
+  
 
 
 

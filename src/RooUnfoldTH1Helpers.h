@@ -35,14 +35,22 @@ namespace RooUnfolding {
   void binXYZ(const TH1* tru, int i, int& jx, int& jy, int& jz);
   double binError(const TH1* h, int i, bool overflow);
   double binContent (const TH1* h, int i, bool overflow);
+  double binContent (const TH1* h, int i, int j, Bool_t overflow);  
   void setBinContent (TH1* h, int i, double val, bool overflow);
   void setBinContent (TH1* h, int i, int j, double val, bool overflow);
   TH1* h2h1d(const TH1* h, int nb);  
   TH1* h2h1d(const TH2* h, int nb);
+  TVectorD h2v  (const TH1* h);    
+  void h2v  (const TH1* h, TVectorD& v);
+  void h2ve  (const TH1* h, TVectorD& v);  
+  void h2m  (const TH2* h, TMatrixD& m);
+  void h2me  (const TH2* h, TMatrixD& m);  
+  TMatrixD h2m  (const TH2* h);  
   TH2* copyHistogram(const TH2* h, bool includeOverflow);
   const char* varname(const TH1* h, Dimension d);
   void setContents(TH1* h,const std::vector<double>& values,const std::vector<double>& errors, bool overflow);
   template<class V> V subtract(const TVectorD& orig, const TH1* hist, bool overflow);
+  void subtract(TH1* hist, const TVectorD& vec, double fac);
 
   void printHistogram(const TH1* h);
   void printTable (std::ostream& o, const TH1* hTrainTrue, const TH1* hTrain,

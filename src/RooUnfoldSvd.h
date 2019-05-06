@@ -30,7 +30,7 @@ public:
    // "xini" - truth MC distribution (number of events)
    // "Adet" - detector response matrix (number of events)
    SVDUnfold( const Hist* bdat, const Hist* bini, const Hist* xini, const Hist2D* Adet );
-   SVDUnfold( const Hist* bdat, Hist2D* Bcov, const Hist* bini, const Hist* xini, const Hist2D* Adet );
+   SVDUnfold( const Hist* bdat, const TMatrixD& Bcov, const Hist* bini, const Hist* xini, const Hist2D* Adet );
    SVDUnfold( const SVDUnfold& other );
 
    // Destructor
@@ -43,20 +43,21 @@ public:
    // Do the unfolding
    // "kreg"   - number of singular values used (regularisation)
    Hist*    Unfold       ( Int_t kreg );
+   TVectorD    UnfoldV       ( Int_t kreg );    
 
    // Determine for given input error matrix covariance matrix of unfolded 
    // spectrum from toy simulation
    // "cov"    - covariance matrix on the measured spectrum, to be propagated
    // "ntoys"  - number of pseudo experiments used for the propagation
    // "seed"   - seed for pseudo experiments
-   Hist2D*    GetUnfoldCovMatrix( const Hist2D* cov, Int_t ntoys, Int_t seed = 1 );
+   TMatrixD    GetUnfoldCovMatrix( const TMatrixD& cov, Int_t ntoys, Int_t seed = 1 );
 
    // Determine covariance matrix of unfolded spectrum from finite statistics in 
    // response matrix
    // "ntoys"  - number of pseudo experiments used for the propagation
    // "seed"   - seed for pseudo experiments
    // "uncmat" - matrix containing the uncertainty on the detector matrix elements if different from purely statistical without any weights
-   Hist2D*    GetAdetCovMatrix( Int_t ntoys, Int_t seed=1, const Hist2D* uncmat=0 );
+   TMatrixD    GetAdetCovMatrix( Int_t ntoys, Int_t seed=1, const TMatrixD* uncmat=0 );
 
    // Regularisation parameter
    Int_t    GetKReg() const { return fKReg; }
@@ -65,19 +66,16 @@ public:
    Hist*    GetD() const;
 
    // Obtain the distribution of singular values
-   Hist*    GetSV() const;
+   TVectorD    GetSV() const;
 
    // Obtain the computed regularized covariance matrix
-   Hist2D*    GetXtau() const;
+   const TMatrixD&    GetXtau() const;
 
    // Obtain the computed inverse of the covariance matrix
-   Hist2D*    GetXinv() const;
+   const TMatrixD&    GetXinv() const;
    
    //Obtain the covariance matrix on the data
-   Hist2D*    GetBCov() const;
-
-   // Helper functions
-   Double_t ComputeChiSquared( const Hist& truspec, const Hist& unfspec );
+   const TMatrixD& GetBCov() const;
 
 private: 
    
@@ -85,14 +83,7 @@ private:
    void            FillCurvatureMatrix( TMatrixD& tCurv, TMatrixD& tC ) const;
    static Double_t GetCurvature       ( const TVectorD& vec, const TMatrixD& curv );
 
-   void            InitHistos  ( );
-
    // Helper functions
-   static void     H2V      ( const Hist* histo, TVectorD& vec   );
-   static void     H2Verr   ( const Hist* histo, TVectorD& vec   );
-   static void     V2H      ( const TVectorD& vec, Hist& histo   );
-   static void     H2M      ( const Hist2D* histo, TMatrixD& mat   );
-   static void     M2H      ( const TMatrixD& mat, Hist2D& histo   );
    static TMatrixD MatDivVec( const TMatrixD& mat, const TVectorD& vec, Int_t zero=0 );
    static TVectorD CompProd ( const TVectorD& vec1, const TVectorD& vec2 );
 
@@ -105,20 +96,23 @@ private:
    Bool_t      fNormalize;   //! Normalize unfolded spectrum to 1
    Int_t       fKReg;        //! Regularisation parameter
    Hist*       fDHist;       //! Distribution of d (for checking regularization)
-   Hist*       fSVHist;      //! Distribution of singular values
-   Hist2D*       fXtau;        //! Computed regularized covariance matrix
-   Hist2D*       fXinv;        //! Computed inverse of covariance matrix
+   TVectorD       fSVHist;      //! Distribution of singular values
+   TMatrixD       fXtau;        //! Computed regularized covariance matrix
+   TMatrixD       fXinv;        //! Computed inverse of covariance matrix
 
    // Input histos
    const Hist* fBdat;        // measured distribution (data)
-   Hist2D* fBcov;        // covariance matrix of measured distribution (data)
+   TMatrixD fBcov;        // covariance matrix of measured distribution (data)
    const Hist* fBini;        // reconstructed distribution (MC)
    const Hist* fXini;        // truth distribution (MC)
-   const Hist2D* fAdet;        // Detector response matrix
+   TMatrixD fAdet;        // Detector response matrix
+   TMatrixD fAdetE;      
 
    // Evaluation of covariance matrices
-   Hist*       fToyhisto;    //! Toy MC histogram
-   Hist2D*       fToymat;      //! Toy MC detector response matrix
+   TVectorD       fToyhisto;    //! Toy MC histogram
+   TVectorD       fToyhistoE;    //! Toy MC histogram
+   TMatrixD       fToymat;      //! Toy MC detector response matrix
+   TMatrixD       fToymatE;      //! Toy MC detector response matrix
    Bool_t      fToyMode;     //! Internal switch for covariance matrix propagation
    Bool_t      fMatToyMode;  //! Internal switch for evaluation of statistical uncertainties from response matrix
 };
@@ -176,5 +170,6 @@ public:
 };
 
 typedef RooUnfoldSvdT<TH1,TH2> RooUnfoldSvd;
+typedef RooUnfoldSvdT<RooAbsReal,RooAbsReal> RooFitUnfoldSvd;
 
 #endif

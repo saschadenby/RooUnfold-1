@@ -61,6 +61,10 @@ End_Html */
 
 #include <iostream>
 
+
+#include "RooUnfoldTH1Helpers.h"
+#include "RooUnfoldFitHelpers.h"
+
 #include "RooUnfoldSvd.h"
 #include "TH1D.h"
 #include "TH2D.h"
@@ -69,103 +73,102 @@ End_Html */
 #include "TMath.h"
 
 using namespace std;
+using namespace RooUnfolding;
 
 //_______________________________________________________________________
 template<class Hist,class Hist2D>
 RooUnfoldSvdT<Hist,Hist2D>::SVDUnfold::SVDUnfold( const Hist *bdat, const Hist *bini, const Hist *xini, const Hist2D *Adet )
   : 
-    fNdim       (0),
+    fNdim       (nBins(bdat,X)),
     fDdim       (2),
     fNormalize  (kFALSE),
     fKReg       (-1),
     fDHist      (NULL),
-    fSVHist     (NULL),
-    fXtau       (NULL),
-    fXinv       (NULL),
     fBdat       (bdat),
     fBini       (bini),
     fXini       (xini),
-    fAdet       (Adet),
-    fToyhisto   (NULL),
-    fToymat     (NULL),
+    fAdet       (h2m(Adet)),
     fToyMode    (kFALSE),
     fMatToyMode (kFALSE)
 {
+
+  if(sumW2N(Adet)){
+    h2me(Adet,fAdet);
+  }
+
   // Alternative constructor
   // User provides data and MC test spectra, as well as detector response matrix, diagonal covariance matrix of measured spectrum built from the uncertainties on measured spectrum
-   if (bdat->GetNbinsX() != bini->GetNbinsX() || 
-       bdat->GetNbinsX() != xini->GetNbinsX() ||
-       bdat->GetNbinsX() != Adet->GetNbinsX() ||
-       bdat->GetNbinsX() != Adet->GetNbinsY()) {
-      TString msg = "All histograms must have equal dimension.\n";
-      msg += Form( "  Found: dim(bdat)=%i\n",    bdat->GetNbinsX() );
-      msg += Form( "  Found: dim(bini)=%i\n",    bini->GetNbinsX() );
-      msg += Form( "  Found: dim(xini)=%i\n",    xini->GetNbinsX() );
-      msg += Form( "  Found: dim(Adet)=%i,%i\n", Adet->GetNbinsX(), Adet->GetNbinsY() );
-      msg += "Please start again!";
-
-      throw std::runtime_error( msg.Data() );
-   }
-
-   fBcov = (TH2*)fAdet->Clone("bcov");
+  if (fNdim != nBins(bini,X) || 
+      fNdim != nBins(xini,X) ||
+      fNdim != nBins(Adet,X) ||
+      fNdim != nBins(Adet,Y)) {
+    TString msg = "All histograms must have equal dimension.\n";
+    msg += Form( "  Found: dim(bdat)=%i\n",    nBins(bdat,X) );
+    msg += Form( "  Found: dim(bini)=%i\n",    nBins(bini,X) );
+    msg += Form( "  Found: dim(xini)=%i\n",    nBins(xini,X) );
+    msg += Form( "  Found: dim(Adet)=%i,%i\n", nBins(Adet,X), nBins(Adet,Y) );
+    msg += "Please start again!";
+    
+    throw std::runtime_error( msg.Data() );
+  }
+  
+   fBcov.ResizeTo(fAdet.GetNrows(),fAdet.GetNcols());
    
-   for(int i=1; i<=fBdat->GetNbinsX(); i++){
-     fBcov->SetBinContent(i, i, fBdat->GetBinError(i)*fBdat->GetBinError(i));
-     for(int j=1; j<=fBdat->GetNbinsX(); j++){
+   for(int i=1; i<=nBins(fBdat,X); i++){
+     fBcov(i,i) =  binError(fBdat,i,false)*binError(fBdat,i,false);
+     for(int j=1; j<=nBins(fBdat,X); j++){
        if(i==j) continue;
-       fBcov->SetBinContent(i,j,0.);
+       fBcov[i][j] = 0.;
      }
    }
    // Get the input histos
-   fNdim = bdat->GetNbinsX();
    fDdim = 2; // This is the derivative used to compute the curvature matrix
 }
 
 
 //_______________________________________________________________________
 template<class Hist,class Hist2D>
-RooUnfoldSvdT<Hist,Hist2D>::SVDUnfold::SVDUnfold( const Hist *bdat, Hist2D* Bcov, const Hist *bini, const Hist *xini, const Hist2D *Adet )
+RooUnfoldSvdT<Hist,Hist2D>::SVDUnfold::SVDUnfold( const Hist *bdat, const TMatrixD& Bcov, const Hist *bini, const Hist *xini, const Hist2D *Adet )
   :
-     fNdim       (0),
+  fNdim       (nBins(bdat,X)),
      fDdim       (2),
      fNormalize  (kFALSE),
      fKReg       (-1),
      fDHist      (NULL),
-     fSVHist     (NULL),
-     fXtau       (NULL),
-     fXinv       (NULL),
      fBdat       (bdat), 
      fBcov       (Bcov), 
      fBini       (bini),
      fXini       (xini),
-     fAdet       (Adet), 
-     fToyhisto   (NULL),
-     fToymat     (NULL),
+     fAdet       (h2m(Adet)), 
      fToyMode    (kFALSE),
      fMatToyMode (kFALSE) 
 {
+
+  if(sumW2N(Adet)){
+    h2me(Adet,fAdet);
+  }
+  
    // Default constructor
    // Initialisation of SVDUnfold
    // User provides data and MC test spectra, as well as detector response matrix and the covariance matrix of the measured distribution
-   if (bdat->GetNbinsX() != bini->GetNbinsX() || 
-       bdat->GetNbinsX() != xini->GetNbinsX() ||
-       bdat->GetNbinsX() != Bcov->GetNbinsX() ||
-       bdat->GetNbinsX() != Bcov->GetNbinsY() ||
-       bdat->GetNbinsX() != Adet->GetNbinsX() ||
-       bdat->GetNbinsX() != Adet->GetNbinsY()) {
+  if (fNdim != nBins(bini,X) || 
+      fNdim != nBins(xini,X) ||
+       fNdim != Bcov.GetNrows() ||
+       fNdim != Bcov.GetNcols() ||
+      fNdim != nBins(Adet,X) ||
+      fNdim != nBins(Adet,Y)) {
       TString msg = "All histograms must have equal dimension.\n";
-      msg += Form( "  Found: dim(bdat)=%i\n",    bdat->GetNbinsX() );
-      msg += Form( "  Found: dim(Bcov)=%i,%i\n",    Bcov->GetNbinsX(), Bcov->GetNbinsY() );
-      msg += Form( "  Found: dim(bini)=%i\n",    bini->GetNbinsX() );
-      msg += Form( "  Found: dim(xini)=%i\n",    xini->GetNbinsX() );
-      msg += Form( "  Found: dim(Adet)=%i,%i\n", Adet->GetNbinsX(), Adet->GetNbinsY() );
+      msg += Form( "  Found: dim(bdat)=%i\n",    nBins(bdat,X) );
+      msg += Form( "  Found: dim(Bcov)=%i,%i\n", Bcov.GetNrows(), Bcov.GetNcols() );
+      msg += Form( "  Found: dim(bini)=%i\n",    nBins(bini,X) );
+      msg += Form( "  Found: dim(xini)=%i\n",    nBins(xini,X) );
+      msg += Form( "  Found: dim(Adet)=%i,%i\n", nBins(Adet,X), nBins(Adet,Y) );
       msg += "Please start again!";
 
       throw std::runtime_error(msg);
    }
 
    // Get the input histos
-   fNdim = bdat->GetNbinsX();
    fDdim = 2; // This is the derivative used to compute the curvature matrix
 }
 
@@ -187,6 +190,7 @@ RooUnfoldSvdT<Hist,Hist2D>::SVDUnfold::SVDUnfold( const SVDUnfold& other )
      fXini       (other.fXini),
      fAdet       (other.fAdet),
      fToyhisto   (other.fToyhisto),
+     fToyhistoE   (other.fToyhistoE),     
      fToymat     (other.fToymat),
      fToyMode    (other.fToyMode),
      fMatToyMode (other.fMatToyMode) 
@@ -198,69 +202,36 @@ RooUnfoldSvdT<Hist,Hist2D>::SVDUnfold::SVDUnfold( const SVDUnfold& other )
 template<class Hist,class Hist2D>
 RooUnfoldSvdT<Hist,Hist2D>::SVDUnfold::~SVDUnfold()
 {
-   // Destructor
-   if(fToyhisto){
-      delete fToyhisto;
-      fToyhisto = 0;
-   }
-   
-   if(fToymat){
-      delete fToymat;
-      fToymat = 0;
-   }
-
    if(fDHist){
       delete fDHist;
       fDHist = 0;
    }
 
-   if(fSVHist){
-      delete fSVHist;
-      fSVHist = 0;
-   }
-
-   if(fXtau){
-      delete fXtau;
-      fXtau = 0;
-   }
-
-   if(fXinv){
-      delete fXinv;
-      fXinv = 0;
-   }
-
-   if(fBcov){
-      delete fBcov;
-      fBcov = 0;
-   }
 }
 
 //_______________________________________________________________________
 template<class Hist,class Hist2D>
-Hist* RooUnfoldSvdT<Hist,Hist2D>::SVDUnfold::Unfold( Int_t kreg )
+TVectorD RooUnfoldSvdT<Hist,Hist2D>::SVDUnfold::UnfoldV( Int_t kreg )
 {
    // Perform the unfolding with regularisation parameter kreg
    fKReg = kreg;
    
-   // Make the histos
-   if (!fToyMode && !fMatToyMode) InitHistos( );
-
    // Create vectors and matrices
-   TVectorD vb(fNdim), vbini(fNdim), vxini(fNdim), vberr(fNdim);
-   TMatrixD mB(fNdim, fNdim), mA(fNdim, fNdim), mCurv(fNdim, fNdim), mC(fNdim, fNdim);
+   TVectorD vb(fNdim), vberr(fNdim);
+   TMatrixD mB(fBcov), mA(fNdim, fNdim), mCurv(fNdim, fNdim), mC(fNdim, fNdim);
 
    Double_t eps = 1e-12;
    Double_t sreg;
 
    // Copy histogams entries into vector
-   if (fToyMode) { H2V( fToyhisto, vb ); H2Verr( fToyhisto, vberr ); }
-   else          { H2V( fBdat,     vb ); H2Verr( fBdat,     vberr ); }
+   if (fToyMode) { vb = fToyhisto; vberr = fToyhistoE; }
+   else          { h2v( fBdat,     vb ); h2ve( fBdat,     vberr ); }
 
-   H2M( fBcov, mB);
-   H2V( fBini, vbini );
-   H2V( fXini, vxini );
-   if (fMatToyMode) H2M( fToymat, mA );
-   else        H2M( fAdet,   mA );
+   TVectorD vbini = h2v(fBini);
+   TVectorD vxini = h2v(fXini);
+
+   if (fMatToyMode) mA = fToymat;
+   else        mA=fAdet;
 
    // Fill and invert the second derivative matrix
    FillCurvatureMatrix( mCurv, mC );
@@ -313,7 +284,7 @@ Hist* RooUnfoldSvdT<Hist,Hist2D>::SVDUnfold::Unfold( Int_t kreg )
    TVectorD ASV  = ASVD.GetSig();
 
    if (!fToyMode && !fMatToyMode) {
-      V2H(ASV, *fSVHist);
+     fSVHist = ASV;
    }
 
    TMatrixD Vreg = mCinv*Vort;
@@ -322,7 +293,7 @@ Hist* RooUnfoldSvdT<Hist,Hist2D>::SVDUnfold::Unfold( Int_t kreg )
    TVectorD vd    = Uort*vb;
 
    if (!fToyMode && !fMatToyMode) {
-      V2H(vd, *fDHist);
+     fDHist = createHist<Hist>(vd,fBdat->GetName(),fBdat->GetTitle(),fNdim,min(fBdat,X),max(fBdat,X),varname(fBdat,X),false);
    }
 
    // Damping coefficient
@@ -378,8 +349,8 @@ Hist* RooUnfoldSvdT<Hist,Hist2D>::SVDUnfold::Unfold( Int_t kreg )
    }
 
    if (!fToyMode && !fMatToyMode) {
-      M2H(Xtau, *fXtau);
-      M2H(Xinv, *fXinv);
+     fXtau = Xtau;
+     fXinv = Xinv;
    }
    
    // Get Curvature and also chi2 in case of MC unfolding
@@ -387,20 +358,21 @@ Hist* RooUnfoldSvdT<Hist,Hist2D>::SVDUnfold::Unfold( Int_t kreg )
      std::cout << TString::Format( "Unfolding param: %i",k+1 ) << std::endl;
      std::cout << TString::Format( "Curvature of weight distribution: %f", GetCurvature( vw, mCurv ) ) << std::endl;
    }
-
-   TH1* h = (TH1*)fBdat->Clone("unfoldingresult");
-   for(int i=1; i<=fNdim; i++){
-      h->SetBinContent(i,0.);
-      h->SetBinError(i,0.);
-   }
-   V2H( vx, *h );
-
-   return h;
+   return vx;
 }
 
 //_______________________________________________________________________
 template<class Hist,class Hist2D>
-Hist2D* RooUnfoldSvdT<Hist,Hist2D>::SVDUnfold::GetUnfoldCovMatrix( const Hist2D* cov, Int_t ntoys, Int_t seed )
+Hist* RooUnfoldSvdT<Hist,Hist2D>::SVDUnfold::Unfold( Int_t kreg )
+{
+
+  TVectorD vx = UnfoldV(kreg);
+  return createHist<Hist>(vx,"unfoldingresult",fBdat->GetTitle(),fNdim,min(fBdat,X),max(fBdat,X),varname(fBdat,X),false);
+}
+
+//_______________________________________________________________________
+template<class Hist,class Hist2D>
+TMatrixD RooUnfoldSvdT<Hist,Hist2D>::SVDUnfold::GetUnfoldCovMatrix( const TMatrixD& cov, Int_t ntoys, Int_t seed )
 {
    // Determine for given input error matrix covariance matrix of unfolded 
    // spectrum from toy simulation given the passed covariance matrix on measured spectrum
@@ -410,12 +382,6 @@ Hist2D* RooUnfoldSvdT<Hist,Hist2D>::SVDUnfold::GetUnfoldCovMatrix( const Hist2D*
    // Note that this covariance matrix will contain effects of forced normalisation if spectrum is normalised to unit area. 
 
    fToyMode = true;
-   TH1* unfres = 0;
-   TH2* unfcov = (TH2*)fAdet->Clone("unfcovmat");
-   unfcov->SetTitle("Toy covariance matrix");
-   for(int i=1; i<=fNdim; i++)
-      for(int j=1; j<=fNdim; j++)
-         unfcov->SetBinContent(i,j,0.);
   
    // Code for generation of toys (taken from RooResult and modified)
    // Calculate the elements of the upper-triangular matrix L that
@@ -425,27 +391,27 @@ Hist2D* RooUnfoldSvdT<Hist,Hist2D>::SVDUnfold::GetUnfoldCovMatrix( const Hist2D*
    for (Int_t iPar= 0; iPar < fNdim; iPar++) {
 
       // Calculate the diagonal term first
-      L(iPar,iPar) = cov->GetBinContent(iPar+1,iPar+1);
-      for (Int_t k=0; k<iPar; k++) L(iPar,iPar) -= TMath::Power( L(k,iPar), 2 );
-      if (L(iPar,iPar) > 0.0) L(iPar,iPar) = TMath::Sqrt(L(iPar,iPar));
-      else                    L(iPar,iPar) = 0.0;
-
-      // ...then the off-diagonal terms
-      for (Int_t jPar=iPar+1; jPar<fNdim; jPar++) {
-         L(iPar,jPar) = cov->GetBinContent(iPar+1,jPar+1);
-         for (Int_t k=0; k<iPar; k++) L(iPar,jPar) -= L(k,iPar)*L(k,jPar);
-         if (L(iPar,iPar)!=0.) L(iPar,jPar) /= L(iPar,iPar);
-         else                  L(iPar,jPar) = 0;
-      }
+     L(iPar,iPar) = cov(iPar,iPar);
+     for (Int_t k=0; k<iPar; k++) L(iPar,iPar) -= TMath::Power( L(k,iPar), 2 );
+     if (L(iPar,iPar) > 0.0) L(iPar,iPar) = TMath::Sqrt(L(iPar,iPar));
+     else                    L(iPar,iPar) = 0.0;
+     
+     // ...then the off-diagonal terms
+     for (Int_t jPar=iPar+1; jPar<fNdim; jPar++) {
+       L(iPar,jPar) = cov(iPar,jPar);
+       for (Int_t k=0; k<iPar; k++) L(iPar,jPar) -= L(k,iPar)*L(k,jPar);
+       if (L(iPar,iPar)!=0.) L(iPar,jPar) /= L(iPar,iPar);
+       else                  L(iPar,jPar) = 0;
+     }
    }
-
+   
    // Remember it
-   TMatrixD *Lt = new TMatrixD(TMatrixD::kTransposed,L);
+   TMatrixD Lt(TMatrixD::kTransposed,L);
    TRandom3 random(seed);
 
-   fToyhisto = (TH1*)fBdat->Clone("toyhisto");
-   TH1 *toymean = (TH1*)fBdat->Clone("toymean");
-   for (Int_t j=1; j<=fNdim; j++) toymean->SetBinContent(j,0.);
+   h2v(fBdat,fToyhisto);
+   h2ve(fBdat,fToyhistoE);   
+   TVectorD toymean(fNdim);
 
    // Get the mean of the toys first
    for (int i=1; i<=ntoys; i++) {
@@ -455,26 +421,26 @@ Hist2D* RooUnfoldSvdT<Hist,Hist2D>::SVDUnfold::GetUnfoldCovMatrix( const Hist2D*
       for (Int_t k= 0; k < fNdim; k++) g(k) = random.Gaus(0.,1.);
 
       // Multiply this vector by Lt to introduce the appropriate correlations
-      g *= (*Lt);
+      g *= Lt;
 
       // Add the mean value offsets and store the results
-      for (int j=1; j<=fNdim; j++) {
-         fToyhisto->SetBinContent(j,fBdat->GetBinContent(j)+g(j-1));
-         fToyhisto->SetBinError(j,fBdat->GetBinError(j));
+      for (int j=0; j<fNdim; j++) {
+        fToyhisto[j] = binContent(fBdat,j,false)+g(j-1);
+        fToyhistoE[j] = binContent(fBdat,j,false);
       }
 
-      unfres = Unfold(GetKReg());
+      TVectorD unfres = UnfoldV(GetKReg());
 
-      for (Int_t j=1; j<=fNdim; j++) {
-         toymean->SetBinContent(j, toymean->GetBinContent(j) + unfres->GetBinContent(j)/ntoys);
+      for (Int_t j=0; j<fNdim; j++) {
+        toymean[j] = toymean[j] + unfres[j]/ntoys;
       }
-      delete unfres;
-      unfres = 0;
    }
 
    // Reset the random seed
    random.SetSeed(seed);
 
+   TMatrixD unfcov(fAdet.GetNrows(),fAdet.GetNcols());
+   
    //Now the toys for the covariance matrix
    for (int i=1; i<=ntoys; i++) {
 
@@ -483,25 +449,21 @@ Hist2D* RooUnfoldSvdT<Hist,Hist2D>::SVDUnfold::GetUnfoldCovMatrix( const Hist2D*
       for (Int_t k= 0; k < fNdim; k++) g(k) = random.Gaus(0.,1.);
 
       // Multiply this vector by Lt to introduce the appropriate correlations
-      g *= (*Lt);
+      g *= Lt;
 
       // Add the mean value offsets and store the results
-      for (int j=1; j<=fNdim; j++) {
-         fToyhisto->SetBinContent( j, fBdat->GetBinContent(j)+g(j-1) );
-         fToyhisto->SetBinError  ( j, fBdat->GetBinError(j) );
+      for (int j=0; j<fNdim; j++) {
+        fToyhisto[j] = binContent(fBdat,j,false)+g(j-1);
+        fToyhistoE[j] = binError(fBdat,j,false);
       }
-      unfres = Unfold(GetKReg());
-
-      for (Int_t j=1; j<=fNdim; j++) {
-         for (Int_t k=1; k<=fNdim; k++) {
-            unfcov->SetBinContent(j,k,unfcov->GetBinContent(j,k) + ( (unfres->GetBinContent(j) - toymean->GetBinContent(j))* (unfres->GetBinContent(k) - toymean->GetBinContent(k))/(ntoys-1)) );
-         }
+      TVectorD unfres = UnfoldV(GetKReg());
+      
+      for (Int_t j=0; j<fNdim; j++) {
+        for (Int_t k=0; k<fNdim; k++) {
+          unfcov(j,k) = unfcov(j,k) + ( (unfres[j] - toymean[j])* (unfres[k] - toymean[k])/(ntoys-1));
+        }
       }
-      delete unfres;
-      unfres = 0;
    }
-   delete Lt;
-   delete toymean;
    fToyMode = kFALSE;
    
    return unfcov;
@@ -509,17 +471,17 @@ Hist2D* RooUnfoldSvdT<Hist,Hist2D>::SVDUnfold::GetUnfoldCovMatrix( const Hist2D*
 
 //_______________________________________________________________________
 template<class Hist,class Hist2D>
-Hist2D* RooUnfoldSvdT<Hist,Hist2D>::SVDUnfold::GetAdetCovMatrix( Int_t ntoys, Int_t seed, const Hist2D* uncmat )
+TMatrixD RooUnfoldSvdT<Hist,Hist2D>::SVDUnfold::GetAdetCovMatrix( Int_t ntoys, Int_t seed, const TMatrixD* uncmat )
 {
    // Determine covariance matrix of unfolded spectrum from finite statistics in 
    // response matrix using pseudo experiments
    // "ntoys"  - number of pseudo experiments used for the propagation
    // "seed"   - seed for pseudo experiments
    // "uncmat" - matrix to be interpreted as uncertainties on detector response matrix, to be propagated by toys, if no matrix passed, uncertainties on Adet will be used in toys with Gaussian smearing if Sumw2 is set for Adet, otherwise Poisson variations on Adet will be performed in toys
-  if (uncmat && (uncmat->GetNbinsX() != fNdim || uncmat->GetNbinsY() != fNdim)) 
+  if (uncmat && (uncmat->GetNrows() != fNdim || uncmat->GetNcols() != fNdim)) 
     {
       TString msg = "Uncertainty histogram must have the same dimension as all other histograms.\n";
-      msg += Form( "  Found: dim(uncmat)=%i,%i\n", uncmat->GetNbinsX(), uncmat->GetNbinsY() );
+      msg += Form( "  Found: dim(uncmat)=%i,%i\n", uncmat->GetNrows(), uncmat->GetNcols() );
       msg += Form( "  Found: dim(Adet)=%i,%i\n", fNdim, fNdim );
       msg += "Please start again!";
       throw std::runtime_error( msg.Data()) ;
@@ -527,71 +489,61 @@ Hist2D* RooUnfoldSvdT<Hist,Hist2D>::SVDUnfold::GetAdetCovMatrix( Int_t ntoys, In
 
 
    fMatToyMode = true;
-   TH1* unfres = 0;
-   TH2* unfcov = (TH2*)fAdet->Clone("unfcovmat");
-   unfcov->SetTitle("Toy covariance matrix");
-   for(int i=1; i<=fNdim; i++)
-      for(int j=1; j<=fNdim; j++)
-         unfcov->SetBinContent(i,j,0.);
 
    //Now the toys for the detector response matrix
    TRandom3 random(seed);
 
-   fToymat = (TH2*)fAdet->Clone("toymat");
-   TH1 *toymean = (TH1*)fXini->Clone("toymean");
-   for (Int_t j=1; j<=fNdim; j++) toymean->SetBinContent(j,0.);
+   fToymat.ResizeTo(fAdet.GetNrows(),fAdet.GetNcols());
+   TVectorD toymean(nBins(fXini,X));
 
-   for (int i=1; i<=ntoys; i++) {    
-      for (Int_t k=1; k<=fNdim; k++) {
-         for (Int_t m=1; m<=fNdim; m++) {
-	   if (fAdet->GetBinContent(k,m)){
+   for (int i=0; i<ntoys; i++) {    
+      for (Int_t k=0; k<fNdim; k++) {
+         for (Int_t m=0; m<fNdim; m++) {
+	   if (fAdet(k,m)){
 	     if(uncmat)
-	       fToymat->SetBinContent(k, m, fAdet->GetBinContent(k,m)+random.Gaus(0.,uncmat->GetBinContent(k,m)));
-	     else if(fAdet->GetSumw2N())
-	       fToymat->SetBinContent(k, m, fAdet->GetBinContent(k,m)+random.Gaus(0.,fAdet->GetBinError(k,m)));
-	     else 
-	       fToymat->SetBinContent(k, m, random.Poisson(fAdet->GetBinContent(k,m)));
+	       fToymat(k, m) =  fAdet(k,m)+random.Gaus(0.,(*uncmat)(k,m));
+             else if(fAdetE.GetNrows() == fAdet.GetNrows())
+               fToymat(k, m) = fAdet(k,m)+random.Gaus(0.,fAdetE(k,m));
+             else 
+	       fToymat(k, m) = random.Poisson(fAdet(k,m));
 	   }
          }
       }
 
-      unfres = Unfold(GetKReg());
+      TVectorD unfres = UnfoldV(GetKReg());
 
-      for (Int_t j=1; j<=fNdim; j++) {
-         toymean->SetBinContent(j, toymean->GetBinContent(j) + unfres->GetBinContent(j)/ntoys);
+      for (Int_t j=0; j<fNdim; j++) {
+        toymean[j] = toymean[j] + unfres(j)/ntoys;
       }
-      delete unfres;
-      unfres = 0;
    }
 
    // Reset the random seed
    random.SetSeed(seed);
 
+   TMatrixD unfcov(fAdet.GetNrows(),fAdet.GetNcols());
+   
    for (int i=1; i<=ntoys; i++) {
-      for (Int_t k=1; k<=fNdim; k++) {
-         for (Int_t m=1; m<=fNdim; m++) {
-	   if (fAdet->GetBinContent(k,m)){
-	     if(uncmat)
-	       fToymat->SetBinContent(k, m, fAdet->GetBinContent(k,m)+random.Gaus(0.,uncmat->GetBinContent(k,m)));
-	     else if(fAdet->GetSumw2N())
-	       fToymat->SetBinContent(k, m, fAdet->GetBinContent(k,m)+random.Gaus(0.,fAdet->GetBinError(k,m)));
-	     else 
-	       fToymat->SetBinContent(k, m, random.Poisson(fAdet->GetBinContent(k,m)));
-	   }
-         }
+      for (Int_t k=0; k<fNdim; k++) {
+        for (Int_t m=0; m<fNdim; m++) {
+          if (fAdet(k,m)){
+            if(uncmat)
+              fToymat(k, m) = fAdet(k,m)+random.Gaus(0.,(*uncmat)(k,m));
+            else if(fAdetE.GetNrows() == fAdet.GetNrows())
+              fToymat(k, m) = fAdet(k,m)+random.Gaus(0.,fAdetE(k,m));
+            else 
+              fToymat(k, m) = random.Poisson(fAdet(k,m));
+          }
+        }
       }
 
-      unfres = Unfold(GetKReg());
+      TVectorD unfres = UnfoldV(GetKReg());
 
-      for (Int_t j=1; j<=fNdim; j++) {
-         for (Int_t k=1; k<=fNdim; k++) {
-            unfcov->SetBinContent(j,k,unfcov->GetBinContent(j,k) + ( (unfres->GetBinContent(j) - toymean->GetBinContent(j))*(unfres->GetBinContent(k) - toymean->GetBinContent(k))/(ntoys-1)) );
-         }
+      for (Int_t j=0; j<fNdim; j++) {
+        for (Int_t k=0; k<fNdim; k++) {
+          unfcov(j,k) = unfcov(j,k) + ( (unfres[j] - toymean[j])*(unfres[k] - toymean[k])/(ntoys-1));
+        }
       }
-      delete unfres;
-      unfres = 0;
    }
-   delete toymean;
    fMatToyMode = kFALSE;
    
    return unfcov;
@@ -601,16 +553,13 @@ Hist2D* RooUnfoldSvdT<Hist,Hist2D>::SVDUnfold::GetAdetCovMatrix( Int_t ntoys, In
 template<class Hist,class Hist2D>
 Hist* RooUnfoldSvdT<Hist,Hist2D>::SVDUnfold::GetD() const 
 { 
-   // Returns d vector (for choosing appropriate regularisation)
-   for (int i=1; i<=fDHist->GetNbinsX(); i++) {
-      if (fDHist->GetBinContent(i)<0.) fDHist->SetBinContent(i, TMath::Abs(fDHist->GetBinContent(i))); 
-   }
-   return fDHist; 
+  // Returns d vector (for choosing appropriate regularisation)
+  return fDHist; 
 }
 
 //_______________________________________________________________________
 template<class Hist,class Hist2D>
-Hist* RooUnfoldSvdT<Hist,Hist2D>::SVDUnfold::GetSV() const 
+TVectorD RooUnfoldSvdT<Hist,Hist2D>::SVDUnfold::GetSV() const 
 { 
    // Returns singular values vector
    return fSVHist; 
@@ -618,16 +567,16 @@ Hist* RooUnfoldSvdT<Hist,Hist2D>::SVDUnfold::GetSV() const
 
 //_______________________________________________________________________
 template<class Hist,class Hist2D>
-Hist2D* RooUnfoldSvdT<Hist,Hist2D>::SVDUnfold::GetXtau() const 
+const TMatrixD& RooUnfoldSvdT<Hist,Hist2D>::SVDUnfold::GetXtau() const 
 { 
    // Returns the computed regularized covariance matrix corresponding to total uncertainties on measured spectrum as passed in the constructor.
   // Note that this covariance matrix will not contain the effects of forced normalization if spectrum is normalized to unit area.
-   return fXtau; 
+  return fXtau; 
 }
 
 //_______________________________________________________________________
 template<class Hist,class Hist2D>
-Hist2D* RooUnfoldSvdT<Hist,Hist2D>::SVDUnfold::GetXinv() const 
+const TMatrixD& RooUnfoldSvdT<Hist,Hist2D>::SVDUnfold::GetXinv() const 
 { 
    // Returns the computed inverse of the covariance matrix
    return fXinv; 
@@ -635,58 +584,10 @@ Hist2D* RooUnfoldSvdT<Hist,Hist2D>::SVDUnfold::GetXinv() const
 
 //_______________________________________________________________________
 template<class Hist,class Hist2D>
-Hist2D* RooUnfoldSvdT<Hist,Hist2D>::SVDUnfold::GetBCov() const 
+const TMatrixD& RooUnfoldSvdT<Hist,Hist2D>::SVDUnfold::GetBCov() const 
 { 
    // Returns the covariance matrix
    return fBcov; 
-}
-
-//_______________________________________________________________________
-template<class Hist,class Hist2D>
-void RooUnfoldSvdT<Hist,Hist2D>::SVDUnfold::H2V( const Hist* histo, TVectorD& vec )
-{
-   // Fill 1D histogram into vector
-   for (Int_t i=0; i<histo->GetNbinsX(); i++) vec(i) = histo->GetBinContent(i+1);
-}
-
-//_______________________________________________________________________
-template<class Hist,class Hist2D>
-void RooUnfoldSvdT<Hist,Hist2D>::SVDUnfold::H2Verr( const Hist* histo, TVectorD& vec )
-{
-   // Fill 1D histogram errors into vector
-   for (Int_t i=0; i<histo->GetNbinsX(); i++) vec(i) = histo->GetBinError(i+1);
-}
-
-//_______________________________________________________________________
-template<class Hist,class Hist2D>
-void RooUnfoldSvdT<Hist,Hist2D>::SVDUnfold::V2H( const TVectorD& vec, Hist& histo )
-{
-   // Fill vector into 1D histogram
-   for(Int_t i=0; i<vec.GetNrows(); i++) histo.SetBinContent(i+1, vec(i));
-}
-
-//_______________________________________________________________________
-template<class Hist,class Hist2D>
-void RooUnfoldSvdT<Hist,Hist2D>::SVDUnfold::H2M( const Hist2D* histo, TMatrixD& mat )
-{
-   // Fill 2D histogram into matrix
-   for (Int_t j=0; j<histo->GetNbinsX(); j++) {
-      for (Int_t i=0; i<histo->GetNbinsY(); i++) {
-         mat(i,j) = histo->GetBinContent(i+1,j+1);
-      }
-   }
-}
-
-//_______________________________________________________________________
-template<class Hist,class Hist2D>
-void RooUnfoldSvdT<Hist,Hist2D>::SVDUnfold::M2H( const TMatrixD& mat, Hist2D& histo )
-{
-   // Fill 2D histogram into matrix
-   for (Int_t j=0; j<mat.GetNcols(); j++) {
-      for (Int_t i=0; i<mat.GetNrows(); i++) {
-	histo.SetBinContent(i+1,j+1, mat(i,j));
-      }
-   }
 }
 
 //_______________________________________________________________________
@@ -831,26 +732,6 @@ void RooUnfoldSvdT<Hist,Hist2D>::SVDUnfold::FillCurvatureMatrix( TMatrixD& tCurv
 
 //_______________________________________________________________________
 template<class Hist,class Hist2D>
-void RooUnfoldSvdT<Hist,Hist2D>::SVDUnfold::InitHistos( )
-{
-
-   fDHist = new TH1D( "dd", "d vector after orthogonal transformation", fNdim, 0, fNdim );  
-   fDHist->Sumw2();
-
-   fSVHist = new TH1D( "sv", "Singular values of AC^-1", fNdim, 0, fNdim );  
-   fSVHist->Sumw2();
-
-   fXtau = (TH2*)fAdet->Clone("Xtau");
-   fXtau->SetTitle("Regularized covariance matrix");  
-   fXtau->Sumw2();
-
-   fXinv = (TH2*)fAdet->Clone("Xinv");
-   fXinv->SetTitle("Inverse covariance matrix");  
-   fXinv->Sumw2();
-}
-
-//_______________________________________________________________________
-template<class Hist,class Hist2D>
 void RooUnfoldSvdT<Hist,Hist2D>::SVDUnfold::RegularisedSymMatInvert( TMatrixDSym& mat, Double_t eps )
 {
    // naive regularised inversion cuts off small elements
@@ -903,24 +784,8 @@ void RooUnfoldSvdT<Hist,Hist2D>::SVDUnfold::RegularisedSymMatInvert( TMatrixDSym
    delete []  ipos;
 }
 
-//_______________________________________________________________________
-template<class Hist,class Hist2D>
-Double_t RooUnfoldSvdT<Hist,Hist2D>::SVDUnfold::ComputeChiSquared( const Hist& truspec, const Hist& unfspec)
-{
-   // Helper routine to compute chi-squared between distributions using the computed inverse of the covariance matrix for the unfolded spectrum as given in paper.
-   UInt_t n = truspec.GetNbinsX();
-
-   // compute chi2
-   Double_t chi2 = 0;
-   for (UInt_t i=0; i<n; i++) {
-      for (UInt_t j=0; j<n; j++) {
-         chi2 += ( (truspec.GetBinContent( i+1 )-unfspec.GetBinContent( i+1 )) *
-                   (truspec.GetBinContent( j+1 )-unfspec.GetBinContent( j+1 )) * fXinv->GetBinContent(i+1,j+1) );
-      }
-   }
-
-   return chi2;
-}
-
 template class RooUnfoldSvdT<TH1,TH2>::SVDUnfold;
 ClassImp (RooUnfoldSvd::SVDUnfold);
+
+template class RooUnfoldSvdT<RooAbsReal,RooAbsReal>::SVDUnfold;
+ClassImp (RooFitUnfoldSvd::SVDUnfold);

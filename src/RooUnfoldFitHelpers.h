@@ -30,9 +30,16 @@ namespace RooUnfolding {
   void binXYZ(const RooAbsReal* tru, int i, int& jx, int& jy, int& jz);
   double binError(const RooAbsReal* h, int i, bool overflow);
   double binContent (const RooAbsReal* h, int i, bool overflow);
+  double binContent (const RooAbsReal* h, int i, int j, Bool_t overflow);  
   void setBinContent (RooAbsReal* h, int i, double val, bool overflow);
   void setBinContent (RooAbsReal* h, int i, int j, double val, bool overflow);
   RooAbsReal* h2h1d(const RooAbsReal* h, int nb);
+  TVectorD h2v  (const RooAbsReal* h);    
+  void h2v  (const RooAbsReal* h, TVectorD& v);
+  void h2ve  (const RooAbsReal* h, TVectorD& v);    
+  TMatrixD h2m  (const RooAbsReal* h);
+  void h2m  (const RooAbsReal* h, TMatrixD& m);
+  void h2me  (const RooAbsReal* h, TMatrixD& m);  
   RooAbsReal* copyHistogram(const RooAbsReal* h, bool includeOverflow);
   const char* varname(const RooAbsReal* h, Dimension d);
   void setContents(RooAbsReal* h,const std::vector<double>& values,const std::vector<double>& errors, bool overflow);
@@ -43,7 +50,8 @@ namespace RooUnfolding {
                    Int_t _nm=0, Int_t _nt=0, Bool_t _overflow=kFALSE,
                    RooUnfolding::ErrorTreatment withError=RooUnfolding::kDefault, Double_t chi_squ=-999.0);
   RooAbsReal* histNoOverflow(const RooAbsReal* h, bool overflow);
-  RooAbsReal* resize (RooAbsReal* h, Int_t nx, Int_t ny, Int_t nz);
+  RooAbsReal* resize (RooAbsReal* h, Int_t nx, Int_t ny = 0, Int_t nz = 0);
+  void subtract(RooAbsReal* hist, const TVectorD& vec, double fac);
 }  
 
 #endif
