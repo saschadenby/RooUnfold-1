@@ -8,6 +8,7 @@
 #pragma link C++ class RooFitUnfold-;
 #pragma link C++ class RooUnfoldBayes+;
 #pragma link C++ class RooUnfoldSvd-;
+#pragma link C++ class RooUnfoldSvd::SVDUnfold-;
 #pragma link C++ class RooUnfoldBinByBin+;
 #pragma link C++ class RooFitUnfoldBinByBin+;
 #pragma link C++ class RooUnfoldResponse-;

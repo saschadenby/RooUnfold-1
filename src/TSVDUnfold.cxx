@@ -71,7 +71,8 @@ End_Html */
 using namespace std;
 
 //_______________________________________________________________________
-RooUnfoldSvd::SVDUnfold::SVDUnfold( const TH1 *bdat, const TH1 *bini, const TH1 *xini, const TH2 *Adet )
+template<class Hist,class Hist2D>
+RooUnfoldSvdT<Hist,Hist2D>::SVDUnfold::SVDUnfold( const Hist *bdat, const Hist *bini, const Hist *xini, const Hist2D *Adet )
   : 
     fNdim       (0),
     fDdim       (2),
@@ -122,7 +123,8 @@ RooUnfoldSvd::SVDUnfold::SVDUnfold( const TH1 *bdat, const TH1 *bini, const TH1 
 
 
 //_______________________________________________________________________
-RooUnfoldSvd::SVDUnfold::SVDUnfold( const TH1 *bdat, TH2* Bcov, const TH1 *bini, const TH1 *xini, const TH2 *Adet )
+template<class Hist,class Hist2D>
+RooUnfoldSvdT<Hist,Hist2D>::SVDUnfold::SVDUnfold( const Hist *bdat, Hist2D* Bcov, const Hist *bini, const Hist *xini, const Hist2D *Adet )
   :
      fNdim       (0),
      fDdim       (2),
@@ -168,7 +170,8 @@ RooUnfoldSvd::SVDUnfold::SVDUnfold( const TH1 *bdat, TH2* Bcov, const TH1 *bini,
 }
 
 //_______________________________________________________________________
-RooUnfoldSvd::SVDUnfold::SVDUnfold( const SVDUnfold& other )
+template<class Hist,class Hist2D>
+RooUnfoldSvdT<Hist,Hist2D>::SVDUnfold::SVDUnfold( const SVDUnfold& other )
    :
      fNdim       (other.fNdim),
      fDdim       (other.fDdim),
@@ -192,7 +195,8 @@ RooUnfoldSvd::SVDUnfold::SVDUnfold( const SVDUnfold& other )
 }
 
 //_______________________________________________________________________
-RooUnfoldSvd::SVDUnfold::~SVDUnfold()
+template<class Hist,class Hist2D>
+RooUnfoldSvdT<Hist,Hist2D>::SVDUnfold::~SVDUnfold()
 {
    // Destructor
    if(fToyhisto){
@@ -232,7 +236,8 @@ RooUnfoldSvd::SVDUnfold::~SVDUnfold()
 }
 
 //_______________________________________________________________________
-TH1* RooUnfoldSvd::SVDUnfold::Unfold( Int_t kreg )
+template<class Hist,class Hist2D>
+Hist* RooUnfoldSvdT<Hist,Hist2D>::SVDUnfold::Unfold( Int_t kreg )
 {
    // Perform the unfolding with regularisation parameter kreg
    fKReg = kreg;
@@ -394,7 +399,8 @@ TH1* RooUnfoldSvd::SVDUnfold::Unfold( Int_t kreg )
 }
 
 //_______________________________________________________________________
-TH2* RooUnfoldSvd::SVDUnfold::GetUnfoldCovMatrix( const TH2* cov, Int_t ntoys, Int_t seed )
+template<class Hist,class Hist2D>
+Hist2D* RooUnfoldSvdT<Hist,Hist2D>::SVDUnfold::GetUnfoldCovMatrix( const Hist2D* cov, Int_t ntoys, Int_t seed )
 {
    // Determine for given input error matrix covariance matrix of unfolded 
    // spectrum from toy simulation given the passed covariance matrix on measured spectrum
@@ -502,7 +508,8 @@ TH2* RooUnfoldSvd::SVDUnfold::GetUnfoldCovMatrix( const TH2* cov, Int_t ntoys, I
 }
 
 //_______________________________________________________________________
-TH2* RooUnfoldSvd::SVDUnfold::GetAdetCovMatrix( Int_t ntoys, Int_t seed, const TH2* uncmat )
+template<class Hist,class Hist2D>
+Hist2D* RooUnfoldSvdT<Hist,Hist2D>::SVDUnfold::GetAdetCovMatrix( Int_t ntoys, Int_t seed, const Hist2D* uncmat )
 {
    // Determine covariance matrix of unfolded spectrum from finite statistics in 
    // response matrix using pseudo experiments
@@ -591,7 +598,8 @@ TH2* RooUnfoldSvd::SVDUnfold::GetAdetCovMatrix( Int_t ntoys, Int_t seed, const T
 }
 
 //_______________________________________________________________________
-TH1* RooUnfoldSvd::SVDUnfold::GetD() const 
+template<class Hist,class Hist2D>
+Hist* RooUnfoldSvdT<Hist,Hist2D>::SVDUnfold::GetD() const 
 { 
    // Returns d vector (for choosing appropriate regularisation)
    for (int i=1; i<=fDHist->GetNbinsX(); i++) {
@@ -601,14 +609,16 @@ TH1* RooUnfoldSvd::SVDUnfold::GetD() const
 }
 
 //_______________________________________________________________________
-TH1* RooUnfoldSvd::SVDUnfold::GetSV() const 
+template<class Hist,class Hist2D>
+Hist* RooUnfoldSvdT<Hist,Hist2D>::SVDUnfold::GetSV() const 
 { 
    // Returns singular values vector
    return fSVHist; 
 }
 
 //_______________________________________________________________________
-TH2* RooUnfoldSvd::SVDUnfold::GetXtau() const 
+template<class Hist,class Hist2D>
+Hist2D* RooUnfoldSvdT<Hist,Hist2D>::SVDUnfold::GetXtau() const 
 { 
    // Returns the computed regularized covariance matrix corresponding to total uncertainties on measured spectrum as passed in the constructor.
   // Note that this covariance matrix will not contain the effects of forced normalization if spectrum is normalized to unit area.
@@ -616,42 +626,48 @@ TH2* RooUnfoldSvd::SVDUnfold::GetXtau() const
 }
 
 //_______________________________________________________________________
-TH2* RooUnfoldSvd::SVDUnfold::GetXinv() const 
+template<class Hist,class Hist2D>
+Hist2D* RooUnfoldSvdT<Hist,Hist2D>::SVDUnfold::GetXinv() const 
 { 
    // Returns the computed inverse of the covariance matrix
    return fXinv; 
 }
 
 //_______________________________________________________________________
-TH2* RooUnfoldSvd::SVDUnfold::GetBCov() const 
+template<class Hist,class Hist2D>
+Hist2D* RooUnfoldSvdT<Hist,Hist2D>::SVDUnfold::GetBCov() const 
 { 
    // Returns the covariance matrix
    return fBcov; 
 }
 
 //_______________________________________________________________________
-void RooUnfoldSvd::SVDUnfold::H2V( const TH1* histo, TVectorD& vec )
+template<class Hist,class Hist2D>
+void RooUnfoldSvdT<Hist,Hist2D>::SVDUnfold::H2V( const Hist* histo, TVectorD& vec )
 {
    // Fill 1D histogram into vector
    for (Int_t i=0; i<histo->GetNbinsX(); i++) vec(i) = histo->GetBinContent(i+1);
 }
 
 //_______________________________________________________________________
-void RooUnfoldSvd::SVDUnfold::H2Verr( const TH1* histo, TVectorD& vec )
+template<class Hist,class Hist2D>
+void RooUnfoldSvdT<Hist,Hist2D>::SVDUnfold::H2Verr( const Hist* histo, TVectorD& vec )
 {
    // Fill 1D histogram errors into vector
    for (Int_t i=0; i<histo->GetNbinsX(); i++) vec(i) = histo->GetBinError(i+1);
 }
 
 //_______________________________________________________________________
-void RooUnfoldSvd::SVDUnfold::V2H( const TVectorD& vec, TH1& histo )
+template<class Hist,class Hist2D>
+void RooUnfoldSvdT<Hist,Hist2D>::SVDUnfold::V2H( const TVectorD& vec, Hist& histo )
 {
    // Fill vector into 1D histogram
    for(Int_t i=0; i<vec.GetNrows(); i++) histo.SetBinContent(i+1, vec(i));
 }
 
 //_______________________________________________________________________
-void RooUnfoldSvd::SVDUnfold::H2M( const TH2* histo, TMatrixD& mat )
+template<class Hist,class Hist2D>
+void RooUnfoldSvdT<Hist,Hist2D>::SVDUnfold::H2M( const Hist2D* histo, TMatrixD& mat )
 {
    // Fill 2D histogram into matrix
    for (Int_t j=0; j<histo->GetNbinsX(); j++) {
@@ -662,7 +678,8 @@ void RooUnfoldSvd::SVDUnfold::H2M( const TH2* histo, TMatrixD& mat )
 }
 
 //_______________________________________________________________________
-void RooUnfoldSvd::SVDUnfold::M2H( const TMatrixD& mat, TH2& histo )
+template<class Hist,class Hist2D>
+void RooUnfoldSvdT<Hist,Hist2D>::SVDUnfold::M2H( const TMatrixD& mat, Hist2D& histo )
 {
    // Fill 2D histogram into matrix
    for (Int_t j=0; j<mat.GetNcols(); j++) {
@@ -673,7 +690,8 @@ void RooUnfoldSvd::SVDUnfold::M2H( const TMatrixD& mat, TH2& histo )
 }
 
 //_______________________________________________________________________
-TVectorD RooUnfoldSvd::SVDUnfold::VecDiv( const TVectorD& vec1, const TVectorD& vec2, Int_t zero )
+template<class Hist,class Hist2D>
+TVectorD RooUnfoldSvdT<Hist,Hist2D>::SVDUnfold::VecDiv( const TVectorD& vec1, const TVectorD& vec2, Int_t zero )
 {
    // Divide entries of two vectors
    TVectorD quot(vec1.GetNrows());
@@ -688,7 +706,8 @@ TVectorD RooUnfoldSvd::SVDUnfold::VecDiv( const TVectorD& vec1, const TVectorD& 
 }
 
 //_______________________________________________________________________
-TMatrixD RooUnfoldSvd::SVDUnfold::MatDivVec( const TMatrixD& mat, const TVectorD& vec, Int_t zero )
+template<class Hist,class Hist2D>
+TMatrixD RooUnfoldSvdT<Hist,Hist2D>::SVDUnfold::MatDivVec( const TMatrixD& mat, const TVectorD& vec, Int_t zero )
 {
    // Divide matrix entries by vector
    TMatrixD quotmat(mat.GetNrows(), mat.GetNcols());
@@ -705,7 +724,8 @@ TMatrixD RooUnfoldSvd::SVDUnfold::MatDivVec( const TMatrixD& mat, const TVectorD
 }
 
 //_______________________________________________________________________
-TVectorD RooUnfoldSvd::SVDUnfold::CompProd( const TVectorD& vec1, const TVectorD& vec2 )
+template<class Hist,class Hist2D>
+TVectorD RooUnfoldSvdT<Hist,Hist2D>::SVDUnfold::CompProd( const TVectorD& vec1, const TVectorD& vec2 )
 {
    // Multiply entries of two vectors
    TVectorD res(vec1.GetNrows());
@@ -714,14 +734,16 @@ TVectorD RooUnfoldSvd::SVDUnfold::CompProd( const TVectorD& vec1, const TVectorD
 }
 
 //_______________________________________________________________________
-Double_t RooUnfoldSvd::SVDUnfold::GetCurvature(const TVectorD& vec, const TMatrixD& curv) 
+template<class Hist,class Hist2D>
+Double_t RooUnfoldSvdT<Hist,Hist2D>::SVDUnfold::GetCurvature(const TVectorD& vec, const TMatrixD& curv) 
 {      
    // Compute curvature of vector
    return vec*(curv*vec);
 }
 
 //_______________________________________________________________________
-void RooUnfoldSvd::SVDUnfold::FillCurvatureMatrix( TMatrixD& tCurv, TMatrixD& tC ) const
+template<class Hist,class Hist2D>
+void RooUnfoldSvdT<Hist,Hist2D>::SVDUnfold::FillCurvatureMatrix( TMatrixD& tCurv, TMatrixD& tC ) const
 {
    Double_t eps = 0.00001;
 
@@ -808,7 +830,8 @@ void RooUnfoldSvd::SVDUnfold::FillCurvatureMatrix( TMatrixD& tCurv, TMatrixD& tC
 }
 
 //_______________________________________________________________________
-void RooUnfoldSvd::SVDUnfold::InitHistos( )
+template<class Hist,class Hist2D>
+void RooUnfoldSvdT<Hist,Hist2D>::SVDUnfold::InitHistos( )
 {
 
    fDHist = new TH1D( "dd", "d vector after orthogonal transformation", fNdim, 0, fNdim );  
@@ -827,7 +850,8 @@ void RooUnfoldSvd::SVDUnfold::InitHistos( )
 }
 
 //_______________________________________________________________________
-void RooUnfoldSvd::SVDUnfold::RegularisedSymMatInvert( TMatrixDSym& mat, Double_t eps )
+template<class Hist,class Hist2D>
+void RooUnfoldSvdT<Hist,Hist2D>::SVDUnfold::RegularisedSymMatInvert( TMatrixDSym& mat, Double_t eps )
 {
    // naive regularised inversion cuts off small elements
 
@@ -880,7 +904,8 @@ void RooUnfoldSvd::SVDUnfold::RegularisedSymMatInvert( TMatrixDSym& mat, Double_
 }
 
 //_______________________________________________________________________
-Double_t RooUnfoldSvd::SVDUnfold::ComputeChiSquared( const TH1& truspec, const TH1& unfspec)
+template<class Hist,class Hist2D>
+Double_t RooUnfoldSvdT<Hist,Hist2D>::SVDUnfold::ComputeChiSquared( const Hist& truspec, const Hist& unfspec)
 {
    // Helper routine to compute chi-squared between distributions using the computed inverse of the covariance matrix for the unfolded spectrum as given in paper.
    UInt_t n = truspec.GetNbinsX();
@@ -897,3 +922,5 @@ Double_t RooUnfoldSvd::SVDUnfold::ComputeChiSquared( const TH1& truspec, const T
    return chi2;
 }
 
+template class RooUnfoldSvdT<TH1,TH2>::SVDUnfold;
+ClassImp (RooUnfoldSvd::SVDUnfold);
