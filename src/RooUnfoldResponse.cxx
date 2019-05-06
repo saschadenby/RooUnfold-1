@@ -1134,4 +1134,4 @@ template class RooUnfoldResponseT<TH1,TH2>;
 ClassImp (RooUnfoldResponse);
 
 template class RooUnfoldResponseT<RooAbsReal,RooAbsReal>;
-ClassImp (RooAbsRealUnfoldResponse);
+ClassImp (RooFitUnfoldResponse);

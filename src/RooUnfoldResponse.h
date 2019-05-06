@@ -176,6 +176,6 @@ public:
 };
 
 typedef RooUnfoldResponseT<TH1,TH2> RooUnfoldResponse;
-typedef RooUnfoldResponseT<RooAbsReal,RooAbsReal> RooAbsRealUnfoldResponse;
+typedef RooUnfoldResponseT<RooAbsReal,RooAbsReal> RooFitUnfoldResponse;
 
 #endif

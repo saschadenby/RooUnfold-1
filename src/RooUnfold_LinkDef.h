@@ -5,12 +5,13 @@
 #pragma link off all functions;
 
 #pragma link C++ class RooUnfold-;
-#pragma link C++ class RooAbsRealUnfold-;
+#pragma link C++ class RooFitUnfold-;
 #pragma link C++ class RooUnfoldBayes+;
 #pragma link C++ class RooUnfoldSvd-;
 #pragma link C++ class RooUnfoldBinByBin+;
+#pragma link C++ class RooFitUnfoldBinByBin+;
 #pragma link C++ class RooUnfoldResponse-;
-#pragma link C++ class RooAbsRealUnfoldResponse-;
+#pragma link C++ class RooFitUnfoldResponse-;
 #pragma link C++ class RooUnfoldErrors+;
 #pragma link C++ class RooUnfoldParms+;
 #pragma link C++ class RooUnfoldInvert+;

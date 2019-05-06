@@ -164,5 +164,5 @@ public:
 };
 
 typedef RooUnfoldT<TH1,TH2> RooUnfold;
-typedef RooUnfoldT<RooAbsReal,RooAbsReal> RooAbsRealUnfold;
+typedef RooUnfoldT<RooAbsReal,RooAbsReal> RooFitUnfold;
 #endif

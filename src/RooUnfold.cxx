@@ -1154,6 +1154,6 @@ template class RooUnfoldT<TH1,TH2>;
 ClassImp (RooUnfold);
 
 template class RooUnfoldT<RooAbsReal,RooAbsReal>;
-ClassImp (RooAbsRealUnfold);
+ClassImp (RooFitUnfold);
 
 
