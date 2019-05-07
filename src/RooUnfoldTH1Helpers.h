@@ -14,8 +14,8 @@ namespace RooUnfolding {
   int sumW2N(const TH1* hist);
   int entries(const TH1* hist);
   int dim(const TH1* hist);
-  int nBins(const TH1* hist);
-  int nBins(const TH1* hist, RooUnfolding::Dimension d);
+  int nBins(const TH1* hist, bool overflow=false);
+  int nBins(const TH1* hist, RooUnfolding::Dimension d, bool overflow=false);
   int bin(const TH1* h, int i, bool overflow);
   int bin(const TH1* h, int i, int j, bool overflow);
   double binCenter(const TH1*h, int i, RooUnfolding::Dimension d);
@@ -40,9 +40,9 @@ namespace RooUnfolding {
   void setBinContent (TH1* h, int i, int j, double val, bool overflow);
   TH1* h2h1d(const TH1* h, int nb);  
   TH1* h2h1d(const TH2* h, int nb);
-  TVectorD h2v  (const TH1* h);    
-  void h2v  (const TH1* h, TVectorD& v);
-  void h2ve  (const TH1* h, TVectorD& v);  
+  TVectorD h2v  (const TH1* h,bool overflow = false);
+  void h2v  (const TH1* h, TVectorD& v,bool overflow = false);
+  void h2ve  (const TH1* h, TVectorD& v,bool overflow = false);
   void h2m  (const TH2* h, TMatrixD& m);
   void h2me  (const TH2* h, TMatrixD& m);  
   TMatrixD h2m  (const TH2* h);  

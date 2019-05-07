@@ -59,11 +59,11 @@ namespace RooUnfolding {
     // TODO
     return 0;
   }
-  int nBins(const RooAbsReal* hist){
+  int nBins(const RooAbsReal* hist, bool overflow){
     // TODO
     return 0;
   }
-  int nBins(const RooAbsReal* hist, RooUnfolding::Dimension d){
+  int nBins(const RooAbsReal* hist, RooUnfolding::Dimension d, bool overflow){
     // TODO
     return 0;
   }
@@ -165,13 +165,13 @@ namespace RooUnfolding {
   }
 
 
-  TVectorD h2v  (const RooAbsReal* h){
+  TVectorD h2v  (const RooAbsReal* h, bool overflow){
     TVectorD v;
     h2v(h,v);
     return v;    
   }
-  void h2v  (const RooAbsReal* h, TVectorD& v){}
-  void h2ve  (const RooAbsReal* h, TVectorD& v){}    
+  void h2v  (const RooAbsReal* h, TVectorD& v, bool overflow){}
+  void h2ve  (const RooAbsReal* h, TVectorD& v, bool overflow){}    
   void h2me  (const RooAbsReal* h, TMatrixD& m){}
   
   void h2m  (const RooAbsReal* h, TMatrixD& m){

@@ -21,8 +21,8 @@ namespace RooUnfolding {
   RooAbsReal* copy(const RooAbsReal* r, bool reset=false, const char* name = 0, const char* title = 0);
   int entries(const RooAbsReal* hist);
   int dim(const RooAbsReal* hist);
-  int nBins(const RooAbsReal* hist);
-  int nBins(const RooAbsReal* hist, RooUnfolding::Dimension d);
+  int nBins(const RooAbsReal* hist, bool overflow=false);
+  int nBins(const RooAbsReal* hist, RooUnfolding::Dimension d, bool overflow=false);
   double binCenter(const RooAbsReal*h, int i, RooUnfolding::Dimension d);
   double binWidth(const RooAbsReal*h, int i, RooUnfolding::Dimension d);
   double binHighEdge(const RooAbsReal*h, int i, RooUnfolding::Dimension d);
@@ -34,9 +34,9 @@ namespace RooUnfolding {
   void setBinContent (RooAbsReal* h, int i, double val, bool overflow);
   void setBinContent (RooAbsReal* h, int i, int j, double val, bool overflow);
   RooAbsReal* h2h1d(const RooAbsReal* h, int nb);
-  TVectorD h2v  (const RooAbsReal* h);    
-  void h2v  (const RooAbsReal* h, TVectorD& v);
-  void h2ve  (const RooAbsReal* h, TVectorD& v);    
+  TVectorD h2v  (const RooAbsReal* h, bool oveflow=false);    
+  void h2v  (const RooAbsReal* h, TVectorD& v, bool overflow=false);
+  void h2ve  (const RooAbsReal* h, TVectorD& v, bool overflow=false);    
   TMatrixD h2m  (const RooAbsReal* h);
   void h2m  (const RooAbsReal* h, TMatrixD& m);
   void h2me  (const RooAbsReal* h, TMatrixD& m);  

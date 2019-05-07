@@ -359,10 +359,10 @@ TVectorD RooUnfoldSvdT<Hist,Hist2D>::SVDUnfold::UnfoldV( Int_t kreg )
    }
    
    // Get Curvature and also chi2 in case of MC unfolding
-   if (!fToyMode && !fMatToyMode) {
-     std::cout << TString::Format( "Unfolding param: %i",k+1 ) << std::endl;
-     std::cout << TString::Format( "Curvature of weight distribution: %f", GetCurvature( vw, mCurv ) ) << std::endl;
-   }
+//   if (!fToyMode && !fMatToyMode) {
+//     std::cout << TString::Format( "Unfolding param: %i",k+1 ) << std::endl;
+//     std::cout << TString::Format( "Curvature of weight distribution: %f", GetCurvature( vw, mCurv ) ) << std::endl;
+//   }
    return vx;
 }
 

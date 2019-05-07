@@ -1092,8 +1092,10 @@ template<class Hist,class Hist2D>
 const TVectorD&          RooUnfoldT<Hist,Hist2D>::Vmeasured() const
 {
   // Measured distribution as a vector.
-  if (!_vMes)
-    _vMes= RooUnfoldResponseT<Hist,Hist2D>::H2V  (_meas, _res->GetNbinsMeasured(), _overflow);
+  if (!_vMes){
+    _vMes = new TVectorD(_res->GetNbinsMeasured());
+    h2v (_meas, *_vMes, _overflow);
+  }
   return *_vMes;
 }
 
@@ -1102,8 +1104,8 @@ const TVectorD&          RooUnfoldT<Hist,Hist2D>::Emeasured() const
 {
   // Measured errors as a vector.
   if (!_eMes){
-    _eMes = new TVectorD(nBins(_meas,X));
-    h2ve (_meas, *_eMes);
+    _eMes = new TVectorD(_res->GetNbinsMeasured());    
+    h2ve (_meas, *_eMes, _overflow);
   }
   return *_eMes;
 }
