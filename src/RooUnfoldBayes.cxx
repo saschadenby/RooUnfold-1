@@ -36,7 +36,10 @@ END_HTML */
 #include "TH1.h"
 #include "TH2.h"
 
+#include "RooUnfoldHelpers.h"
 #include "RooUnfoldResponse.h"
+
+using namespace RooUnfolding;
 
 using std::min;
 using std::cerr;
@@ -103,7 +106,7 @@ void RooUnfoldBayes::Unfold()
   setup();
   if (verbose() >= 2) {
     Print();
-    RooUnfoldResponse::PrintMatrix(_Nji,"RooUnfoldBayes response matrix (Nji)");
+    printMatrix(_Nji,"RooUnfoldBayes response matrix (Nji)");
   }
   if (verbose() >= 1) cout << "Now unfolding..." << endl;
   unfold();

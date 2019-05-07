@@ -399,7 +399,7 @@ RooUnfoldT<Hist,Hist2D>::GetMeasuredCov() const
 {
   // Get covariance matrix on measured distribution.
   if (_covMes) return *_covMes;
-  const TVectorD& err= Emeasured();
+  const TVectorD& err(Emeasured());
   _covMes= new TMatrixD (_nm,_nm);
   for (Int_t i= 0 ; i<_nm; i++) {
     Double_t e= err[i];
@@ -463,8 +463,8 @@ RooUnfoldT<Hist,Hist2D>::GetErrors()
 template<class Hist,class Hist2D> void
 RooUnfoldT<Hist,Hist2D>::GetCov()
 {
-    //Dummy routine to get covariance matrix. It should be overridden by derived classes.
-  const TMatrixD& covmeas= GetMeasuredCov();
+  //Dummy routine to get covariance matrix. It should be overridden by derived classes.
+  const TMatrixD& covmeas(GetMeasuredCov());
   Int_t nb= _nm < _nt ? _nm : _nt;
   _cov.ResizeTo (_nt, _nt);
   for (int i=0; i<nb; i++)
@@ -526,9 +526,9 @@ RooUnfoldT<Hist,Hist2D>::UnfoldWithErrors (ErrorTreatment withError, bool getWei
       cerr << "-bin histogram does not match "  << nBins(rmeas,X);
       if (dim(rmeas)>=2) cerr << "x" << nBins(rmeas,Y);
       if (dim(rmeas)>=3) cerr << "x" << nBins(rmeas,Z);
-      cerr << "-bin measured histogram from RooUnfoldResponseT<Hist,Hist2D>" << endl;
+      cerr << "-bin measured histogram from RooUnfoldResponse" << endl;
     }
-    Unfold();
+    this->Unfold();
     if (!_unfolded) {
       _fail= true;
       return false;
@@ -636,14 +636,13 @@ RooUnfoldT<Hist,Hist2D>::Hreco (ErrorTreatment withError)
     2: Errors from the square root of of the covariance matrix given by the unfolding
     3: Errors from the square root of the covariance matrix from the variation of the results in toy MC tests
     */
+
   Hist* reco= copy(_res->Htruth(),true,GetName(),GetTitle());
   if (!UnfoldWithErrors (withError)) withError= kNoError;
   if (!_unfolded) return reco;
 
   std::vector<double> values;  
   std::vector<double> errors;
-
-  //Int_t j= RooUnfolding::bin (reco, i, _overflow);
 
   for (Int_t i= 0; i < _nt; i++) {
     values.push_back(_rec(i));
@@ -720,7 +719,7 @@ RooUnfoldT<Hist,Hist2D>::RunToy() const
       c.Decompose();
       TMatrixD U(c.GetU());
       _covL= new TMatrixD (TMatrixD::kTransposed, U);
-      if (_verbose>=2) RooUnfoldResponseT<Hist,Hist2D>::PrintMatrix(*_covL,"decomposed measurement covariance matrix");
+      if (_verbose>=2) printMatrix(*_covL,"decomposed measurement covariance matrix");
     }
     TVectorD newmeas(_nm);
     for (Int_t i= 0; i<_nm; i++) newmeas[i]= gRandom->Gaus(0.0,1.0);
@@ -971,7 +970,7 @@ RooUnfoldT<Hist,Hist2D>::InvertMatrix(const TMatrixD& mat, TMatrixD& inv, const 
 #endif
   if (verbose>=1) {
     TMatrixD I (mat, TMatrixD::kMult, inv);
-    if (verbose>=3) RooUnfoldResponseT<Hist,Hist2D>::PrintMatrix(I,"V*V^-1");
+    if (verbose>=3) printMatrix(I,"V*V^-1");
     Double_t m= 0.0;
     for (Int_t i= 0; i<I.GetNrows(); i++) {
       Double_t d= fabs(I(i,i)-1.0);
@@ -1102,8 +1101,10 @@ template<class Hist,class Hist2D>
 const TVectorD&          RooUnfoldT<Hist,Hist2D>::Emeasured() const
 {
   // Measured errors as a vector.
-  if (!_eMes)
-    _eMes= RooUnfoldResponseT<Hist,Hist2D>::H2VE (_meas, _res->GetNbinsMeasured(), _overflow);
+  if (!_eMes){
+    _eMes = new TVectorD(nBins(_meas,X));
+    h2ve (_meas, *_eMes);
+  }
   return *_eMes;
 }
 

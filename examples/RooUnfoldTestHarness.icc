@@ -42,6 +42,7 @@
 #include "RooUnfoldErrors.h"
 #include "RooUnfoldParms.h"
 #include "RooUnfoldResponse.h"
+#include "RooUnfoldHelpers.h"
 #include "RooUnfold.h"
 #ifdef USE_TUNFOLD_H
 #include "RooUnfoldTUnfold.h"
@@ -412,7 +413,7 @@ Int_t RooUnfoldTestHarness::Unfold ()
     for (Int_t i=0; i<ntbins; i++)
       for (Int_t j=0; j<ntbins; j++)
         errmat(i,j)= covmat(i,j)>=0 ? sqrt(covmat(i,j)) : -sqrt(-covmat(i,j));
-    RooUnfoldResponse::PrintMatrix(errmat,"covariance matrix");
+    RooUnfolding::printMatrix(errmat,"covariance matrix");
   }
 
   // Calculate pulls and residuals

@@ -147,7 +147,6 @@ RooUnfoldSvdT<Hist,Hist2D>::Unfold()
   }
 
   Bool_t oldstat= TH1::AddDirectoryStatus();
-  TH1::AddDirectory (kFALSE);
   this->_meas1d=  this->HistNoOverflow (this->_meas,             this->_overflow);
   this->_train1d= this->HistNoOverflow (this->_res->Hmeasured(), this->_overflow);
   this->_truth1d= this->HistNoOverflow (this->_res->Htruth(),    this->_overflow);
@@ -159,35 +158,27 @@ RooUnfoldSvdT<Hist,Hist2D>::Unfold()
 
   // Subtract fakes from measured distribution
   if (this->_res->FakeEntries()) {
-    TVectorD fakes= this->_res->Vfakes();
+    TVectorD fakes(this->_res->Vfakes());
     Double_t fac= this->_res->Vmeasured().Sum();
     if (fac!=0.0) fac=  this->Vmeasured().Sum() / fac;
     if (this->_verbose>=1) cout << "Subtract " << fac*fakes.Sum() << " fakes from measured distribution" << endl;
     subtract(this->_meas1d,fakes,fac);
   }
 
-  const TMatrixD& cov= this->GetMeasuredCov();
+  const TMatrixD& cov(this->GetMeasuredCov());
 
   if (this->_verbose>=1) cout << "SVD init " << nBins(this->_reshist,X) << " x " << nBins(this->_reshist,Y)
                         << " bins, kreg=" << this->_kreg << endl;
   this->_svd= new SVDUnfold (this->_meas1d, cov, this->_train1d, this->_truth1d, this->_reshist);
 
-  Hist* rechist= this->_svd->Unfold (this->_kreg);
-
   this->_rec.ResizeTo (this->_nt);
-  for (Int_t i= 0; i<this->_nt; i++) {
-    this->_rec[i]= binContent(rechist,i,this->_overflow);
-  }
+  this->_rec = this->_svd->UnfoldV (this->_kreg);
 
   if (this->_verbose>=2) {
-    printTable (cout, this->_truth1d, this->_train1d, 0, this->_meas1d, rechist, this->_nb, this->_nb, kFALSE, kErrors);
-    TMatrixD* resmat= RooUnfoldResponseT<Hist,Hist2D>::H2M (this->_reshist, this->_nb, this->_nb);
-    RooUnfoldResponseT<Hist,Hist2D>::PrintMatrix(*resmat,"SVDUnfold response matrix");
-    delete resmat;
+    printTable (cout, h2v(this->_truth1d), h2v(this->_train1d), h2v(this->_meas1d), this->_rec, this->_nb, this->_nb);
+    TMatrixD resmat(h2m(this->_reshist));
+    printMatrix(resmat,"SVDUnfold response matrix");
   }
-
-  delete rechist;
-  TH1::AddDirectory (oldstat);
 
   this->_unfolded= true;
   this->_haveCov=  false;
@@ -197,7 +188,7 @@ template<class Hist,class Hist2D> void
 RooUnfoldSvdT<Hist,Hist2D>::GetCov()
 {
   if (!this->_svd) return;
-
+  this->_cov.ResizeTo(this->_nb,this->_nb);
   //Get the covariance matrix for statistical uncertainties on the measured distribution
   if (this->_dosys!=2) this->_cov = this->_svd->GetXtau();
   //Get the covariance matrix for statistical uncertainties on the response matrix

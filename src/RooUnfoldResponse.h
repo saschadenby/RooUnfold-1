@@ -29,16 +29,6 @@ class TH2D;
 class TAxis;
 class TCollection;
 
-#ifdef PrintMatrix
-// TMVA in ROOT 6.14/00 added a debugging macro called PrintMatrix in TMVA/DNN/Architectures/Cpu/CpuMatrix.h.
-// This interferes with RooUnfoldResponse::PrintMatrix below when the RooUnfoldResponse dictionary is loaded
-// (eg. if used in CLING or PyROOT). This happens despite RooUnfold and TMVA being entirely independent,
-// but presumably TMVA's macro writes all over the global modulemap.
-// The following #undef seems to work round the issue.
-// See https://sft.its.cern.ch/jira/browse/ROOT-9799 .
-#undef PrintMatrix
-#endif
-
 template<class Hist, class Hist2D>
 class RooUnfoldResponseT : public TNamed {
 
@@ -129,7 +119,6 @@ public:
   static Int_t   FindBin(const Hist*  h, Double_t x);  // return vector index for bin containing (x)
   static Int_t   FindBin(const Hist*  h, Double_t x, Double_t y);  // return vector index for bin containing (x,y)
   static Int_t   FindBin(const Hist*  h, Double_t x, Double_t y, Double_t z);  // return vector index for bin containing (x,y,z)
-  static void PrintMatrix (const TMatrixD& m, const char* name="matrix", const char* format=0, Int_t cols_per_sheet=10);
 
   Hist* ApplyToTruth (const Hist* truth= 0, const char* name= "AppliedResponse") const; // If argument is 0, applies itself to its own truth
   TF1* MakeFoldingFunction (TF1* func, Double_t eps=1e-12, Bool_t verbose=false) const;
