@@ -107,8 +107,7 @@ END_HTML */
 #include "RooUnfoldDagostini.h"
 #endif
 #include "RooUnfoldIds.h"
-#include "RooUnfoldTH1Helpers.h"
-#include "RooUnfoldFitHelpers.h"
+#include "RooUnfoldHelpers.h"
 
 using std::vector;
 using std::cout;
@@ -366,7 +365,7 @@ RooUnfoldT<Hist,Hist2D>::SetMeasured (const TVectorD& meas, const TVectorD& err)
   if (_measmine) {
     delete _measmine;
   }
-  _measmine = RooUnfolding::createHist<Hist>(meas,GetName(),GetTitle(),nBins(orig,X),min(orig,X),max(orig,X),varname(orig,X));
+  _measmine = RooUnfolding::createHist<Hist>(meas,GetName(),GetTitle(),var(orig,X));
   SetMeasured (_measmine);
 }
 
@@ -574,7 +573,7 @@ RooUnfoldT<Hist,Hist2D>::Chi2(const Hist* hTrue,ErrorTreatment DoChi2)
 
     if (!UnfoldWithErrors (DoChi2)) return -1.0;
 
-    TVectorD res = subtract<TVectorD>(_rec,hTrue,_overflow);
+    TVectorD res = subtract<Hist,TVectorD>(_rec,hTrue,_overflow);
 
     Double_t chi2= 0.0;
     if (DoChi2==kCovariance || DoChi2==kCovToy) {
@@ -637,26 +636,29 @@ RooUnfoldT<Hist,Hist2D>::Hreco (ErrorTreatment withError)
     3: Errors from the square root of the covariance matrix from the variation of the results in toy MC tests
     */
 
-  Hist* reco= copy(_res->Htruth(),true,GetName(),GetTitle());
   if (!UnfoldWithErrors (withError)) withError= kNoError;
-  if (!_unfolded) return reco;
+  if (!_unfolded){
+    Hist* reco= copy(_res->Htruth(),true,GetName(),GetTitle());
+    return reco;
+  } else {
 
-  std::vector<double> values;  
-  std::vector<double> errors;
-
-  for (Int_t i= 0; i < _nt; i++) {
-    values.push_back(_rec(i));
-    if        (withError==kErrors){
-      errors.push_back(sqrt( fabs (_variances(i))));
-    } else if (withError==kCovariance){
-      errors.push_back(sqrt (fabs (_cov(i,i))));
-    } else if (withError==kCovToy){
-      errors.push_back(sqrt (fabs (_err_mat(i,i))));
+    TVectorD rec(this->_nt);
+    TVectorD errors(this->_nt);
+    for (Int_t i= 0; i < _nt; i++) {
+      rec[i] = _rec[i];
+      if        (withError==kErrors){
+        errors[i] = (sqrt( fabs (_variances(i))));
+      } else if (withError==kCovariance){
+        errors[i] = (sqrt (fabs (_cov(i,i))));
+      } else if (withError==kCovToy){
+        errors[i] = (sqrt (fabs (_err_mat(i,i))));
+      }
     }
+
+    const Hist* t = _res->Htruth();
+    Hist* reco = createHist<Hist>(rec,errors,t->GetName(),t->GetTitle(),vars(t),_overflow);
+    return reco;
   }
-  setContents(reco,values,errors,_overflow);
-  
-  return reco;
 }
 
 template<class Hist,class Hist2D> void
@@ -1073,8 +1075,7 @@ const TVectorD&          RooUnfoldT<Hist,Hist2D>::Vmeasured() const
 {
   // Measured distribution as a vector.
   if (!_vMes){
-    _vMes = new TVectorD(_res->GetNbinsMeasured());
-    h2v (_meas, *_vMes, _overflow);
+    _vMes = new TVectorD(h2v (_meas, _overflow));
   }
   return *_vMes;
 }
@@ -1084,8 +1085,7 @@ const TVectorD&          RooUnfoldT<Hist,Hist2D>::Emeasured() const
 {
   // Measured errors as a vector.
   if (!_eMes){
-    _eMes = new TVectorD(_res->GetNbinsMeasured());    
-    h2ve (_meas, *_eMes, _overflow);
+    _eMes = new TVectorD(h2ve (_meas, _overflow));
   }
   return *_eMes;
 }

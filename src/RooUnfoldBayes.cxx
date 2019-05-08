@@ -37,8 +37,6 @@ END_HTML */
 #include "TH2.h"
 
 #include "RooUnfoldHelpers.h"
-#include "RooUnfoldTH1Helpers.h"
-#include "RooUnfoldFitHelpers.h"
 #include "RooUnfoldResponse.h"
 
 using namespace RooUnfolding;
@@ -159,7 +157,8 @@ RooUnfoldBayesT<Hist,Hist2D>::setup()
   this->_nCi= this->_res->Vtruth();
 
   this->_Nji.ResizeTo(this->_ne,this->_nt);
-  h2m (this->_res->Hresponse(), this->_Nji, this->_overflow);   // don't normalise, which is what this->_res->Mresponse() would give us
+
+  h2m(this->_res->Hresponse(), this->_Nji, this->_overflow);   // don't normalise, which is what this->_res->Mresponse() would give us
 
   if (this->_res->FakeEntries()) {
     TVectorD fakes= this->_res->Vfakes();

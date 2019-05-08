@@ -1,4 +1,4 @@
-#include "RooUnfoldTH1Helpers.h"
+#include "RooUnfoldHelpers.h"
 
 #include <iostream>
 #include <ostream>
@@ -8,6 +8,11 @@
 #include "TH1.h"
 #include "TH2.h"
 #include "TH3.h"
+namespace RooUnfolding {
+  template<> int dim<TH1>(const TH1* hist){
+    return hist->GetDimension();
+  }
+}
 
 namespace{
   const TAxis* getAxis(const TH1* h, RooUnfolding::Dimension d){
@@ -34,29 +39,48 @@ namespace{
 }
 
 namespace RooUnfolding {
-  void reset(TH1* h){
+  template<> void reset<TH1>(TH1* h){
     h->Reset();
   }
-  int findBin(const TH1* h, double x, RooUnfolding::Dimension d){
+  template<> int findBin<TH1>(const TH1* h, double x, RooUnfolding::Dimension d){
     return getAxis(h,d)->FindBin(x);
   }
-  double min(const TH1* hist, RooUnfolding::Dimension d){
+
+  template<> double min<TH1>(const TH1* hist, RooUnfolding::Dimension d){
     return getAxis(hist,d)->GetXmin();
   }
-  double max(const TH1* hist, RooUnfolding::Dimension d){
+  template<> double max<TH1>(const TH1* hist, RooUnfolding::Dimension d){
     return getAxis(hist,d)->GetXmax();
   }  
-  int sumW2N(const TH1* hist){
+  template<> double min<TH2>(const TH2* hist, RooUnfolding::Dimension d){
+    return min<TH1>(hist,d);
+  }
+  template<> double max<TH2>(const TH2* hist, RooUnfolding::Dimension d){
+    return max<TH1>(hist,d);
+  }
+  template<> double min<TH3>(const TH3* hist, RooUnfolding::Dimension d){
+    return min<TH1>(hist,d);
+  }
+  template<> double max<TH3>(const TH3* hist, RooUnfolding::Dimension d){
+    return max<TH1>(hist,d);
+  }
+  template<> int sumW2N<TH1>(const TH1* hist){
     return hist->GetSumw2N();
   }
-  int entries(const TH1* hist){
+  template<> int sumW2N<TH2>(const TH2* hist){
+    return sumW2N<TH1>(hist);
+  }
+  template<> int entries<TH1>(const TH1* hist){
     return hist->GetEntries();
   }
-  int dim(const TH1* hist){
-    return hist->GetDimension();
+  template<> int entries<TH2>(const TH2* hist){
+    return hist->GetEntries();
   }
- 
-  int nBins(const TH1* hist, bool overflow){
+  template<> int entries<TH3>(const TH3* hist){
+    return hist->GetEntries();
+  }
+
+  template<> int nBins<TH1>(const TH1* hist, bool overflow){
     int d = dim(hist);
     if(d==1){
       return (hist->GetNbinsX()+2*overflow);
@@ -66,41 +90,68 @@ namespace RooUnfolding {
       return ( (hist->GetNbinsX()+2*overflow) * (hist->GetNbinsY()+2*overflow) * (hist->GetNbinsZ()+2*overflow) );
     }
   }
-  int nBins(const TH1* hist, RooUnfolding::Dimension d, bool overflow){
+  template<> int nBins<TH2>(const TH2* hist, bool overflow){
+    return ( (hist->GetNbinsX()+2*overflow) * (hist->GetNbinsY()+2*overflow) );
+  }
+  template<> int nBins<TH3>(const TH3* hist, bool overflow){
+    return ( (hist->GetNbinsX()+2*overflow) * (hist->GetNbinsY()+2*overflow) * (hist->GetNbinsZ()+2*overflow) );
+  }
+  template<> int nBins<TH1>(const TH1* hist, RooUnfolding::Dimension d, bool overflow){
     const TAxis* ax = getAxis(hist,d);
     return ax->GetNbins()+2*overflow;
   }
-  int bin(const TH1* h, Int_t i, Bool_t overflow)
-  {
+  template<> int nBins<TH2>(const TH2* hist, RooUnfolding::Dimension d, bool overflow){
+    return nBins<TH1>(hist,d,overflow);
+  }
+  template<> int nBins<TH3>(const TH3* hist, RooUnfolding::Dimension d, bool overflow){
+    return nBins<TH1>(hist,d,overflow);
+  }
+  template<> int bin<TH1>(const TH1* h, Int_t i, Bool_t overflow){
     // vector index (0..nx*ny-1) -> multi-dimensional histogram
     // global bin number (0..(nx+2)*(ny+2)-1) skipping under/overflow bins
     return (dim(h)<2) ? i+(overflow ? 0 : 1) : binDim(h,i);
   }
-  int bin(const TH1* h, int i, int j, Bool_t overflow)
+  template<> int bin<TH2>(const TH2* h, Int_t i, Bool_t overflow){
+    // vector index (0..nx*ny-1) -> multi-dimensional histogram
+    // global bin number (0..(nx+2)*(ny+2)-1) skipping under/overflow bins
+    return binDim(h,i);
+  }
+  template<> int bin<TH1>(const TH1* h, int i, int j, Bool_t overflow)
   {
     return h->GetBin(i,j);
   }
-  double binCenter(const TH1*h, int i, RooUnfolding::Dimension d){
+  template<> int bin<TH2>(const TH2* h, int i, int j, Bool_t overflow)
+  {
+    return h->GetBin(i,j);
+  }
+
+  template<> double binCenter<TH1>(const TH1*h, int i, RooUnfolding::Dimension d){
     const TAxis* ax = getAxis(h,d);
     return ax->GetBinCenter(i);
   }
-  double binWidth(const TH1*h, int i, RooUnfolding::Dimension d){
+  template<> double binCenter<TH2>(const TH2*h, int i, RooUnfolding::Dimension d){
+    return binCenter<TH1>(h,i,d);
+  }
+  template<> double binWidth<TH1>(const TH1*h, int i, RooUnfolding::Dimension d){
     const TAxis* ax = getAxis(h,d);
     return ax->GetBinWidth(i);
   }
-  double binHighEdge(const TH1*h, int i, RooUnfolding::Dimension d){
+  template<> double binHighEdge<TH1>(const TH1*h, int i, RooUnfolding::Dimension d){
     const TAxis* ax = getAxis(h,d);
     return ax->GetBinUpEdge(i);
   }
-  double binLowEdge(const TH1*h, int i, RooUnfolding::Dimension d){
+  template<> double binLowEdge<TH1>(const TH1*h, int i, RooUnfolding::Dimension d){
     const TAxis* ax = getAxis(h,d);
     return ax->GetBinLowEdge(i);
   }
   
-  void add(TH1* hista, const TH1* histb){
+  template<> void add<TH1>(TH1* hista, const TH1* histb){
     hista->Add(histb);
   }
-  void projectY(TH2* _res, TH1* _tru, bool overflow){
+  template<> void add<TH2>(TH2* hista, const TH2* histb){
+    add<TH1>(hista,histb);
+  }
+  template<> void projectY<TH1>(TH2* _res, TH1* _tru, bool overflow){
     Int_t s= _res->GetSumw2N();
     for (Int_t j= 1-overflow; j<_res->GetNbinsY()+1+overflow; j++) {
       Double_t ntru= 0.0, wtru= 0.0;
@@ -108,12 +159,12 @@ namespace RooUnfolding {
         ntru +=      _res->GetBinContent (i, j);
         if (s) wtru += pow (_res->GetBinError   (i, j), 2);
       }
-      Int_t b= bin(_tru, j, overflow);
+      Int_t b= bin<TH1>(_tru, j, overflow);
       _tru->SetBinContent (b,      ntru);
       if (s) _tru->SetBinError   (b, sqrt(wtru));
     }
   }
-  void projectX(TH2* _res, TH1* _mes, bool overflow){
+  template<> void projectX<TH1>(TH2* _res, TH1* _mes, bool overflow){
     Int_t s= _res->GetSumw2N();
     for (Int_t i= 1-overflow; i<_res->GetNbinsX()+1+overflow; i++) {
       Double_t nmes= 0.0, wmes= 0.0;
@@ -126,7 +177,7 @@ namespace RooUnfolding {
       if (s) _mes->SetBinError   (b, sqrt(wmes));
     }
   }
-  void subtractProjectX(TH2* _res, TH1* _mes, TH1* _fak, bool overflow){
+  template<> void subtractProjectX<TH1>(TH2* _res, TH1* _mes, TH1* _fak, bool overflow){
     Int_t s= _res->GetSumw2N();
     Int_t sm= _mes->GetSumw2N(), nfake=0;
     for (Int_t i= 1-overflow; i<_res->GetNbinsX()+1+overflow; i++) {
@@ -148,19 +199,19 @@ namespace RooUnfolding {
     _fak->SetEntries (nfake);  // 0 entries if 0 fakes
 #endif    
   }
-  int fill(TH1* hist, double x, double w){
+  template<> int fill<TH1>(TH1* hist, double x, double w){
     return hist->Fill (x, w);
   }
-  int fill(TH1* hist, double x, double y, double w){
+  template<> int fill<TH1>(TH1* hist, double x, double y, double w){
     return ((TH2*)hist)->Fill (x, y, w);
   }
-  int fill(TH1* hist, double x, double y, double z, double w){
+  template<> int fill<TH1>(TH1* hist, double x, double y, double z, double w){
     return ((TH3*)hist)->Fill (x, y, z, w);
   }    
-  int fill(TH2* hist, double x, double y, double w){
+  template<> int fill<TH2>(TH2* hist, double x, double y, double w){
     return hist->Fill (x, y, w);
   } 
-  TH1* copy(const TH1* orighist, bool reset, const char* name, const char* title){
+  template<> TH1* copy<TH1>(const TH1* orighist, bool reset, const char* name, const char* title){
     Bool_t oldstat= TH1::AddDirectoryStatus();
     TH1::AddDirectory (kFALSE);
     TH1* hist = (TH1*)(orighist ->Clone());
@@ -170,7 +221,7 @@ namespace RooUnfolding {
     return hist;
     TH1::AddDirectory (oldstat);
   }
-  TH2* copy(const TH2* orighist, bool reset, const char* name, const char* title){
+  template<> TH2* copy<TH2>(const TH2* orighist, bool reset, const char* name, const char* title){
     Bool_t oldstat= TH1::AddDirectoryStatus();
     TH1::AddDirectory (kFALSE);
     TH2* hist = (TH2*)(orighist ->Clone());
@@ -180,8 +231,8 @@ namespace RooUnfolding {
     return hist;
     TH1::AddDirectory (oldstat);
   }  
-  void binXYZ(const TH1* tru, int i, int& jx, int& jy, int& jz){
-    Int_t j= RooUnfolding::bin(tru, i, false);
+  template<> void binXYZ<TH1>(const TH1* tru, int i, int& jx, int& jy, int& jz){
+    Int_t j= RooUnfolding::bin<TH1>(tru, i, false);
     if (dim(tru)>1) tru->GetBinXYZ (j, jx, jy, jz);
     else {
       jx = j;
@@ -189,52 +240,25 @@ namespace RooUnfolding {
       jz = 0;
     }
   }
-  double binError(const TH1* h, Int_t i, Bool_t overflow)
+  template<> double binError<TH1>(const TH1* h, Int_t i, Bool_t overflow)
   {
     // Bin error   by vector index
     return h->GetBinError   (bin (h, i, overflow));
   }
-  double binContent (const TH1* h, Int_t i, Bool_t overflow)
+  template<> double binContent<TH1> (const TH1* h, Int_t i, Bool_t overflow)
   {
     // Bin content by vector index
     return h->GetBinContent (bin (h, i, overflow));
   }
-  double binContent (const TH1* h, int i, int j, Bool_t overflow)
+  template<> double binContent<TH1> (const TH1* h, int i, int j, Bool_t overflow)
   {
     // Bin content by vector index
     return h->GetBinContent (bin (h, i, j, overflow));
   }
-  void setBinContent (TH1* h, int i, double val, Bool_t overflow)
-  {
-    // Bin content by vector index
-    h->SetBinContent (bin (h, i, overflow), val);
-  }
-  void setBinContent (TH1* h, int i, int j, double val, Bool_t overflow)
-  {
-    // Bin content by vector index
-    h->SetBinContent (bin (h, i, j, overflow), val);
-  }
-
-  template<>  
-  TH2* createHist<TH2>(const char* name, const char* title, int nbinsx, double xmin, double xmax, const char* xname, int nbinsy, double ymin, double ymax, const char* yname){
-    Bool_t oldstat= TH1::AddDirectoryStatus();
-    TH1::AddDirectory (kFALSE);
-    TH2* hist = new TH2D (name,title, nbinsx, xmin, xmax, nbinsy, ymin, ymax);
-    TH1::AddDirectory (oldstat);
-    return hist;
-  }
-  template<> TH1* createHist<TH1>(const char* name, const char* title, int nbinsx, double xmin, double xmax, const char* xname){
-    Bool_t oldstat= TH1::AddDirectoryStatus();
-    TH1::AddDirectory (kFALSE);
-    TH1* hist = new TH1D (name,title, nbinsx, xmin, xmax);
-    TH1::AddDirectory (oldstat);
-    return hist;
-  }
-  TH1* h2h1d(const TH1* h, int nb){
+  template<> TH1* h2h1d<TH1,TH2>(const TH1* h, int nb){
     return dynamic_cast<TH1*>(h->Clone());
-  }
-  
-  TH1* h2h1d(const TH2* h, int nb){
+  }  
+  template<> TH1* h2h1d<TH1,TH2>(const TH2* h, int nb){
     TH1* h1d= new TH1F(h->GetName(), h->GetTitle(), nb, 0.0, 1.0);
     Int_t s= h->GetSumw2N();
     for (Int_t i= 0; i < nb; i++) {
@@ -244,81 +268,64 @@ namespace RooUnfolding {
     }
     return h1d;
   }
-  TMatrixD h2m  (const TH2* h,bool overflow){
-    // Returns Matrix of values of bins in a 2D input histogram
-    TMatrixD m(h->GetNbinsX()+2*overflow,h->GetNbinsY()+2*overflow);
-    h2m(h,m,overflow);
-    return m;
+
+  template<> void h2mNorm<TH1,TH2>  (const TH2* h, TMatrixD& m, const TH1* norm, bool overflow){
+    // sets Matrix to values of bins in a 2D input histogram
+    m.ResizeTo(h->GetNbinsX()+2*overflow,h->GetNbinsY()+2*overflow);
+    for (Int_t j= 0; j < h->GetNbinsY()+2*overflow; ++j) {
+      double fac = 1.;
+      if (norm){
+        fac= norm->GetBinContent(j);
+        if (fac != 0.0) fac= 1.0/fac;
+      }
+      for (Int_t i= 0; i < h->GetNbinsX()+2*overflow; ++i) {
+        m(i,j)= h->GetBinContent(i+!overflow,j+!overflow) * fac;
+      }
+    }
   }
-  TMatrixD h2me  (const TH2* h,bool overflow){
-    // Returns Matrix of values of bins in a 2D input histogram
-    TMatrixD m(h->GetNbinsX()+2*overflow,h->GetNbinsY()+2*overflow);
-    h2me(h,m,overflow);
-    return m;
+  template<> void h2meNorm<TH1,TH2>  (const TH2* h, TMatrixD& m, const TH1* norm, bool overflow){
+    // sets Matrix to values of bins in a 2D input histogram
+    m.ResizeTo(h->GetNbinsX()+2*overflow,h->GetNbinsY()+2*overflow);
+    for (Int_t j= 0; j < h->GetNbinsY()+2*overflow; ++j) {
+      double fac = 1.;
+      if (norm){
+        fac= norm->GetBinContent(j);
+        if (fac != 0.0) fac= 1.0/fac;
+      }
+      for (Int_t i= 0; i < h->GetNbinsX()+2*overflow; ++i) {
+        m(i,j)= h->GetBinContent(i+!overflow,j+!overflow) * fac;
+      }
+    }
   }
-  TMatrixD h2mNorm  (const TH2* h, const TH1* norm, bool overflow){
+  template<> TMatrixD h2mNorm<TH1,TH2>  (const TH2* h, const TH1* norm, bool overflow){
     // Returns Matrix of values of bins in a 2D input histogram
     TMatrixD m(h->GetNbinsX()+2*overflow,h->GetNbinsY()+2*overflow);
     h2mNorm(h,m,norm,overflow);
     return m;
   }
-  TMatrixD h2meNorm  (const TH2* h, const TH1* norm, bool overflow){
+  template<> TMatrixD h2meNorm<TH1,TH2>  (const TH2* h, const TH1* norm, bool overflow){
     // Returns Matrix of values of bins in a 2D input histogram
     TMatrixD m(h->GetNbinsX()+2*overflow,h->GetNbinsY()+2*overflow);
     h2meNorm(h,m,norm,overflow);
     return m;
   }
-  void h2m  (const TH2* h, TMatrixD& m, bool overflow){
-    // sets Matrix to errors of bins in a 2D input histogram
-    h2mNorm(h,m,NULL,overflow);
+  template<> void h2m  (const TH2* h, TMatrixD& m, bool overflow) { h2mNorm (h,m,(const TH1*)NULL,overflow); }
+  template<> void h2me  (const TH2* h, TMatrixD& m, bool overflow){ h2meNorm(h,m,(const TH1*)NULL,overflow); };  
+
+  template<> TMatrixD h2m<TH2>  (const TH2* h,bool overflow){
+    // Returns Matrix of values of bins in a 2D input histogram
+    TMatrixD m(h->GetNbinsX()+2*overflow,h->GetNbinsY()+2*overflow);
+    h2m(h,m,overflow);
+    return m;
   }
-  void h2mNorm  (const TH2* h, TMatrixD& m, const TH1* norm, bool overflow){
-    // sets Matrix to values of bins in a 2D input histogram
-    m.ResizeTo(h->GetNbinsX()+2*overflow,h->GetNbinsY()+2*overflow);
-    for (Int_t j= 0; j < h->GetNbinsY()+2*overflow; ++j) {
-      double fac = 1.;
-      if (norm){
-        fac= norm->GetBinContent(j);
-        if (fac != 0.0) fac= 1.0/fac;
-      }
-      for (Int_t i= 0; i < h->GetNbinsX()+2*overflow; ++i) {
-        m(i,j)= h->GetBinContent(i+!overflow,j+!overflow) * fac;
-      }
-    }
-  }
-  void h2me  (const TH2* h, TMatrixD& m, bool overflow){
-    // sets Matrix to errors of bins in a 2D input histogram
-    h2meNorm(h,m,NULL,overflow);
-  }
-  void h2meNorm  (const TH2* h, TMatrixD& m, const TH1* norm, bool overflow){
-    // sets Matrix to values of bins in a 2D input histogram
-    m.ResizeTo(h->GetNbinsX()+2*overflow,h->GetNbinsY()+2*overflow);
-    for (Int_t j= 0; j < h->GetNbinsY()+2*overflow; ++j) {
-      double fac = 1.;
-      if (norm){
-        fac= norm->GetBinContent(j);
-        if (fac != 0.0) fac= 1.0/fac;
-      }
-      for (Int_t i= 0; i < h->GetNbinsX()+2*overflow; ++i) {
-        m(i,j)= h->GetBinContent(i+!overflow,j+!overflow) * fac;
-      }
-    }
+  template<> TMatrixD h2me<TH2>  (const TH2* h,bool overflow){
+    // Returns Matrix of values of bins in a 2D input histogram
+    TMatrixD m(h->GetNbinsX()+2*overflow,h->GetNbinsY()+2*overflow);
+    h2me(h,m,overflow);
+    return m;
   }
 
-  TVectorD h2v  (const TH1* h, bool overflow){
-    // Returns Vector of values of bins in an input histogram
-    TVectorD v(nBins(h,overflow));
-    h2v(h,v,overflow);
-    return v;
-  }
-  TVectorD h2ve  (const TH1* h, bool overflow){
-    // Returns Vector of values of bins in an input histogram
-    TVectorD v(nBins(h,overflow));
-    h2ve(h,v,overflow);
-    return v;
-  }
-  
-  void h2v  (const TH1* h, TVectorD& v, bool overflow){
+  template<> void h2v<TH1>  (const TH1* h, TVectorD& v, bool overflow){
     // sets Vector to values of bins in an input histogram
     int nbinstotal = nBins(h,true);
     v.ResizeTo(nBins(h,overflow));
@@ -331,7 +338,7 @@ namespace RooUnfolding {
       ++n;
     }
   }
-  void h2ve  (const TH1* h, TVectorD& v, bool overflow){
+  template<> void h2ve<TH1>  (const TH1* h, TVectorD& v, bool overflow){
     // sets Vector to values of bins in an input histogram
     int nbinstotal = nBins(h,true);
     v.ResizeTo(nBins(h,overflow));
@@ -344,10 +351,21 @@ namespace RooUnfolding {
       ++n;
     }  
   }    
- 
-
-  TH2* copyHistogram(const TH2* h, bool includeOverflow){
-    Int_t nx= nBins(h,RooUnfolding::X), ny= nBins(h,RooUnfolding::Y), s= sumW2N(h);
+  template<> TVectorD h2v<TH1>  (const TH1* h, bool overflow){
+    // Returns Vector of values of bins in an input histogram
+    TVectorD v(nBins(h,overflow));
+    h2v(h,v,overflow);
+    return v;
+  }
+  template<> TVectorD h2ve<TH1>  (const TH1* h, bool overflow){
+    // Returns Vector of values of bins in an input histogram
+    TVectorD v(nBins(h,overflow));
+    h2ve(h,v,overflow);
+    return v;
+  }
+  
+  template<> TH2* copyHistogram<TH2>(const TH2* h, bool includeOverflow){
+    Int_t nx= nBins(h,RooUnfolding::X), ny= nBins(h,RooUnfolding::Y), s= h->GetSumw2N();
     if (includeOverflow) {  // implies truth/measured both 1D
       Double_t xlo= min(h,X), xhi= max(h,X), xb= (xhi-xlo)/nx;
       Double_t ylo= min(h,Y), yhi= max(h,Y), yb= (yhi-ylo)/ny;
@@ -385,29 +403,92 @@ namespace RooUnfolding {
       return hx;
     }
   }
-  template<> TH1* createHist<TH1>(const TVectorD& v, const char* name, const char* title, int nb, double min, double max, const char* xname, bool overflow){  
+  template<> TH1* createHist<TH1>(const char* name, const char* title, const std::vector<Variable>& x){
+    Bool_t oldstat= TH1::AddDirectoryStatus();
+    TH1::AddDirectory (kFALSE);
+    TH1* hist = NULL;
+    if(x.size() == 1){
+      hist = new TH1D (name,title, x[0]._nBins, x[0]._min, x[0]._max);
+    } else if(x.size() == 2){
+      hist = new TH2D (name,title, x[0]._nBins, x[0]._min, x[0]._max, x[1]._nBins, x[1]._min, x[1]._max);
+    } else if(x.size() == 3){
+      hist = new TH3D (name,title, x[0]._nBins, x[0]._min, x[0]._max, x[1]._nBins, x[1]._min, x[1]._max, x[2]._nBins, x[2]._min, x[2]._max);
+    } else {
+      throw std::runtime_error(TString::Format("invalid dimensionality for ROOT histogram: %d",(int)x.size()).Data());
+    }
+    TH1::AddDirectory (oldstat);
+    return hist;
+  }
+  template<> TH1* createHist<TH1>(const TVectorD& v, const char* name, const char* title, const std::vector<Variable>& x, bool overflow){  
     // Sets the bin content of the histogram as that element of the input vector
-    TH1* h = createHist<TH1>(name,title,nb,min,max,xname);
-    if (overflow) nb += 2;
+    int nb = v.GetNrows();
+    TH1* h = createHist<TH1>(name,title,x);
     for (Int_t i= 0; i < nb; i++) {
-      Int_t j= RooUnfolding::bin(h, i, overflow);
+      Int_t j= RooUnfolding::bin<TH1>(h, i, overflow);
       h->SetBinContent (j, v(i));
     }
     return h;
   }
-  const char* varname(const TH1* h, Dimension d){  
+  template<> TH1* createHist<TH1>(const TVectorD& v, const TVectorD& ve, const char* name, const char* title, const std::vector<Variable>& x, bool overflow){  
+    // Sets the bin content of the histogram as that element of the input vector
+    int nb = v.GetNrows();
+    TH1* h = createHist<TH1>(name,title,x);
+    if (overflow) nb += 2;
+    for (Int_t i= 0; i < nb; i++) {
+      Int_t j= RooUnfolding::bin<TH1>(h, i, overflow);
+      h->SetBinContent (j, v(i));
+      h->SetBinError (j, ve(i));
+    }
+    return h;
+  }
+  template<>  
+  TH2* createHist<TH2>(const char* name, const char* title, const Variable& x, const Variable& y){
+    Bool_t oldstat= TH1::AddDirectoryStatus();
+    TH1::AddDirectory (kFALSE);
+    TH2* hist = new TH2D (name,title, x._nBins, x._min, x._max, y._nBins, y._min, y._max);
+    TH1::AddDirectory (oldstat);
+    return hist;
+  }
+  template<> TH2* createHist<TH2>(const TMatrixD& m, const char* name, const char* title, const Variable& x, const Variable& y){  
+    // Sets the bin content of the histogram as that element of the input vector
+    int nx = m.GetNrows();
+    int ny = m.GetNcols();
+    TH2* h = createHist<TH2>(name,title,x,y);
+    for (Int_t i= 0; i < nx; i++) {
+      for (Int_t j= 0; j < nx; j++) {
+        Int_t n= RooUnfolding::bin<TH1>(h, i, j, false);
+        h->SetBinContent (n, m(i,j));
+      }
+    }
+    return h;
+  }
+  template<> TH2* createHist<TH2>(const TMatrixD& m, const TMatrixD& me, const char* name, const char* title, const Variable& x, const Variable& y){  
+    // Sets the bin content of the histogram as that element of the input vector
+    int nx = m.GetNrows();
+    int ny = m.GetNcols();
+    TH2* h = createHist<TH2>(name,title,x,y);
+    for (Int_t i= 0; i < nx; i++) {
+      for (Int_t j= 0; j < nx; j++) {
+        Int_t n= RooUnfolding::bin<TH1>(h, i, j, false);
+        h->SetBinContent (n, m(i,j));
+        h->SetBinError   (n, me(i,j));
+      }
+    }
+    return h;
+  }
+
+
+  template<> const char* varname<TH1>(const TH1* h, Dimension d){  
+    return "";
+  }
+  template<> const char* varname<TH2>(const TH2* h, Dimension d){  
+    return "";
+  }
+  template<> const char* varname<TH3>(const TH3* h, Dimension d){  
     return "";
   }
 
-  void setContents(TH1* h,const std::vector<double>& values,const std::vector<double>& errors, bool overflow){
-    for (Int_t i= 0; i < values.size(); i++) {
-      Int_t b= RooUnfolding::bin (h, i, overflow);
-      h->SetBinContent(b,values[i]);
-      h->SetBinError(b,errors[i]);
-    }
-  }
-
-  template<> TVectorD subtract<TVectorD>(const TVectorD& orig, const TH1* hist, bool overflow){
+  template<> TVectorD subtract<TH1,TVectorD>(const TVectorD& orig, const TH1* hist, bool overflow){
     const int n = nBins(hist);
     TVectorD res(n);
     for (Int_t i = 0 ; i < n; i++) {
@@ -419,24 +500,7 @@ namespace RooUnfolding {
     return res;
   }
 
-  void printTable (std::ostream& o, const TVectorD& vTrainTrue, const TVectorD& vTrain,
-                   const TVectorD& vMeas, const TVectorD& vReco,
-                   Int_t nm, Int_t nt)
-  {
-    if (nm<=0) nm= vTrain    .GetNrows();
-    if (nt<=0) nt= vTrainTrue.GetNrows();
-    TH1* hTrainTrue =  RooUnfolding::createHist<TH1>(vTrainTrue, "","", nt,0.0,nt,"xt",false);
-    TH1* hTrain     =  RooUnfolding::createHist<TH1>(vTrain,     "","", nm,0.0,nm,"xm",false);
-    TH1* hMeas      =  RooUnfolding::createHist<TH1>(vMeas,      "","", nm,0.0,nm,"xm",false);
-    TH1* hReco      =  RooUnfolding::createHist<TH1>(vReco,      "","", nt,0.0,nt,"xt",false);
-    printTable (o, hTrainTrue, hTrain, 0, hMeas, hReco, nm, nt);
-    delete hTrainTrue;
-    delete hTrain    ;
-    delete hMeas     ;
-    delete hReco     ;
-  }
-
-  void printTable (std::ostream& o, const TH1* hTrainTrue, const TH1* hTrain,
+  template<> void printTable<TH1> (std::ostream& o, const TH1* hTrainTrue, const TH1* hTrain,
                    const TH1* hTrue, const TH1* hMeas, const TH1* hReco,
                    Int_t _nm, Int_t _nt, Bool_t _overflow,
                    ErrorTreatment withError, Double_t chi_squ)
@@ -471,8 +535,8 @@ namespace RooUnfolding {
     Int_t ndf= 0, first= (_overflow ? 0 : 1);
     Int_t maxbin= _nt < _nm ? _nm : _nt;
     for (Int_t i = 0 ; i < maxbin; i++) {
-      Int_t it= RooUnfolding::bin(hReco, i, _overflow);
-      Int_t im= RooUnfolding::bin(hMeas, i, _overflow);
+      Int_t it= RooUnfolding::bin<TH1>(hReco, i, _overflow);
+      Int_t im= RooUnfolding::bin<TH1>(hMeas, i, _overflow);
 
       if (dim==2 || dim==3) {
         Int_t iw= (dim==2) ? 3 : 2;
@@ -558,10 +622,27 @@ namespace RooUnfolding {
       if (chi_squ<=0.0) std::cerr << "Warning: Invalid Chi^2 Value" << std::endl;
     }
   }
+  void printTable (std::ostream& o, const TVectorD& vTrainTrue, const TVectorD& vTrain,
+                   const TVectorD& vMeas, const TVectorD& vReco,
+                   Int_t nm, Int_t nt)
+  {
+    if (nm<=0) nm= vTrain    .GetNrows();
+    if (nt<=0) nt= vTrainTrue.GetNrows();
+    TH1* hTrainTrue =  RooUnfolding::createHist<TH1>(vTrainTrue, "","",Variable(nt,0.0,nt,"xt"),false);
+    TH1* hTrain     =  RooUnfolding::createHist<TH1>(vTrain,     "","",Variable(nm,0.0,nm,"xm"),false);
+    TH1* hMeas      =  RooUnfolding::createHist<TH1>(vMeas,      "","",Variable(nm,0.0,nm,"xm"),false);
+    TH1* hReco      =  RooUnfolding::createHist<TH1>(vReco,      "","",Variable(nt,0.0,nt,"xt"),false);
+    printTable<TH1> (o, hTrainTrue, hTrain, 0, hMeas, hReco, nm, nt);
+    delete hTrainTrue;
+    delete hTrain    ;
+    delete hMeas     ;
+    delete hReco     ;
+  }
 
-  TH1* histNoOverflow (const TH1* h, Bool_t overflow){
+
+  template<> TH1* histNoOverflow<TH1> (const TH1* h, Bool_t overflow){
     if (!overflow) {   // also for 2D+
-      TH1* hx= h2h1d (h, h->GetNbinsX()*h->GetNbinsY()*h->GetNbinsZ());
+      TH1* hx= h2h1d<TH1,TH2> (h, h->GetNbinsX()*h->GetNbinsY()*h->GetNbinsZ());
       if (!hx) return hx;
       // clear under/overflow bins for cloned Hist
       hx->SetBinContent (0,                 0.0);
@@ -579,8 +660,7 @@ namespace RooUnfolding {
     return hx;
   }
 
-
-  TH1* resize (TH1* h, Int_t nx, Int_t ny, Int_t nz)
+  template<> TH1* resize<TH1> (TH1* h, Int_t nx, Int_t ny, Int_t nz)
   {
     // Resize a histogram with a different number of bins.
     // Contents and errors are copied to the same bin numbers (the overflow bin
@@ -680,20 +760,93 @@ namespace RooUnfolding {
     delete hc;
     return h;
   }
-
-  void printHistogram(const TH1* hist){
-    std::cout << hist->GetName() << " ( " << hist->GetNbinsX() << " bins)" << std::endl;
-    for(int i=0; i<hist->GetNbinsX()+2; ++i){
-      std::cout << hist->GetBinContent(i) << "+/-" << hist->GetBinError(i) << std::endl;
-    }
-
+  template<> TH2* resize<TH2> (TH2* h, Int_t nx, Int_t ny, Int_t nz){
+    resize<TH1>(h,nx,ny,nz);
+    return h;
   }
 
-  void subtract(TH1* hist, const TVectorD& vec, double fac){
+  template<> void printHistogram<TH2>(const TH2* hist){
+    std::cout << hist->GetName() << " ( " << hist->GetNbinsX() << " x  " << hist->GetNbinsY() << " bins)" << std::endl;
+    for(int i=0; i<hist->GetNbinsX()+2; ++i){
+      for(int j=0; j<hist->GetNbinsY()+2; ++j){
+        std::cout << i << " " << j << " " << hist->GetBinContent(i,j) << "+/-" << hist->GetBinError(i,j) << std::endl;
+      }
+    }
+  }
+  template<> void printHistogram<TH3>(const TH3* hist){
+    std::cout << hist->GetName() << " ( " << hist->GetNbinsX() << " x  " << hist->GetNbinsY() << " x  " << hist->GetNbinsZ() <<" bins)" << std::endl;
+    for(int i=0; i<hist->GetNbinsX()+2; ++i){
+      for(int j=0; j<hist->GetNbinsY()+2; ++j){
+        for(int k=0; k<hist->GetNbinsZ()+2; ++k){
+          std::cout << i << " " << j << " " << k << " " << hist->GetBinContent(i,j,k) << "+/-" << hist->GetBinError(i,j,k) << std::endl;
+        }
+      }
+    }
+  }
+  template<> void printHistogram<TH1>(const TH1* hist){
+    if(hist->InheritsFrom(TH3::Class())){
+      printHistogram<TH3>((TH3*)hist);
+    } else if(hist->InheritsFrom(TH2::Class())){
+      printHistogram<TH2>((TH2*)hist);
+    } else {
+      std::cout << hist->GetName() << " ( " << hist->GetNbinsX() << " bins)" << std::endl;
+      for(int i=0; i<hist->GetNbinsX()+2; ++i){
+        std::cout << i << " " << hist->GetBinContent(i) << "+/-" << hist->GetBinError(i) << std::endl;
+      }
+    }
+  }
+
+  template<> void subtract<TH1>(TH1* hist, const TVectorD& vec, double fac){
     for (Int_t i= 1; i<=hist->GetNbinsX()+1; i++){
       hist->SetBinContent (i, hist->GetBinContent(i)-(fac*vec[i-1]));
     }
   }
+
+  template<> int findBin<TH1>(const TH1* h, Double_t x){
+    // Get vector index (0..nx*ny-1) for bin containing (x,y) coordinates
+    Int_t nx=   nBins(h,RooUnfolding::X);
+    Int_t binx= findBin<TH1>(h,x,RooUnfolding::X) - 1;
+    if (binx <  0)  return -1;
+    if (binx >= nx) return nx;
+    return binx;
+  }
+
+  template<> int findBin<TH1>(const TH1* h, Double_t x, Double_t y){
+    // Get vector index (0..nx*ny-1) for bin containing (x,y) coordinates
+    Int_t nx=   nBins(h,RooUnfolding::X);
+    Int_t ny=   nBins(h,RooUnfolding::Y);
+    Int_t binx= findBin<TH1>(h,x,RooUnfolding::X) - 1;
+    if (binx <  0)  return -1;
+    if (binx >= nx) return nx*ny;
+    Int_t biny= findBin<TH1>(h,y,RooUnfolding::Y) - 1;
+    if (biny <  0)  return -1;
+    if (biny >= ny) return nx*ny;
+    return binx + nx*biny;
+  }
+  template<> int findBin<TH2>(const TH2* h, Double_t x, Double_t y){
+    return findBin<TH1>(h,x,y);
+  }
+
+  template<> int findBin<TH1>(const TH1* h, Double_t x, Double_t y, Double_t z){
+    // Get vector index (0..nx*ny-1) for bin containing (x,y) coordinates
+    Int_t nx=   nBins(h,RooUnfolding::X);
+    Int_t ny=   nBins(h,RooUnfolding::Y);
+    Int_t nz=   nBins(h,RooUnfolding::Z);
+    Int_t binx= findBin<TH1>(h,x,RooUnfolding::X) - 1;
+    if (binx <  0)  return -1;
+    if (binx >= nx) return nx*ny*nz;
+    Int_t biny= findBin<TH1>(h,y,RooUnfolding::Y) - 1;
+    if (biny <  0)  return -1;
+    if (biny >= ny) return nx*ny*nz;
+    Int_t binz= findBin<TH1>(h,z,RooUnfolding::Z) - 1;
+    if (binz <  0)  return -1;
+    if (binz >= nz) return nx*ny*nz;
+    return binx + nx*biny + ny*binz*biny;
+  }
+  template<> int findBin<TH3>(const TH3* h, Double_t x, Double_t y, Double_t z){
+    return findBin<TH1>(h,x,y,z);
+  }
+
 }
   
 

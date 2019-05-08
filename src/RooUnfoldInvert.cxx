@@ -31,7 +31,7 @@ END_HTML */
 #include "TDecompSVD.h"
 
 #include "RooUnfoldResponse.h"
-#include "RooUnfoldTH1Helpers.h"
+#include "RooUnfoldHelpers.h"
 
 using namespace RooUnfolding;
 

@@ -28,7 +28,7 @@ return an rms. The chi squared values are calculated using the chi2() method in 
 ////////////////////////////////////////////////////////////////
 
 #include "RooUnfoldParms.h"
-#include "RooUnfoldTH1Helpers.h"
+#include "RooUnfoldHelpers.h"
 
 #include <cfloat>
 #include <iostream>

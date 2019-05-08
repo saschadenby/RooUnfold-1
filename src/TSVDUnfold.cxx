@@ -62,8 +62,7 @@ End_Html */
 #include <iostream>
 
 
-#include "RooUnfoldTH1Helpers.h"
-#include "RooUnfoldFitHelpers.h"
+#include "RooUnfoldHelpers.h"
 
 #include "RooUnfoldSvd.h"
 #include "TH1D.h"
@@ -93,7 +92,7 @@ RooUnfoldSvdT<Hist,Hist2D>::SVDUnfold::SVDUnfold( const Hist *bdat, const Hist *
 {
 
   if(sumW2N(Adet)){
-    h2me(Adet,fAdet);
+    h2me<Hist2D>(Adet,fAdet);
   }
 
   // Alternative constructor
@@ -148,7 +147,7 @@ RooUnfoldSvdT<Hist,Hist2D>::SVDUnfold::SVDUnfold( const Hist *bdat, const TMatri
 {
 
   if(sumW2N(Adet)){
-    h2me(Adet,fAdet);
+    h2me<Hist2D>(Adet,fAdet);
   }
   
    // Default constructor
@@ -299,7 +298,7 @@ TVectorD RooUnfoldSvdT<Hist,Hist2D>::SVDUnfold::UnfoldV( Int_t kreg )
    TVectorD vd(Uort*vb);
 
    if (!fToyMode && !fMatToyMode) {
-     fDHist = createHist<Hist>(vd,fBdat->GetName(),fBdat->GetTitle(),fNdim,min(fBdat,X),max(fBdat,X),varname(fBdat,X),false);
+     fDHist = createHist<Hist>(vd,fBdat->GetName(),fBdat->GetTitle(),vars(fBdat),false);
    }
 
    // Damping coefficient
@@ -372,7 +371,7 @@ Hist* RooUnfoldSvdT<Hist,Hist2D>::SVDUnfold::Unfold( Int_t kreg )
 {
 
   TVectorD vx(UnfoldV(kreg));
-  return createHist<Hist>(vx,"unfoldingresult",fBdat->GetTitle(),fNdim,min(fBdat,X),max(fBdat,X),varname(fBdat,X),false);
+  return createHist<Hist>(vx,"unfoldingresult",fBdat->GetTitle(),vars(fBdat),false);
 }
 
 //_______________________________________________________________________

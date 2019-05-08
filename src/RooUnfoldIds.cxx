@@ -6,7 +6,7 @@
 
 #include "RooUnfoldIds.h"
 #include "RooUnfoldResponse.h"
-#include "RooUnfoldTH1Helpers.h"
+#include "RooUnfoldHelpers.h"
 
 #include <iostream>
 

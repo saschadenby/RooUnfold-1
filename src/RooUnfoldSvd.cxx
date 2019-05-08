@@ -33,8 +33,7 @@ END_HTML */
 #include "TVectorD.h"
 #include "TMatrixD.h"
 
-#include "RooUnfoldTH1Helpers.h"
-#include "RooUnfoldFitHelpers.h"
+#include "RooUnfoldHelpers.h"
 #include "RooUnfoldResponse.h"
 
 using namespace RooUnfolding;
