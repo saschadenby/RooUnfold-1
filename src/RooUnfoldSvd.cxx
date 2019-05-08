@@ -43,8 +43,6 @@ using std::cout;
 using std::cerr;
 using std::endl;
 
-ClassImp (RooUnfoldSvd);
-
 template<class Hist,class Hist2D>
 RooUnfoldSvdT<Hist,Hist2D>::RooUnfoldSvdT (const RooUnfoldSvdT<Hist,Hist2D>& rhs)
   : RooUnfoldT<Hist,Hist2D> (rhs)

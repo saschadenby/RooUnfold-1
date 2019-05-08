@@ -21,22 +21,23 @@
 class TH1;
 class TH2;
 
-class RooUnfoldBayes : public RooUnfold {
+template<class Hist, class Hist2D>
+class RooUnfoldBayesT : public RooUnfoldT<Hist,Hist2D> {
 
 public:
 
   // Standard methods
 
-  RooUnfoldBayes(); // default constructor
-  RooUnfoldBayes (const char*    name, const char*    title); // named constructor
-  RooUnfoldBayes (const TString& name, const TString& title); // named constructor
-  RooUnfoldBayes (const RooUnfoldBayes& rhs); // copy constructor
-  RooUnfoldBayes& operator= (const RooUnfoldBayes& rhs); // assignment operator
-  virtual RooUnfoldBayes* Clone (const char* newname= 0) const;
+  RooUnfoldBayesT(); // default constructor
+  RooUnfoldBayesT (const char*    name, const char*    title); // named constructor
+  RooUnfoldBayesT (const TString& name, const TString& title); // named constructor
+  RooUnfoldBayesT (const RooUnfoldBayesT<Hist,Hist2D>& rhs); // copy constructor
+  RooUnfoldBayesT& operator= (const RooUnfoldBayesT<Hist,Hist2D>& rhs); // assignment operator
+  virtual RooUnfoldBayesT<Hist,Hist2D>* Clone (const char* newname= 0) const;
 
   // Special constructors
 
-  RooUnfoldBayes (const RooUnfoldResponse* res, const TH1* meas, Int_t niter= 4, Bool_t smoothit= false,
+  RooUnfoldBayesT (const RooUnfoldResponseT<Hist,Hist2D>* res, const Hist* meas, Int_t niter= 4, Bool_t smoothit= false,
                   const char* name= 0, const char* title= 0);
 
   void SetIterations (Int_t niter= 4);
@@ -45,15 +46,13 @@ public:
   Int_t GetSmoothing()  const;
   const TMatrixD& UnfoldingMatrix() const;
 
-  virtual void  SetRegParm (Double_t parm);
-  virtual Double_t GetRegParm() const;
+  virtual void  SetRegParm (double parm);
+  virtual double GetRegParm() const;
   virtual void Reset();
   virtual void Print (Option_t* option= "") const;
 
-  static TMatrixD& H2M (const TH2* h, TMatrixD& m, Bool_t overflow);
-
 protected:
-  void Assign (const RooUnfoldBayes& rhs); // implementation of assignment operator
+  void Assign (const RooUnfoldBayesT<Hist,Hist2D>& rhs); // implementation of assignment operator
   virtual void Unfold();
   virtual void GetCov();
   virtual void GetSettings();
@@ -63,23 +62,23 @@ protected:
   void getCovariance();
 
   void smooth(TVectorD& PbarCi) const;
-  Double_t getChi2(const TVectorD& prob1,
+  double getChi2(const TVectorD& prob1,
                    const TVectorD& prob2,
-                   Double_t nevents) const;
+                   double nevents) const;
 
 private:
   void Init();
-  void CopyData (const RooUnfoldBayes& rhs);
+  void CopyData (const RooUnfoldBayesT<Hist,Hist2D>& rhs);
 
 protected:
   // instance variables
-  Int_t _niter;
-  Int_t _smoothit;
+  int _niter;
+  int _smoothit;
 
-  Int_t _nc;              // number of causes  (same as _nt)
-  Int_t _ne;              // number of effects (same as _nm)
-  Double_t _N0C;          // number of events in prior
-  Double_t _nbartrue;     // best estimate of number of true events
+  int _nc;              // number of causes  (same as _nt)
+  int _ne;              // number of effects (same as _nm)
+  double _N0C;          // number of events in prior
+  double _nbartrue;     // best estimate of number of true events
 
   TVectorD _nEstj;        // Number of measured events from Effect E_j
   TVectorD _nCi;          // Number of true events from cause C_i
@@ -96,91 +95,11 @@ protected:
   TMatrixD _dnCidPjk;     // response error propagation matrix (stack j,k into each column)
 
 public:
-  ClassDef (RooUnfoldBayes, 1) // Bayesian Unfolding
+  ClassDefT (RooUnfoldBayesT, 0) // Bayesian Unfolding
 };
 
-// Inline method definitions
 
-inline
-RooUnfoldBayes::RooUnfoldBayes()
-  : RooUnfold()
-{
-  // Default constructor. Use Setup() to prepare for unfolding.
-  Init();
-}
-
-inline
-RooUnfoldBayes::RooUnfoldBayes (const char* name, const char* title)
-  : RooUnfold(name,title)
-{
-  // Basic named constructor. Use Setup() to prepare for unfolding.
-  Init();
-}
-
-inline
-RooUnfoldBayes::RooUnfoldBayes (const TString& name, const TString& title)
-  : RooUnfold(name,title)
-{
-  // Basic named constructor. Use Setup() to prepare for unfolding.
-  Init();
-}
-
-inline
-RooUnfoldBayes& RooUnfoldBayes::operator= (const RooUnfoldBayes& rhs)
-{
-  // Assignment operator for copying RooUnfoldBayes settings.
-  Assign(rhs);
-  return *this;
-}
-
-
-inline
-void RooUnfoldBayes::SetIterations (Int_t niter)
-{
-  // Set regularisation parameter (number of iterations)
-  _niter= niter;
-}
-
-inline
-void RooUnfoldBayes::SetSmoothing (Bool_t smoothit)
-{
-  // Enable smoothing
-  _smoothit= smoothit;
-}
-
-inline
-Int_t RooUnfoldBayes::GetIterations() const
-{
-  // Return regularisation parameter (number of iterations)
-  return _niter;
-}
-
-inline
-Int_t RooUnfoldBayes::GetSmoothing()  const
-{
-  // Return smoothing setting
-  return _smoothit;
-}
-
-inline
-const TMatrixD& RooUnfoldBayes::UnfoldingMatrix() const
-{
-  // Access unfolding matrix (Mij)
-  return _Mij;
-}
-
-inline
-void  RooUnfoldBayes::SetRegParm (Double_t parm)
-{
-  // Set regularisation parameter (number of iterations)
-  SetIterations(Int_t(parm+0.5));
-}
-
-inline
-Double_t RooUnfoldBayes::GetRegParm() const
-{
-  // Return regularisation parameter (number of iterations)
-  return GetIterations();
-}
+typedef RooUnfoldBayesT<TH1,TH2> RooUnfoldBayes;
+typedef RooUnfoldBayesT<RooAbsReal,RooAbsReal> RooFitUnfoldBayes;
 
 #endif

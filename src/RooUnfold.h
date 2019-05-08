@@ -115,8 +115,6 @@ protected:
 
   static TMatrixD CutZeros     (const TMatrixD& ereco);
   static Hist*    HistNoOverflow (const Hist* h, Bool_t overflow);
-  static TMatrixD& ABAT (const TMatrixD& a, const TMatrixD& b, TMatrixD& c);
-  static TMatrixD& ABAT (const TMatrixD& a, const TVectorD& b, TMatrixD& c);
   static Int_t    InvertMatrix (const TMatrixD& mat, TMatrixD& inv, const char* name="matrix", Int_t verbose=1);
 
 private:

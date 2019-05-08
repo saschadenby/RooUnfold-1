@@ -78,5 +78,23 @@ namespace RooUnfolding {
 }
 
 
+TMatrixD& ABAT (const TMatrixD& a, const TMatrixD& b, TMatrixD& c){
+  // Fills C such that C = A * B * A^T. Note that C cannot be the same object as A.
+  TMatrixD d (b, TMatrixD::kMultTranspose, a);
+  c.Mult (a, d);
+  return c;
+}
+
+TMatrixD& ABAT (const TMatrixD& a, const TVectorD& b, TMatrixD& c){
+  // Fills C such that C = A * B * A^T, where B is a diagonal matrix specified by the vector.
+  // Note that C cannot be the same object as A.
+  TMatrixD d (TMatrixD::kTransposed, a);
+  d.NormByColumn (b, "M");
+  c.Mult (a, d);
+  return c;
+}
+
+
+
 
 }

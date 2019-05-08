@@ -2,6 +2,7 @@
 #define ROOUNFOLDHELPERS_HH
 
 #include <TVectorD.h>
+#include <TMatrixD.h>
 
 namespace RooUnfolding {
 
@@ -36,6 +37,8 @@ namespace RooUnfolding {
   void printMatrix (const TMatrixD& m, const char* name="matrix", const char* format=0, Int_t cols_per_sheet=10);
 
   void add(TMatrixD& target, const TMatrixD& addition);
+  TMatrixD& ABAT (const TMatrixD& a, const TMatrixD& b, TMatrixD& c);
+  TMatrixD& ABAT (const TMatrixD& a, const TVectorD& b, TMatrixD& c);
   
 }
 

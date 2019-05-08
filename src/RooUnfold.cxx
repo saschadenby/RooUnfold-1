@@ -164,15 +164,15 @@ RooUnfoldT<Hist,Hist2D>::New (RooUnfolding::Algorithm alg, const RooUnfoldRespon
     case kNone:
       unfold= new RooUnfoldT<Hist,Hist2D>         (res, meas);
       break;
-//    case kBayes:
-//      unfold= new RooUnfoldBayes    (res, meas);
-//      break;
-//    case kSVD:
-//      unfold= new RooUnfoldSvd      (res, meas);
-//      break;
-//    case kBinByBin:
-//      unfold= new RooUnfoldBinByBin (res, meas);
-//      break;
+    case kBayes:
+      unfold= new RooUnfoldBayesT<Hist,Hist2D>    (res, meas);
+      break;
+    case kSVD:
+      unfold= new RooUnfoldSvdT<Hist,Hist2D>      (res, meas);
+      break;
+    case kBinByBin:
+      unfold= new RooUnfoldBinByBinT<Hist,Hist2D> (res, meas);
+      break;
 //    case kTUnfold:
 //#ifndef NOTUNFOLD
 //      unfold= new RooUnfoldTUnfold  (res,meas);
@@ -911,26 +911,6 @@ template<class Hist,class Hist2D> Hist*
 RooUnfoldT<Hist,Hist2D>::HistNoOverflow (const Hist* h, Bool_t overflow)
 {
   return histNoOverflow(h,overflow);
-}
-
-template<class Hist,class Hist2D> TMatrixD&
-RooUnfoldT<Hist,Hist2D>::ABAT (const TMatrixD& a, const TMatrixD& b, TMatrixD& c)
-{
-  // Fills C such that C = A * B * A^T. Note that C cannot be the same object as A.
-  TMatrixD d (b, TMatrixD::kMultTranspose, a);
-  c.Mult (a, d);
-  return c;
-}
-
-template<class Hist,class Hist2D> TMatrixD&
-RooUnfoldT<Hist,Hist2D>::ABAT (const TMatrixD& a, const TVectorD& b, TMatrixD& c)
-{
-  // Fills C such that C = A * B * A^T, where B is a diagonal matrix specified by the vector.
-  // Note that C cannot be the same object as A.
-  TMatrixD d (TMatrixD::kTransposed, a);
-  d.NormByColumn (b, "M");
-  c.Mult (a, d);
-  return c;
 }
 
 template<class Hist,class Hist2D> Int_t

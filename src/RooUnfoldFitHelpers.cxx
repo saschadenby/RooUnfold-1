@@ -172,15 +172,15 @@ namespace RooUnfolding {
   }
   void h2v  (const RooAbsReal* h, TVectorD& v, bool overflow){}
   void h2ve  (const RooAbsReal* h, TVectorD& v, bool overflow){}    
-  void h2me  (const RooAbsReal* h, TMatrixD& m){}
+  void h2me  (const RooAbsReal* h, TMatrixD& m, bool overflow){}
   
-  void h2m  (const RooAbsReal* h, TMatrixD& m){
+  void h2m  (const RooAbsReal* h, TMatrixD& m, bool overflow){
     // sets Matrix to values of bins in a 2D input histogram    
   }
-  TMatrixD h2m  (const RooAbsReal* h){
+  TMatrixD h2m  (const RooAbsReal* h, bool overflow){
     // Returns Matrix of values of bins in a 2D input histogram
     TMatrixD m;
-    h2m(h,m);
+    h2m(h,m,overflow);
     return m;
   }
   

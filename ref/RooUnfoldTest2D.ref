@@ -19,7 +19,7 @@ fill histogram pdfy: norm=200, offset=0
 histogram pdfy filled
 ==================================== UNFOLD ===================================
 Create RooUnfold object for method 1
-Created RooUnfoldBayes::unfold "Unfold Test 2D", regularisation parameter=4, 30x10 (300) bins measured, 30x10 (300) bins truth
+Created RooUnfoldBayesT<TH1,TH2>::unfold "Unfold Test 2D", regularisation parameter=4, 30x10 (300) bins measured, 30x10 (300) bins truth
 Now unfolding...
 Iteration : 0
 Chi^2 of change 2832.08

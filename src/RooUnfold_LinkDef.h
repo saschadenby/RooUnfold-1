@@ -7,6 +7,7 @@
 #pragma link C++ class RooUnfold-;
 #pragma link C++ class RooFitUnfold-;
 #pragma link C++ class RooUnfoldBayes+;
+#pragma link C++ class RooFitUnfoldBayes+;
 #pragma link C++ class RooUnfoldSvd-;
 #pragma link C++ class RooFitUnfoldSvd-;
 #pragma link C++ class RooUnfoldSvd::SVDUnfold-;

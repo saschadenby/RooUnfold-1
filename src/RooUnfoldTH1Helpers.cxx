@@ -244,12 +244,27 @@ namespace RooUnfolding {
     }
     return h1d;
   }
-  void h2m  (const TH2* h, TMatrixD& m){
+  TMatrixD h2m  (const TH2* h,bool overflow){
+    // Returns Matrix of values of bins in a 2D input histogram
+    TMatrixD m(h->GetNbinsX()+2*overflow,h->GetNbinsY()+2*overflow);
+    h2m(h,m,overflow);
+    return m;
+  }
+  void h2m  (const TH2* h, TMatrixD& m, bool overflow){
     // sets Matrix to values of bins in a 2D input histogram
-    m.ResizeTo(h->GetNbinsX(),h->GetNbinsY());
-    for (Int_t i= 0; i < h->GetNbinsX(); ++i) {
-      for (Int_t j= 0; j < h->GetNbinsY(); ++j) {
-        m(i,j)= h->GetBinContent(i+1,j+1);
+    m.ResizeTo(h->GetNbinsX()+2*overflow,h->GetNbinsY()+2*overflow);
+    for (Int_t i= 0; i < h->GetNbinsX()+2*overflow; ++i) {
+      for (Int_t j= 0; j < h->GetNbinsY()+2*overflow; ++j) {
+        m(i,j)= h->GetBinContent(i+!overflow,j+!overflow);
+      }
+    }
+  }
+  void h2me  (const TH2* h, TMatrixD& m, bool overflow){
+    // sets Matrix to errors of bins in a 2D input histogram
+    m.ResizeTo(h->GetNbinsX()+2*overflow,h->GetNbinsY()+2*overflow);
+    for (Int_t i= 0; i < h->GetNbinsX()+2*overflow; ++i) {
+      for (Int_t j= 0; j < h->GetNbinsY()+2*overflow; ++j) {
+        m(i,j)= h->GetBinError(i+!overflow,j+!overflow);
       }
     }
   }
@@ -286,22 +301,7 @@ namespace RooUnfolding {
       ++n;
     }  
   }    
-  void h2me  (const TH2* h, TMatrixD& m){
-  // sets Matrix to errors of bins in a 2D input histogram    
-    m.ResizeTo(h->GetNbinsX(),h->GetNbinsY());
-    for (Int_t i= 0; i < h->GetNbinsX(); ++i) {
-      for (Int_t j= 0; j < h->GetNbinsY(); ++j) {
-        m(i,j)= h->GetBinError(i+1,j+1);
-      }
-    }
-  }  
-  TMatrixD h2m  (const TH2* h){
-    // Returns Matrix of values of bins in a 2D input histogram
-    TMatrixD m(h->GetNbinsX(),h->GetNbinsY());
-    h2m(h,m);
-    return m;
-  }
-  
+ 
 
   TH2* copyHistogram(const TH2* h, bool includeOverflow){
     Int_t nx= nBins(h,RooUnfolding::X), ny= nBins(h,RooUnfolding::Y), s= sumW2N(h);
