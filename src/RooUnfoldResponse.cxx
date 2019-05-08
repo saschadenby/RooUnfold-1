@@ -565,83 +565,6 @@ RooUnfoldResponseT<Hist,Hist2D>::HresponseNoOverflow() const
   return copyHistogram(Hresponse(),_overflow);
 }
 
-template <class Hist, class Hist2D> TVectorD*
-RooUnfoldResponseT<Hist,Hist2D>::H2V  (const Hist* h, Int_t nb, Bool_t overflow)
-{
-  // Returns TVectorD of the bin contents of the input histogram
-  if (overflow) nb += 2;
-  TVectorD* v= new TVectorD (nb);
-  if (!h) return v;
-  for (Int_t i= 0; i < nb; i++) {
-    (*v)(i)= binContent(h, i, overflow);
-  }
-  return v;  
-}
-
-template <class Hist, class Hist2D> TVectorD*
-RooUnfoldResponseT<Hist,Hist2D>::H2VE (const Hist* h, Int_t nb, Bool_t overflow)
-{
-  // Returns TVectorD of bin errors for input histogram
-  if (overflow) nb += 2;
-  TVectorD* v= new TVectorD (nb);
-  if (!h) return v;
-  for (Int_t i= 0; i < nb; i++) {
-    (*v)(i)= binError (h, i, overflow);
-  }
-  return v;
-}
-
-template <class Hist, class Hist2D> TMatrixD*
-RooUnfoldResponseT<Hist,Hist2D>::H2M  (const Hist2D* h, Int_t nx, Int_t ny, const Hist* norm, Bool_t overflow)
-{
-  // Returns Matrix of values of bins in a 2D input histogram
-  Int_t first= overflow ? 0 : 1;
-  if (overflow) {
-    nx += 2;
-    ny += 2;
-  }
-  TMatrixD* m= new TMatrixD (nx, ny);
-  if (!h) return m;
-  for (Int_t j= 0; j < ny; j++) {
-    Double_t fac;
-    if (!norm) fac= 1.0;
-    else {
-      fac= binContent (norm, j, overflow);
-      if (fac != 0.0) fac= 1.0/fac;
-    }
-    for (Int_t i= 0; i < nx; i++) {
-      (*m)(i,j)= binContent (h,i+first,j+first) * fac;
-    }
-  }
-  return m;
-}
-
-template <class Hist, class Hist2D> TMatrixD*
-RooUnfoldResponseT<Hist,Hist2D>::H2ME (const Hist2D* h, Int_t nx, Int_t ny, const Hist* norm, Bool_t overflow)
-{
-  // Returns matrix of bin errors for a 2D histogram.
-  Int_t first= overflow ? 0 : 1;
-  if (overflow) {
-    nx += 2;
-    ny += 2;
-  }
-  TMatrixD* m= new TMatrixD (nx, ny);
-  if (!h) return m;
-  for (Int_t j= 0; j < ny; j++) {
-    Double_t fac;
-    if (!norm) fac= 1.0;
-    else {
-      fac= binContent (norm, j, overflow);
-      if (fac != 0.0) fac= 1.0/fac;
-    }
-    for (Int_t i= 0; i < nx; i++) {
-      // Assume Poisson norm, Multinomial P(mes|tru)
-      (*m)(i,j)= binError(h,i+first,j+first) * fac;
-    }
-  }
-  return m;
-}
-
 template <class Hist, class Hist2D> void
 RooUnfoldResponseT<Hist,Hist2D>::Print (Option_t* /* option */) const
 {
@@ -658,7 +581,7 @@ RooUnfoldResponseT<Hist,Hist2D>::ApplyToTruth (const Hist* truth, const char* na
 
   // If no truth histogram input, use training truth
   // If truth histogram input, make sure its binning is correct
-  TVectorD* resultvect;
+  TVectorD resultvect;;
   if (truth) {
     if (nBins(truth,RooUnfolding::X) != nBins(_tru,RooUnfolding::X) ||
         nBins(truth,RooUnfolding::Y) != nBins(_tru,RooUnfolding::Y) ||
@@ -666,18 +589,16 @@ RooUnfoldResponseT<Hist,Hist2D>::ApplyToTruth (const Hist* truth, const char* na
       cerr << "Warning: RooUnfoldResponseT<Hist,Hist2D>::ApplyToTruth truth histogram is a different size ("
            << (nBins(truth,RooUnfolding::X) * nBins(truth,RooUnfolding::Y) * nBins(truth,RooUnfolding::Z)) << " bins) or shape from response matrix truth ("
            << ( nBins(_tru,RooUnfolding::X) * nBins( _tru,RooUnfolding::Y) * nBins( _tru,RooUnfolding::Z)) << " bins)" << endl;
-    resultvect= H2V (truth, GetNbinsTruth(), _overflow);
-    if (!resultvect) return 0;
+    resultvect= h2v (truth, _overflow);
   } else {
-    resultvect= new TVectorD (Vtruth());
+    resultvect= Vtruth();
   }
 
-  (*resultvect) *= Mresponse();   // v= A*v
+  resultvect *= Mresponse();   // v= A*v
 
   // Turn results vector into properly binned histogram
   const Hist* t = Hmeasured();
-  Hist* result= createHist<Hist>(*resultvect, t->GetName(),name, nBins(t,X), min(t,X),max(t,X), varname(t,X), _overflow);
-  delete resultvect;
+  Hist* result= createHist<Hist>(resultvect, t->GetName(),name, nBins(t,X), min(t,X),max(t,X), varname(t,X), _overflow);
   return result;
 }
 
@@ -734,7 +655,7 @@ RooUnfoldResponseT<Hist,Hist2D>::MakeFoldingFunction (TF1* func, Double_t eps, B
 template <class Hist, class Hist2D> RooUnfoldResponseT<Hist,Hist2D>*
 RooUnfoldResponseT<Hist,Hist2D>::RunToy() const
 {
-  // Returns new RooUnfoldResponseT<class Hist, class Hist2D> object with smeared response matrix elements for use as a toy.
+  // Returns new RooUnfoldResponse object with smeared response matrix elements for use as a toy.
   TString name= GetName();
   name += "_toy";
   RooUnfoldResponseT<Hist,Hist2D>* res= new RooUnfoldResponseT<Hist,Hist2D> (*this);
@@ -947,7 +868,7 @@ template<class Hist, class Hist2D>
 const TVectorD& RooUnfoldResponseT<Hist,Hist2D>::Vmeasured() const
 {
   // Measured distribution as a TVectorD
-  if (!_vMes) _cached= (_vMes= H2V  (_mes, _nm, _overflow));
+  if (!_vMes) _cached= (_vMes= new TVectorD(h2v  (_mes, _overflow)));
   return *_vMes;
 }
 
@@ -955,7 +876,7 @@ template<class Hist, class Hist2D>
 const TVectorD& RooUnfoldResponseT<Hist,Hist2D>::Vfakes() const
 {
   // Fakes distribution as a TVectorD
-  if (!_vFak) _cached= (_vFak= H2V  (_fak, _nm, _overflow));
+  if (!_vFak) _cached= (_vFak= new TVectorD(h2v  (_fak, _overflow)));
   return *_vFak;
 }
 
@@ -963,7 +884,7 @@ template<class Hist, class Hist2D>
 const TVectorD& RooUnfoldResponseT<Hist,Hist2D>::Emeasured() const
 {
   // Measured distribution errors as a TVectorD
-  if (!_eMes) _cached= (_eMes= H2VE (_mes, _nm, _overflow));
+  if (!_eMes) _cached= (_eMes= new TVectorD(h2ve (_mes, _overflow)));
   return *_eMes;
 }
 
@@ -971,7 +892,7 @@ template<class Hist, class Hist2D>
 const TVectorD& RooUnfoldResponseT<Hist,Hist2D>::Vtruth() const
 {
   // Truth distribution as a TVectorD
-  if (!_vTru) _cached= (_vTru= H2V  (_tru, _nt, _overflow)); 
+  if (!_vTru) _cached= (_vTru= new TVectorD(h2v  (_tru, _overflow))); 
   return *_vTru;
 }
 
@@ -979,7 +900,7 @@ template<class Hist, class Hist2D>
 const TVectorD& RooUnfoldResponseT<Hist,Hist2D>::Etruth() const
 {
   // Truth distribution errors as a TVectorD
-  if (!_eTru) _cached= (_eTru= H2VE (_tru, _nt, _overflow)); 
+  if (!_eTru) _cached= (_eTru= new TVectorD(h2ve (_tru, _overflow))); 
   return *_eTru;
 }
 
@@ -987,7 +908,7 @@ template<class Hist, class Hist2D>
 const TMatrixD& RooUnfoldResponseT<Hist,Hist2D>::Mresponse() const
 {
   // Response matrix as a TMatrixD: (row,column)=(measured,truth)
-  if (!_mRes) _cached= (_mRes= H2M  (_res, _nm, _nt, _tru, _overflow)); 
+  if (!_mRes) _cached= (_mRes= new TMatrixD(h2mNorm  (_res, _tru, _overflow))); 
   return *_mRes;
 }
 
@@ -995,7 +916,7 @@ template<class Hist, class Hist2D>
 const TMatrixD& RooUnfoldResponseT<Hist,Hist2D>::Eresponse() const
 {
   // Response matrix errors as a TMatrixD: (row,column)=(measured,truth)
-  if (!_eRes) _cached= (_eRes= H2ME (_res, _nm, _nt, _tru, _overflow)); 
+  if (!_eRes) _cached= (_eRes= new TMatrixD(h2meNorm (_res, _tru, _overflow))); 
   return *_eRes;
 }
 

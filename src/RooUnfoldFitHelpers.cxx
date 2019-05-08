@@ -170,21 +170,51 @@ namespace RooUnfolding {
     h2v(h,v);
     return v;    
   }
+  TVectorD h2ve  (const RooAbsReal* h, bool overflow){
+    TVectorD v;
+    h2ve(h,v);
+    return v;    
+  }
   void h2v  (const RooAbsReal* h, TVectorD& v, bool overflow){}
   void h2ve  (const RooAbsReal* h, TVectorD& v, bool overflow){}    
-  void h2me  (const RooAbsReal* h, TMatrixD& m, bool overflow){}
-  
-  void h2m  (const RooAbsReal* h, TMatrixD& m, bool overflow){
-    // sets Matrix to values of bins in a 2D input histogram    
-  }
   TMatrixD h2m  (const RooAbsReal* h, bool overflow){
     // Returns Matrix of values of bins in a 2D input histogram
     TMatrixD m;
     h2m(h,m,overflow);
     return m;
   }
-  
-  
+  TMatrixD h2mNorm  (const RooAbsReal* h, const RooAbsReal* norm, bool overflow){
+    // Returns Matrix of values of bins in a 2D input histogram
+    TMatrixD m;
+    h2mNorm(h,m,norm, overflow);
+    return m;
+  }
+  TMatrixD h2me  (const RooAbsReal* h, bool overflow){
+    // Returns Matrix of errors of bins in a 2D input histogram
+    TMatrixD m;
+    h2me(h,m,overflow);
+    return m;
+  }
+  TMatrixD h2meNorm  (const RooAbsReal* h, const RooAbsReal* norm, bool overflow){
+    // Returns Matrix of errors of bins in a 2D input histogram
+    TMatrixD m;
+    h2meNorm(h,m,norm, overflow);
+    return m;
+  }
+  void h2m  (const RooAbsReal* h, TMatrixD& m, bool overflow){
+    // sets Matrix to values of bins in a 2D input histogram    
+    h2mNorm(h,m,NULL,overflow);
+  }
+  void h2me  (const RooAbsReal* h, TMatrixD& m, bool overflow){
+    // sets Matrix to errors of bins in a 2D input histogram    
+    h2meNorm(h,m,NULL,overflow);
+  }
+  void h2mNorm  (const RooAbsReal* h, TMatrixD& m, const RooAbsReal* norm, bool overflow){
+    // sets Matrix to values of bins in a 2D input histogram    
+  }
+  void h2meNorm  (const RooAbsReal* h, TMatrixD& m, const RooAbsReal* norm, bool overflow){
+    // sets Matrix to errors of bins in a 2D input histogram    
+  }
 }  
 
   

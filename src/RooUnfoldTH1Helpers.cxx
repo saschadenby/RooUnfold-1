@@ -250,28 +250,71 @@ namespace RooUnfolding {
     h2m(h,m,overflow);
     return m;
   }
+  TMatrixD h2me  (const TH2* h,bool overflow){
+    // Returns Matrix of values of bins in a 2D input histogram
+    TMatrixD m(h->GetNbinsX()+2*overflow,h->GetNbinsY()+2*overflow);
+    h2me(h,m,overflow);
+    return m;
+  }
+  TMatrixD h2mNorm  (const TH2* h, const TH1* norm, bool overflow){
+    // Returns Matrix of values of bins in a 2D input histogram
+    TMatrixD m(h->GetNbinsX()+2*overflow,h->GetNbinsY()+2*overflow);
+    h2mNorm(h,m,norm,overflow);
+    return m;
+  }
+  TMatrixD h2meNorm  (const TH2* h, const TH1* norm, bool overflow){
+    // Returns Matrix of values of bins in a 2D input histogram
+    TMatrixD m(h->GetNbinsX()+2*overflow,h->GetNbinsY()+2*overflow);
+    h2meNorm(h,m,norm,overflow);
+    return m;
+  }
   void h2m  (const TH2* h, TMatrixD& m, bool overflow){
+    // sets Matrix to errors of bins in a 2D input histogram
+    h2mNorm(h,m,NULL,overflow);
+  }
+  void h2mNorm  (const TH2* h, TMatrixD& m, const TH1* norm, bool overflow){
     // sets Matrix to values of bins in a 2D input histogram
     m.ResizeTo(h->GetNbinsX()+2*overflow,h->GetNbinsY()+2*overflow);
-    for (Int_t i= 0; i < h->GetNbinsX()+2*overflow; ++i) {
-      for (Int_t j= 0; j < h->GetNbinsY()+2*overflow; ++j) {
-        m(i,j)= h->GetBinContent(i+!overflow,j+!overflow);
+    for (Int_t j= 0; j < h->GetNbinsY()+2*overflow; ++j) {
+      double fac = 1.;
+      if (norm){
+        fac= norm->GetBinContent(j);
+        if (fac != 0.0) fac= 1.0/fac;
+      }
+      for (Int_t i= 0; i < h->GetNbinsX()+2*overflow; ++i) {
+        m(i,j)= h->GetBinContent(i+!overflow,j+!overflow) * fac;
       }
     }
   }
   void h2me  (const TH2* h, TMatrixD& m, bool overflow){
     // sets Matrix to errors of bins in a 2D input histogram
+    h2meNorm(h,m,NULL,overflow);
+  }
+  void h2meNorm  (const TH2* h, TMatrixD& m, const TH1* norm, bool overflow){
+    // sets Matrix to values of bins in a 2D input histogram
     m.ResizeTo(h->GetNbinsX()+2*overflow,h->GetNbinsY()+2*overflow);
-    for (Int_t i= 0; i < h->GetNbinsX()+2*overflow; ++i) {
-      for (Int_t j= 0; j < h->GetNbinsY()+2*overflow; ++j) {
-        m(i,j)= h->GetBinError(i+!overflow,j+!overflow);
+    for (Int_t j= 0; j < h->GetNbinsY()+2*overflow; ++j) {
+      double fac = 1.;
+      if (norm){
+        fac= norm->GetBinContent(j);
+        if (fac != 0.0) fac= 1.0/fac;
+      }
+      for (Int_t i= 0; i < h->GetNbinsX()+2*overflow; ++i) {
+        m(i,j)= h->GetBinContent(i+!overflow,j+!overflow) * fac;
       }
     }
   }
+
   TVectorD h2v  (const TH1* h, bool overflow){
     // Returns Vector of values of bins in an input histogram
     TVectorD v(nBins(h,overflow));
     h2v(h,v,overflow);
+    return v;
+  }
+  TVectorD h2ve  (const TH1* h, bool overflow){
+    // Returns Vector of values of bins in an input histogram
+    TVectorD v(nBins(h,overflow));
+    h2ve(h,v,overflow);
     return v;
   }
   

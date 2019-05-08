@@ -41,11 +41,17 @@ namespace RooUnfolding {
   TH1* h2h1d(const TH1* h, int nb);  
   TH1* h2h1d(const TH2* h, int nb);
   TVectorD h2v  (const TH1* h,bool overflow = false);
+  TVectorD h2ve  (const TH1* h,bool overflow = false);
   void h2v  (const TH1* h, TVectorD& v,bool overflow = false);
   void h2ve  (const TH1* h, TVectorD& v,bool overflow = false);
   void h2m  (const TH2* h, TMatrixD& m, bool overflow = false);
   void h2me  (const TH2* h, TMatrixD& m, bool overflow = false);  
   TMatrixD h2m  (const TH2* h, bool overflow = false);  
+  TMatrixD h2me  (const TH2* h, bool overflow = false);  
+  void h2mNorm  (const TH2* h, TMatrixD& m, const TH1* norm, bool overflow = false);
+  void h2meNorm  (const TH2* h, TMatrixD& m, const TH1* norm, bool overflow = false);  
+  TMatrixD h2mNorm  (const TH2* h, const TH1* norm, bool overflow = false);  
+  TMatrixD h2meNorm  (const TH2* h, const TH1* norm, bool overflow = false);  
   TH2* copyHistogram(const TH2* h, bool includeOverflow);
   const char* varname(const TH1* h, Dimension d);
   void setContents(TH1* h,const std::vector<double>& values,const std::vector<double>& errors, bool overflow);

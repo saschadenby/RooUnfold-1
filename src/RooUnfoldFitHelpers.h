@@ -35,11 +35,17 @@ namespace RooUnfolding {
   void setBinContent (RooAbsReal* h, int i, int j, double val, bool overflow);
   RooAbsReal* h2h1d(const RooAbsReal* h, int nb);
   TVectorD h2v  (const RooAbsReal* h, bool oveflow=false);    
+  TVectorD h2ve  (const RooAbsReal* h, bool oveflow=false);    
   void h2v  (const RooAbsReal* h, TVectorD& v, bool overflow=false);
   void h2ve  (const RooAbsReal* h, TVectorD& v, bool overflow=false);    
   TMatrixD h2m  (const RooAbsReal* h, bool overflow=false);
+  TMatrixD h2me  (const RooAbsReal* h, bool overflow=false);
   void h2m  (const RooAbsReal* h, TMatrixD& m, bool overflow=false);
   void h2me  (const RooAbsReal* h, TMatrixD& m, bool overflow=false);  
+  TMatrixD h2mNorm  (const RooAbsReal* h, const RooAbsReal* norm, bool overflow=false);
+  TMatrixD h2meNorm  (const RooAbsReal* h, const RooAbsReal* norm, bool overflow=false);
+  void h2mNorm  (const RooAbsReal* h, TMatrixD& m, const RooAbsReal* norm, bool overflow=false);
+  void h2meNorm  (const RooAbsReal* h, TMatrixD& m, const RooAbsReal* norm, bool overflow=false);  
   RooAbsReal* copyHistogram(const RooAbsReal* h, bool includeOverflow);
   const char* varname(const RooAbsReal* h, Dimension d);
   void setContents(RooAbsReal* h,const std::vector<double>& values,const std::vector<double>& errors, bool overflow);
