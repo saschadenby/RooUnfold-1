@@ -46,8 +46,8 @@ public:
 
   RooUnfoldResponseT(Int_t nb, Double_t xlo, Double_t xhi, const char* name= 0, const char* title= 0);  // constructor -  simple 1D case with same binning, measured vs truth
   RooUnfoldResponseT(Int_t nm, Double_t mlo, Double_t mhi, Int_t nt, Double_t tlo, Double_t thi, const char* name= 0, const char* title= 0);  // constructor -  simple 1D case
-  RooUnfoldResponseT(const Hist* measured, const Hist* truth, const char* name= 0, const char* title= 0);  // constructor - measured and truth only used for shape
-  RooUnfoldResponseT(const Hist* measured, const Hist* truth, const Hist2D* response, const char* name= 0, const char* title= 0);  // create from already-filled histograms
+  RooUnfoldResponseT(const Hist* measured, const Hist* truth, const char* name= 0, const char* title= 0, bool overflow=false);  // constructor - measured and truth only used for shape
+  RooUnfoldResponseT(const Hist* measured, const Hist* truth, const Hist2D* response, const char* name= 0, const char* title= 0, bool overflow=false);  // create from already-filled histograms
 
   // Set up an existing object
 
@@ -110,12 +110,6 @@ public:
   virtual void Print (Option_t* option="") const;
 
   template < typename = typename std::enable_if< !std::is_same<Hist,Hist2D>::value > >
-  static Hist*     H2H1D(const Hist2D*  h, Int_t nb);
-  static Hist*     H2H1D(const Hist*  h, Int_t nb);
-  static TVectorD* H2V  (const Hist*  h, Int_t nb, Bool_t overflow= kFALSE);
-  static TVectorD* H2VE (const Hist*  h, Int_t nb, Bool_t overflow= kFALSE);
-  static TMatrixD* H2M  (const Hist2D*  h, Int_t nx, Int_t ny, const Hist* norm= 0, Bool_t overflow= kFALSE);
-  static TMatrixD* H2ME (const Hist2D*  h, Int_t nx, Int_t ny, const Hist* norm= 0, Bool_t overflow= kFALSE);
   static Int_t   FindBin(const Hist*  h, Double_t x);  // return vector index for bin containing (x)
   static Int_t   FindBin(const Hist*  h, Double_t x, Double_t y);  // return vector index for bin containing (x,y)
   static Int_t   FindBin(const Hist*  h, Double_t x, Double_t y, Double_t z);  // return vector index for bin containing (x,y,z)
