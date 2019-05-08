@@ -841,7 +841,7 @@ namespace RooUnfolding {
     Int_t binz= findBin<TH1>(h,z,RooUnfolding::Z) - 1;
     if (binz <  0)  return -1;
     if (binz >= nz) return nx*ny*nz;
-    return binx + nx*biny + ny*binz*biny;
+    return binx + nx*(biny + ny*binz);
   }
   template<> int findBin<TH3>(const TH3* h, Double_t x, Double_t y, Double_t z){
     return findBin<TH1>(h,x,y,z);

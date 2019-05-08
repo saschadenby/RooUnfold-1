@@ -885,7 +885,7 @@ template<class Hist, class Hist2D>
 const TMatrixD& RooUnfoldResponseT<Hist,Hist2D>::Eresponse() const
 {
   // Response matrix errors as a TMatrixD: (row,column)=(measured,truth)
-  if (!_eRes) _cached= (_eRes= new TMatrixD(h2meNorm<Hist,Hist2D> (_res, _tru, _overflow))); 
+  if (!_eRes) _cached= (_eRes= new TMatrixD(h2meNorm (_res, _tru, _overflow))); 
   return *_eRes;
 }
 
