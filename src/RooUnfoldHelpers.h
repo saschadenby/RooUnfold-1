@@ -56,7 +56,6 @@ namespace RooUnfolding {
   template<class Hist> const char* varname(const Hist* h, Dimension d);
   template<class Hist> void printHistogram(const Hist* h);
   template<class Hist> void printTable (std::ostream& o, const Hist* hTrainTrue, const Hist* hTrain, const Hist* hTrue, const Hist* hMeas, const Hist* hReco, Int_t _nm=0, Int_t _nt=0, Bool_t _overflow=kFALSE, RooUnfolding::ErrorTreatment withError=RooUnfolding::kDefault, Double_t chi_squ=-999.0);
-  template<class Hist> Hist* histNoOverflow (const Hist* h, Bool_t overflow);
   template<class Hist> Hist* resize (Hist* h, Int_t nx, Int_t ny = 0, Int_t nz = 0);  
   template<class Hist> void subtract(Hist* hist, const TVectorD& vec, double fac);
   template<class Hist, class V> V subtract(const TVectorD& orig, const Hist* hist, bool overflow);

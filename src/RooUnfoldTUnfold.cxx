@@ -42,8 +42,15 @@ END_HTML */
 
 #include "RooUnfoldResponse.h"
 #include "RooUnfoldHelpers.h"
+#include "RooUnfoldTH1Helpers.h"
 
 using namespace RooUnfolding;
+
+namespace{
+  TH1* histNoOverflow(const TH1* hist, bool overflow){
+    return createHist<TH1>(h2v<TH1>(hist,overflow),h2ve<TH1>(hist,overflow),hist->GetName(),hist->GetTitle(),vars(hist),overflow);
+  }
+}
 
 using std::cout;
 using std::cerr;
@@ -173,7 +180,7 @@ RooUnfoldTUnfold::Unfold()
 
   Bool_t oldstat= TH1::AddDirectoryStatus();
   TH1::AddDirectory (kFALSE);
-  TH1* meas= HistNoOverflow (_meas, _overflow);
+  TH1* meas= ::histNoOverflow (_meas, _overflow);
   TH2* Hres=_res->HresponseNoOverflow();
   TH1::AddDirectory (oldstat);
 
@@ -258,8 +265,8 @@ RooUnfoldTUnfold::Unfold()
   }
 
   if (_verbose>=2) {
-    TH1* train1d= HistNoOverflow (_res->Hmeasured(), _overflow);
-    TH1* truth1d= HistNoOverflow (_res->Htruth(),    _overflow);
+    TH1* train1d= ::histNoOverflow (_res->Hmeasured(), _overflow);
+    TH1* truth1d= ::histNoOverflow (_res->Htruth(),    _overflow);
     printTable<TH1> (cout, truth1d, train1d, 0, meas, &reco, _nm, _nt, kTRUE);
     delete truth1d;
     delete train1d;

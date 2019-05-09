@@ -6,7 +6,10 @@
 
 #include "RooUnfoldIds.h"
 #include "RooUnfoldResponse.h"
+
 #include "RooUnfoldHelpers.h"
+#include "RooUnfoldTH1Helpers.h"
+using namespace RooUnfolding;
 
 #include <iostream>
 
@@ -96,6 +99,12 @@ RooUnfoldIds::CopyData(const RooUnfoldIds &rhs)
    _lambdaS = rhs._lambdaS;
 }
 
+namespace{
+  TH1* histNoOverflow(const TH1* hist, bool overflow){
+    return createHist<TH1>(h2v<TH1>(hist,overflow),h2ve<TH1>(hist,overflow),hist->GetName(),hist->GetTitle(),vars(hist),overflow);
+  }
+}
+  
 //______________________________________________________________________________
 void
 RooUnfoldIds::Unfold()
@@ -111,9 +120,9 @@ RooUnfoldIds::Unfold()
    Bool_t oldstat= TH1::AddDirectoryStatus();
    TH1::AddDirectory (kFALSE);
 
-   _meas1d  = HistNoOverflow(_meas            , _overflow); // data
-   _train1d = HistNoOverflow(_res->Hmeasured(), _overflow); // reco
-   _truth1d = HistNoOverflow(_res->Htruth()   , _overflow); // true
+   _meas1d  = ::histNoOverflow(_meas            , _overflow); // data
+   _train1d = ::histNoOverflow(_res->Hmeasured(), _overflow); // reco
+   _truth1d = ::histNoOverflow(_res->Htruth()   , _overflow); // true
    _reshist = _res->HresponseNoOverflow();
 
    RooUnfolding::resize(_meas1d,  _nb);
@@ -193,9 +202,9 @@ RooUnfoldIds::GetUnfoldCovMatrix(const TH2 *cov, Int_t ntoys, Int_t seed)
    // "seed"   - seed for pseudo experiments
    // Note that this covariance matrix will contain effects of forced normalisation if spectrum is normalised to unit area.
 
-   _meas1d  = HistNoOverflow(_meas            , _overflow); // data
-   _train1d = HistNoOverflow(_res->Hmeasured(), _overflow); // reco
-   _truth1d = HistNoOverflow(_res->Htruth()   , _overflow); // true
+   _meas1d  = ::histNoOverflow(_meas            , _overflow); // data
+   _train1d = ::histNoOverflow(_res->Hmeasured(), _overflow); // reco
+   _truth1d = ::histNoOverflow(_res->Htruth()   , _overflow); // true
    _reshist = _res->HresponseNoOverflow();
 
    TH1* unfres = 0;
@@ -292,9 +301,9 @@ RooUnfoldIds::GetAdetCovMatrix(Int_t ntoys, Int_t seed)
    // "ntoys"  - number of pseudo experiments used for the propagation
    // "seed"   - seed for pseudo experiments
 
-   _meas1d  = HistNoOverflow(_meas            , _overflow); // data
-   _train1d = HistNoOverflow(_res->Hmeasured(), _overflow); // reco
-   _truth1d = HistNoOverflow(_res->Htruth()   , _overflow); // true
+   _meas1d  = ::histNoOverflow(_meas            , _overflow); // data
+   _train1d = ::histNoOverflow(_res->Hmeasured(), _overflow); // reco
+   _truth1d = ::histNoOverflow(_res->Htruth()   , _overflow); // true
    _reshist = _res->HresponseNoOverflow();
 
    TH1 *unfres = 0;

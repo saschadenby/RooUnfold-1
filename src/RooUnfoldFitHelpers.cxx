@@ -147,11 +147,6 @@ namespace RooUnfolding {
     // TODO
     return "";
   }
-  template<> RooAbsReal* histNoOverflow<RooAbsReal>(const RooAbsReal* h, bool overflow){
-    // overflow not supported anyway, do nothing
-    // TODO
-    return NULL;
-  }
 
   template<> TVectorD subtract<RooAbsReal,TVectorD>(const TVectorD& orig, const RooAbsReal* hist, bool overflow) {
     // TODO

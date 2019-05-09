@@ -907,12 +907,6 @@ RooUnfoldT<Hist,Hist2D>::Wreco(ErrorTreatment withError)
     return Wreco_m;
 }
 
-template<class Hist,class Hist2D> Hist*
-RooUnfoldT<Hist,Hist2D>::HistNoOverflow (const Hist* h, Bool_t overflow)
-{
-  return histNoOverflow(h,overflow);
-}
-
 template<class Hist,class Hist2D> Int_t
 RooUnfoldT<Hist,Hist2D>::InvertMatrix(const TMatrixD& mat, TMatrixD& inv, const char* name, Int_t verbose)
 {

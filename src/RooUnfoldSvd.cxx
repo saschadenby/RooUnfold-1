@@ -127,6 +127,12 @@ RooUnfoldSvdT<Hist,Hist2D>::Impl()
   return this->_svd;
 }
 
+namespace{
+  template<class Hist> Hist* histNoOverflow(const Hist* hist, bool overflow){
+    return createHist<Hist>(h2v<Hist>(hist,overflow),h2ve<Hist>(hist,overflow),hist->GetName(),hist->GetTitle(),vars(hist),overflow);
+  }
+}
+
 template<class Hist,class Hist2D> void
 RooUnfoldSvdT<Hist,Hist2D>::Unfold()
 {
@@ -146,9 +152,9 @@ RooUnfoldSvdT<Hist,Hist2D>::Unfold()
   }
 
   Bool_t oldstat= TH1::AddDirectoryStatus();
-  this->_meas1d=  this->HistNoOverflow (this->_meas,             this->_overflow);
-  this->_train1d= this->HistNoOverflow (this->_res->Hmeasured(), this->_overflow);
-  this->_truth1d= this->HistNoOverflow (this->_res->Htruth(),    this->_overflow);
+  this->_meas1d=  ::histNoOverflow (this->_meas,             this->_overflow);
+  this->_train1d= ::histNoOverflow (this->_res->Hmeasured(), this->_overflow);
+  this->_truth1d= ::histNoOverflow (this->_res->Htruth(),    this->_overflow);
   this->_reshist= this->_res->HresponseNoOverflow();
   RooUnfolding::resize (this->_meas1d,  this->_nb);
   RooUnfolding::resize (this->_train1d, this->_nb);

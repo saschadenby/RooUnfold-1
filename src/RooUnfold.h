@@ -114,7 +114,6 @@ protected:
   virtual Bool_t UnfoldWithErrors (RooUnfolding::ErrorTreatment withError, bool getWeights=false);
 
   static TMatrixD CutZeros     (const TMatrixD& ereco);
-  static Hist*    HistNoOverflow (const Hist* h, Bool_t overflow);
   static Int_t    InvertMatrix (const TMatrixD& mat, TMatrixD& inv, const char* name="matrix", Int_t verbose=1);
 
 private:

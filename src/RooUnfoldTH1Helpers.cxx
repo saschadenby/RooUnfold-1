@@ -412,26 +412,6 @@ namespace RooUnfolding {
     return res;
   }
 
-  template<> TH1* histNoOverflow<TH1> (const TH1* h, Bool_t overflow){
-    if (!overflow) {   // also for 2D+
-      TH1* hx= h2h1d<TH1,TH2> (h, h->GetNbinsX()*h->GetNbinsY()*h->GetNbinsZ());
-      if (!hx) return hx;
-      // clear under/overflow bins for cloned Hist
-      hx->SetBinContent (0,                 0.0);
-      hx->SetBinContent (hx->GetNbinsX()+1, 0.0);
-      return hx;
-    }
-    Int_t nb= h->GetNbinsX(), s= h->GetSumw2N();
-    Double_t xlo= h->GetXaxis()->GetXmin(), xhi= h->GetXaxis()->GetXmax(), xb= (xhi-xlo)/nb;
-    nb += 2;
-    TH1* hx= new TH1F (h->GetName(), h->GetTitle(), nb, xlo-xb, xhi+xb);
-    for (Int_t i= 0; i < nb; i++) {
-      hx->SetBinContent (i+1, h->GetBinContent (i));
-      if (s) hx->SetBinError   (i+1, h->GetBinError   (i));
-    }
-    return hx;
-  }
-
   template<class Hist> Hist* resize (Hist* h, Int_t nx, Int_t ny, Int_t nz)
   {
     // Resize a histogram with a different number of bins.
