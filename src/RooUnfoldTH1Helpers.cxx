@@ -791,24 +791,38 @@ namespace RooUnfolding {
   
 
 
-
-template void RooUnfolding::add<TH2>(TH2*, TH2 const*);
+template int RooUnfolding::sumW2N<TH1>(TH1 const*);
 template int RooUnfolding::sumW2N<TH2>(TH2 const*);
-template int RooUnfolding::dim<TH2>(TH2 const*);
-template double RooUnfolding::binCenter<TH2>(TH2 const*, int, RooUnfolding::Dimension);
-template TH2* RooUnfolding::resize<TH2>(TH2*, int, int, int);
-template TH1* RooUnfolding::createHist<TH1>(TVectorT<double> const&, char const*, char const*, RooUnfolding::Variable<TH1> const&, bool);
-template double RooUnfolding::binWidth<TH1>(TH1 const*, int, RooUnfolding::Dimension);
-template RooUnfolding::Variable<TH2> RooUnfolding::var<TH2>(TH2 const*, RooUnfolding::Dimension);
-template int RooUnfolding::entries<TH1>(TH1 const*);
-template void RooUnfolding::add<TH1>(TH1*, TH1 const*);
-template TH1* RooUnfolding::resize<TH1>(TH1*, int, int, int);
-template std::vector<RooUnfolding::Variable<TH1> > RooUnfolding::vars<TH1>(TH1 const*);
-template int RooUnfolding::entries<TH2>(TH2 const*);
-template RooUnfolding::Variable<TH1> RooUnfolding::var<TH1>(TH1 const*, RooUnfolding::Dimension);
-template TH1* RooUnfolding::copy<TH1>(TH1 const*, bool, char const*, char const*);
+template int RooUnfolding::sumW2N<TH3>(TH3 const*);
 template double RooUnfolding::binCenter<TH1>(TH1 const*, int, RooUnfolding::Dimension);
+template double RooUnfolding::binCenter<TH2>(TH2 const*, int, RooUnfolding::Dimension);
+template double RooUnfolding::binCenter<TH3>(TH3 const*, int, RooUnfolding::Dimension);
+template double RooUnfolding::binWidth<TH1>(TH1 const*, int, RooUnfolding::Dimension);
+template double RooUnfolding::binWidth<TH2>(TH2 const*, int, RooUnfolding::Dimension);
+template double RooUnfolding::binWidth<TH3>(TH3 const*, int, RooUnfolding::Dimension);
+template TH1* RooUnfolding::resize<TH1>(TH1*, int, int, int);
+template TH2* RooUnfolding::resize<TH2>(TH2*, int, int, int);
+template TH3* RooUnfolding::resize<TH3>(TH3*, int, int, int);
+template int RooUnfolding::entries<TH1>(TH1 const*);
+template int RooUnfolding::entries<TH2>(TH2 const*);
+template int RooUnfolding::entries<TH3>(TH3 const*);
+template void RooUnfolding::add<TH1>(TH1*, TH1 const*);
+template void RooUnfolding::add<TH2>(TH2*, TH2 const*);
+template void RooUnfolding::add<TH3>(TH3*, TH3 const*);
+template int RooUnfolding::dim<TH1>(TH1 const*);
+template int RooUnfolding::dim<TH2>(TH2 const*);
+template int RooUnfolding::dim<TH3>(TH3 const*);
+template std::vector<RooUnfolding::Variable<TH1> > RooUnfolding::vars<TH1>(TH1 const*);
+template std::vector<RooUnfolding::Variable<TH2> > RooUnfolding::vars<TH2>(TH2 const*);
+template std::vector<RooUnfolding::Variable<TH3> > RooUnfolding::vars<TH3>(TH3 const*);
+template RooUnfolding::Variable<TH1> RooUnfolding::var<TH1>(TH1 const*, RooUnfolding::Dimension);
+template RooUnfolding::Variable<TH2> RooUnfolding::var<TH2>(TH2 const*, RooUnfolding::Dimension);
+template RooUnfolding::Variable<TH3> RooUnfolding::var<TH3>(TH3 const*, RooUnfolding::Dimension);
+template TH1* RooUnfolding::copy<TH1>(TH1 const*, bool, char const*, char const*);
 template TH2* RooUnfolding::copy<TH2>(TH2 const*, bool, char const*, char const*);
+template TH3* RooUnfolding::copy<TH3>(TH3 const*, bool, char const*, char const*);
+template TH1* RooUnfolding::createHist<TH1>(TVectorT<double> const&, char const*, char const*, RooUnfolding::Variable<TH1> const&, bool);
+
 
   
 
