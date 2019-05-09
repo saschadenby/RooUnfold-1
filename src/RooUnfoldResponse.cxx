@@ -23,6 +23,8 @@ END_HTML */
 
 #include "RooUnfoldResponse.h"
 #include "RooUnfoldHelpers.h"
+#include "RooUnfoldTH1Helpers.h"
+#include "RooUnfoldFitHelpers.h"
 
 #include <iostream>
 #include <assert.h>
@@ -303,10 +305,10 @@ RooUnfoldResponseT<Hist,Hist2D>::Setup (Int_t nm, Double_t mlo, Double_t mhi, In
   _mdim= _tdim= 1;
   _nm= nm;
   _nt= nt;
-  _mes= createHist<Hist>("measured", "Measured",   Variable(nm, mlo, mhi,"xm"));
-  _fak= createHist<Hist>("fakes",    "Fakes",      Variable(nm, mlo, mhi,"xm"));
-  _tru= createHist<Hist>("truth",    "Truth",      Variable(nt, tlo, thi,"xt"));
-  _res= createHist<Hist2D>("response", "Response", Variable(nm, mlo, mhi, "xm"), Variable(nt, tlo, thi, "xt"));
+  _mes= createHist<Hist>("measured", "Measured",   Variable<Hist>(nm, mlo, mhi,"xm"));
+  _fak= createHist<Hist>("fakes",    "Fakes",      Variable<Hist>(nm, mlo, mhi,"xm"));
+  _tru= createHist<Hist>("truth",    "Truth",      Variable<Hist>(nt, tlo, thi,"xt"));
+  _res= createHist<Hist2D>("response", "Response", Variable<Hist2D>(nm, mlo, mhi, "xm"), Variable<Hist2D>(nt, tlo, thi, "xt"));
   return *this;
 }
 
@@ -327,7 +329,7 @@ RooUnfoldResponseT<Hist,Hist2D>::Setup (const Hist* measured, const Hist* truth)
   SetNameTitleDefault();
   _nm= nBins(_mes);
   _nt= nBins(_tru);
-  _res=createHist<Hist2D>(GetName(), GetTitle(), Variable(_nm, 0.0, _nm, "xm"), Variable(_nt, 0.0, _nt, "xt"));
+  _res=createHist<Hist2D>(GetName(), GetTitle(), Variable<Hist2D>(_nm, 0.0, _nm, "xm"), Variable<Hist2D>(_nt, 0.0, _nt, "xt"));
   return *this;
 }
 
@@ -348,7 +350,7 @@ RooUnfoldResponseT<Hist,Hist2D>::Setup (const Hist* measured, const Hist* truth,
     _fak= copy(measured,true,"fakes","Fakes");
     _mdim= dim(_mes);
   } else {
-    _mes= createHist<Hist>("measured", "Measured", Variable(nBins(response,RooUnfolding::X), 0.0, 1.0, "xm"));
+    _mes= createHist<Hist>("measured", "Measured", Variable<Hist>(nBins(response,RooUnfolding::X), 0.0, 1.0, "xm"));
     _fak= copy(_mes,false,"fakes","Fakes");
     _mdim= 1;
   }
@@ -356,7 +358,7 @@ RooUnfoldResponseT<Hist,Hist2D>::Setup (const Hist* measured, const Hist* truth,
     _tru= copy(truth,false,truth->GetName(),truth->GetTitle());
     _tdim= dim(_tru);
   } else {
-    _tru= createHist<Hist>("truth",    "Truth",    Variable(nBins(response,RooUnfolding::Y), 0.0, 1.0, "xt"));
+    _tru= createHist<Hist>("truth",    "Truth",    Variable<Hist>(nBins(response,RooUnfolding::Y), 0.0, 1.0, "xt"));
     _tdim= 1;
   }
   if (_overflow && (_mdim > 1 || _tdim > 1)) {

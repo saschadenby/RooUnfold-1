@@ -27,6 +27,8 @@ END_HTML */
 //#define OLDMULT   // restore old (slower) matrix multiplications
 
 #include "RooUnfoldBayes.h"
+#include "RooUnfoldTH1Helpers.h"
+#include "RooUnfoldFitHelpers.h"
 
 #include <iostream>
 #include <iomanip>

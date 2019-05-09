@@ -63,6 +63,8 @@ End_Html */
 
 
 #include "RooUnfoldHelpers.h"
+#include "RooUnfoldTH1Helpers.h"
+#include "RooUnfoldFitHelpers.h"
 
 #include "RooUnfoldSvd.h"
 #include "TH1D.h"

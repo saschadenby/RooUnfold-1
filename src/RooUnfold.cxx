@@ -108,6 +108,8 @@ END_HTML */
 #endif
 #include "RooUnfoldIds.h"
 #include "RooUnfoldHelpers.h"
+#include "RooUnfoldTH1Helpers.h"
+#include "RooUnfoldFitHelpers.h"
 
 using std::vector;
 using std::cout;

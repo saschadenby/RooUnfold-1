@@ -35,6 +35,8 @@ END_HTML */
 
 #include "RooUnfoldHelpers.h"
 #include "RooUnfoldResponse.h"
+#include "RooUnfoldTH1Helpers.h"
+#include "RooUnfoldFitHelpers.h"
 
 using namespace RooUnfolding;
 

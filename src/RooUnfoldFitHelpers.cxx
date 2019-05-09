@@ -1,18 +1,20 @@
 #include "RooUnfoldHelpers.h"
+#include "RooUnfoldFitHelpers.h"
+#include <RooUnfoldHelpers.tpp>
 
 #include "RooAbsReal.h"
 #include "RooRealVar.h"
 #include "RooDataHist.h"
 #include "RooHistFunc.h"
 
-namespace {
-  RooRealVar* makeVar(const RooUnfolding::Variable& x){
-    return new RooRealVar(x._name,x._name,x._nBins,x._min,x._max);
-  }
-}
-
-
 namespace RooUnfolding {
+  Variable<RooAbsReal>::Variable(int nBins,double min,double max,const char* name) : _var(new RooRealVar(name,name,nBins,min,max)) {}
+  Variable<RooAbsReal>::Variable(RooRealVar* var) : _var(var) {};
+
+  template<> Variable<RooAbsReal> var(const RooAbsReal* h, Dimension d){
+    return Variable<RooAbsReal>(NULL);
+  }
+  
   template<> void reset<RooAbsReal>(RooAbsReal* r){
     // TODO
   }
@@ -116,23 +118,20 @@ namespace RooUnfolding {
     // TODO
     return 0;
   }
-  template<class Hist2D> Hist2D* createHist(const char* name, const char* title, const Variable& x, const Variable& y);
-  template<> RooAbsReal* createHist<RooAbsReal>(const char* name, const char* title, const Variable& x, const Variable& y){
-    RooRealVar* rx = ::makeVar(x);
-    RooRealVar* ry = ::makeVar(y);
-    RooArgSet vars(*rx,*ry);
+  template<> RooAbsReal* createHist<RooAbsReal>(const char* name, const char* title, const Variable<RooAbsReal>& x, const Variable<RooAbsReal>& y){
+    RooArgSet vars(*x._var,*y._var);
     RooDataHist* hist = new RooDataHist (name,title,vars);
     return new RooHistFunc(name,title,vars,vars,*hist);
   }
-  template<> RooAbsReal* createHist<RooAbsReal>(const char* name, const char* title, const std::vector<Variable>& x){
+  template<> RooAbsReal* createHist<RooAbsReal>(const char* name, const char* title, const std::vector<Variable<RooAbsReal>>& x){
     return NULL;
   }
-  template<> RooAbsReal* createHist<RooAbsReal>(const TMatrixD& m, const char* name, const char* title, const Variable& x, const Variable& y){  
+  template<> RooAbsReal* createHist<RooAbsReal>(const TMatrixD& m, const char* name, const char* title, const Variable<RooAbsReal>& x, const Variable<RooAbsReal>& y){  
     // Sets the bin content of the histogram as that element of the input vector
     // TODO
     return NULL;
   }
-  template<> RooAbsReal* createHist<RooAbsReal>(const TMatrixD& m, const TMatrixD& me, const char* name, const char* title, const Variable& x, const Variable& y){  
+  template<> RooAbsReal* createHist<RooAbsReal>(const TMatrixD& m, const TMatrixD& me, const char* name, const char* title, const Variable<RooAbsReal>& x, const Variable<RooAbsReal>& y){  
     // Sets the bin content of the histogram as that element of the input vector
     // TODO
     return NULL;
@@ -146,11 +145,11 @@ namespace RooUnfolding {
     // TODO
     return 0;
   }
-  template<> RooAbsReal* createHist<RooAbsReal>(const TVectorD& v, const char* name, const char* title, const std::vector<Variable>& x, bool overflow){
+  template<> RooAbsReal* createHist<RooAbsReal>(const TVectorD& v, const char* name, const char* title, const std::vector<Variable<RooAbsReal>>& x, bool overflow){
     // TODO
     return 0;
   }
-  template<> RooAbsReal* createHist<RooAbsReal>(const TVectorD& v, const TVectorD& ve, const char* name, const char* title, const std::vector<Variable>& x, bool overflow){
+  template<> RooAbsReal* createHist<RooAbsReal>(const TVectorD& v, const TVectorD& ve, const char* name, const char* title, const std::vector<Variable<RooAbsReal>>& x, bool overflow){
     // TODO
     return 0;
   }
@@ -235,6 +234,7 @@ namespace RooUnfolding {
   }
 }  
 
-  
+template RooAbsReal* RooUnfolding::createHist<RooAbsReal>(TVectorT<double> const&, char const*, char const*, RooUnfolding::Variable<RooAbsReal> const&, bool);
+template std::vector<RooUnfolding::Variable<RooAbsReal> > RooUnfolding::vars<RooAbsReal>(RooAbsReal const*); 
 
 

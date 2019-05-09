@@ -27,14 +27,7 @@ namespace RooUnfolding {
   };
   
   enum Dimension { X, Y, Z };
-
-  struct Variable {
-    int _nBins;
-    double _min;
-    double _max;
-    const char* _name;
-    Variable(int nBins,double min,double max,const char* name) : _nBins(nBins),_min(min),_max(max),_name(name) {};
-  };
+  template<class Hist> struct Variable;
 
   template<class Hist> void reset(Hist* h);
   template<class Hist> double min(const Hist* hist, RooUnfolding::Dimension d);
@@ -95,15 +88,15 @@ namespace RooUnfolding {
   template<class Hist2D> TMatrixD h2m  (const Hist2D* h, bool overflow = false);  
   template<class Hist2D> TMatrixD h2me  (const Hist2D* h, bool overflow = false);  
 
-  template<class Hist2D> Hist2D* createHist(const char* name, const char* title, const Variable& x, const Variable& y);
-  template<class Hist2D> Hist2D* createHist(const TMatrixD& m, const char* name, const char* title, const Variable& x, const Variable& y);
-  template<class Hist2D> Hist2D* createHist(const TMatrixD& m, const TMatrixD& me, const char* name, const char* title, const Variable& x, const Variable& y);
-  template<class Hist> Hist* createHist(const char* name, const char* title, const std::vector<Variable>& x);  
-  template<class Hist> Hist* createHist(const char* name, const char* title, const Variable& x) { return createHist<Hist>(name,title,std::vector<Variable>{x}); };  
-  template<class Hist> Hist* createHist(const TVectorD& vec, const char* name, const char* title, const std::vector<Variable>& x, bool overflow=false);
-  template<class Hist> Hist* createHist(const TVectorD& vec, const char* name, const char* title, const Variable& x, bool overflow=false) { return createHist<Hist>(vec,name,title,std::vector<Variable>{x},overflow); };  
-  template<class Hist> Hist* createHist(const TVectorD& vec, const TVectorD& errvec, const char* name, const char* title, const std::vector<Variable>& x, bool overflow=false);
-  template<class Hist> Hist* createHist(const TVectorD& vec, const TVectorD& errvec, const char* name, const char* title, const Variable& x, bool overflow=false) { return createHist<Hist>(vec,errvec,name,title,std::vector<Variable>{x},overflow); };  
+  template<class Hist2D> Hist2D* createHist(const char* name, const char* title, const Variable<Hist2D>& x, const Variable<Hist2D>& y);
+  template<class Hist2D> Hist2D* createHist(const TMatrixD& m, const char* name, const char* title, const Variable<Hist2D>& x, const Variable<Hist2D>& y);
+  template<class Hist2D> Hist2D* createHist(const TMatrixD& m, const TMatrixD& me, const char* name, const char* title, const Variable<Hist2D>& x, const Variable<Hist2D>& y);
+  template<class Hist> Hist* createHist(const char* name, const char* title, const std::vector<Variable<Hist>>& x);  
+  template<class Hist> Hist* createHist(const char* name, const char* title, const Variable<Hist>& x) { return createHist<Hist>(name,title,std::vector<Variable<Hist>>{x}); };  
+  template<class Hist> Hist* createHist(const TVectorD& vec, const char* name, const char* title, const std::vector<Variable<Hist>>& x, bool overflow=false);
+  template<class Hist> Hist* createHist(const TVectorD& vec, const char* name, const char* title, const Variable<Hist>& x, bool overflow=false);
+  template<class Hist> Hist* createHist(const TVectorD& vec, const TVectorD& errvec, const char* name, const char* title, const std::vector<Variable<Hist>>& x, bool overflow=false);
+  template<class Hist> Hist* createHist(const TVectorD& vec, const TVectorD& errvec, const char* name, const char* title, const Variable<Hist>& x, bool overflow=false);
   
   void printTable (std::ostream& o, const TVectorD& vTrainTrue, const TVectorD& vTrain, const TVectorD& vMeas, const TVectorD& vReco, Int_t nm, Int_t nt);
 
@@ -113,17 +106,8 @@ namespace RooUnfolding {
   void add(TMatrixD& target, const TMatrixD& addition);
   TMatrixD& ABAT (const TMatrixD& a, const TMatrixD& b, TMatrixD& c);
   TMatrixD& ABAT (const TMatrixD& a, const TVectorD& b, TMatrixD& c);
-  template<class Hist> RooUnfolding::Variable var(const Hist* h, Dimension d){
-    return Variable(nBins(h,d),min(h,d),max(h,d),varname(h,d));
-  }
-  template<class Hist> std::vector<RooUnfolding::Variable> vars(const Hist* h){
-    int d = dim(h);
-    std::vector<Variable> v;
-    v.push_back(var(h,X));
-    if(d>1) v.push_back(var(h,Y));
-    if(d>2) v.push_back(var(h,Z));
-    return v;
-  }
+  template<class Hist> RooUnfolding::Variable<Hist> var(const Hist* h, Dimension d);
+  template<class Hist> std::vector<RooUnfolding::Variable<Hist>> vars(const Hist* h);
 }
 
 #endif
