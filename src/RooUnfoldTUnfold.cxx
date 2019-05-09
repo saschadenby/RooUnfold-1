@@ -195,7 +195,7 @@ RooUnfoldTUnfold::Unfold()
   }
 
   // Subtract fakes from measured distribution
-  if (_res->FakeEntries()) {
+  if (_res->HasFakes()) {
     TVectorD fakes= _res->Vfakes();
     Double_t fac= _res->Vmeasured().Sum();
     if (fac!=0.0) fac=  Vmeasured().Sum() / fac;

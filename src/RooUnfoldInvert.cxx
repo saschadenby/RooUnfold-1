@@ -110,7 +110,7 @@ RooUnfoldInvert::Unfold()
   _rec.ResizeTo(_nm);
   _rec= Vmeasured();
 
-  if (_res->FakeEntries()) {
+  if (_res->HasFakes()) {
     TVectorD fakes= _res->Vfakes();
     Double_t fac= _res->Vmeasured().Sum();
     if (fac!=0.0) fac=  Vmeasured().Sum() / fac;

@@ -76,7 +76,7 @@ RooUnfoldBinByBinT<Hist,Hist2D>::Unfold()
 
     TVectorD fakes= this->_res->Vfakes();
     Double_t fac= 0.0;
-    if (this->_res->FakeEntries()) {
+    if (this->_res->HasFakes()) {
       fac= vtrain.Sum();
       if (fac!=0.0) fac= vmeas.Sum() / fac;
       if (this->_verbose>=1) std::cout << "Subtract " << fac*fakes.Sum() << " fakes from measured distribution" << std::endl;

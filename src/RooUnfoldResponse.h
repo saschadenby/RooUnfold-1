@@ -69,7 +69,7 @@ public:
 
   void   UseOverflow (Bool_t set= kTRUE);      // Specify to use overflow bins
   Bool_t UseOverflowStatus() const;            // Get UseOverflow setting
-  Double_t FakeEntries() const;                // Return number of bins with fakes
+  bool HasFakes() const;                // Return number of bins with fakes
   virtual void Print (Option_t* option="") const;
 
   Hist* ApplyToTruth (const Hist* truth= 0, const char* name= "AppliedResponse") const; // If argument is 0, applies itself to its own truth
@@ -162,6 +162,7 @@ public:
 
   virtual void Add (const RooUnfoldResponse& rhs);
   virtual Long64_t Merge (TCollection* others);
+  virtual Long64_t FakeEntries() const;                // Return number of bins with fakes
 
 private:
   virtual Int_t Miss1D (Double_t xt, Double_t w= 1.0);  // Fill missed event into 1D Response Matrix (with weight)

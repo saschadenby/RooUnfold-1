@@ -110,7 +110,7 @@ void
 RooUnfoldIds::Unfold()
 {
    // Data and MC reco/truth must have the same number of bins
-   if (_res->FakeEntries()) {
+   if (_res->HasFakes()) {
       _nb = _nt+1;
       if (_nm>_nb) _nb = _nm;
    } else {
@@ -131,7 +131,7 @@ RooUnfoldIds::Unfold()
    RooUnfolding::resize(_reshist, _nb, _nb);
 
    // Something about fakes here?
-   if (_res->FakeEntries()) {
+   if (_res->HasFakes()) {
       TVectorD fakes = _res->Vfakes();
       Double_t nfakes = fakes.Sum();
       if (_verbose >= 1) std::cout << "Add truth bin for " << nfakes << " fakes" << std::endl;

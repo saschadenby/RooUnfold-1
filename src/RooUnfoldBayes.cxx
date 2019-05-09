@@ -162,7 +162,7 @@ RooUnfoldBayesT<Hist,Hist2D>::setup()
 
   h2m(this->_res->Hresponse(), this->_Nji, this->_overflow);   // don't normalise, which is what this->_res->Mresponse() would give us
 
-  if (this->_res->FakeEntries()) {
+  if (this->_res->HasFakes()) {
     TVectorD fakes= this->_res->Vfakes();
     double nfakes= fakes.Sum();
     if (this->verbose()>=0) cout << "Add truth bin for " << nfakes << " fakes" << endl;

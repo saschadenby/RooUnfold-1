@@ -43,25 +43,7 @@ namespace RooUnfolding {
   template<> int sumW2N<RooAbsReal>(const RooAbsReal* hist){
     return 0;
   }
-  template<> void projectY<RooAbsReal>(RooAbsReal* _res, RooAbsReal* _tru, bool overflow){
-    // TODO
-  } 
-  template<> void projectX<RooAbsReal>(RooAbsReal* _res, RooAbsReal* _mes, bool overflow){
-    // TODO
-  }  
-  template<> void subtractProjectX<RooAbsReal>(RooAbsReal* _res, RooAbsReal* _mes, RooAbsReal* _fak, bool overflow){
-    // TODO
-  }
-  template<> int fill<RooAbsReal>(RooAbsReal* hist, double x, double w){
-    return 0;
-  }
-  template<> int fill<RooAbsReal>(RooAbsReal* hist, double x, double y, double w){
-    return 0;
-  }  
-  template<> int fill<RooAbsReal>(RooAbsReal* hist, double x, double y, double z, double w){
-    return 0;
-  }  
-  template<> int entries<RooAbsReal>(const RooAbsReal* hist){
+  template<> bool empty<RooAbsReal>(const RooAbsReal* hist){
     // TODO
     return 0;
   }

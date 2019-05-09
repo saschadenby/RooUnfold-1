@@ -32,7 +32,7 @@ namespace RooUnfolding {
   template<class Hist> double min(const Hist* hist, RooUnfolding::Dimension d);
   template<class Hist> double max(const Hist* hist, RooUnfolding::Dimension d);
   template<class Hist> int sumW2N(const Hist* hist);
-  template<class Hist> int entries(const Hist* hist);
+  template<class Hist> bool empty(const Hist* hist);
   template<class Hist> int dim(const Hist* hist);
   template<class Hist> int nBins(const Hist* hist, bool overflow=false);
   template<class Hist> int nBins(const Hist* hist, RooUnfolding::Dimension d, bool overflow=false);
@@ -42,9 +42,6 @@ namespace RooUnfolding {
   template<class Hist> double binWidth(const Hist*h, int i, RooUnfolding::Dimension d);
   template<class Hist> double binHighEdge(const Hist*h, int i, RooUnfolding::Dimension d);
   template<class Hist> double binLowEdge(const Hist*h, int i, RooUnfolding::Dimension d);
-  template<class Hist> int fill(Hist* hist, double x, double w);
-  template<class Hist> int fill(Hist* hist, double x, double y, double w);
-  template<class Hist> int fill(Hist* hist, double x, double y, double z, double w);
   template<class Hist> void binXYZ(const Hist* tru, int i, int& jx, int& jy, int& jz);
   template<class Hist> double binError(const Hist* h, int i, bool overflow);
   template<class Hist> double binContent (const Hist* h, int i, bool overflow);
@@ -69,9 +66,6 @@ namespace RooUnfolding {
   template<class Hist, class Hist2D> void h2meNorm  (const Hist2D* h, TMatrixD& m, const Hist* norm, bool overflow = false);  
   template<class Hist, class Hist2D> TMatrixD h2mNorm  (const Hist2D* h, const Hist* norm, bool overflow = false);  
   template<class Hist, class Hist2D> TMatrixD h2meNorm  (const Hist2D* h, const Hist* norm, bool overflow = false);  
-  template<class Hist, class Hist2D> void projectY(Hist2D* _res, Hist* _tru, bool overflow);
-  template<class Hist, class Hist2D> void projectX(Hist2D* _res, Hist* _mes, bool overflow);
-  template<class Hist, class Hist2D> void subtractProjectX(Hist2D* _res, Hist* _mes, Hist* _fak, bool overflow);
 
   template<class Hist2D> void h2m  (const Hist2D* h, TMatrixD& m, bool overflow = false);
   template<class Hist2D> void h2me  (const Hist2D* h, TMatrixD& m, bool overflow = false);

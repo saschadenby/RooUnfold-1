@@ -162,7 +162,7 @@ RooUnfoldSvdT<Hist,Hist2D>::Unfold()
   RooUnfolding::resize (this->_reshist, this->_nb, this->_nb);
 
   // Subtract fakes from measured distribution
-  if (this->_res->FakeEntries()) {
+  if (this->_res->HasFakes()) {
     TVectorD fakes(this->_res->Vfakes());
     Double_t fac= this->_res->Vmeasured().Sum();
     if (fac!=0.0) fac=  this->Vmeasured().Sum() / fac;

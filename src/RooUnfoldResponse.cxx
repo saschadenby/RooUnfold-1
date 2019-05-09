@@ -570,10 +570,10 @@ Bool_t RooUnfoldResponseT<Hist,Hist2D>::UseOverflowStatus() const
 }
 
 template<class Hist, class Hist2D>
-Double_t RooUnfoldResponseT<Hist,Hist2D>::FakeEntries() const
+bool RooUnfoldResponseT<Hist,Hist2D>::HasFakes() const
 {
   // Return number of fake entries
-  return _fak ? entries(_fak) : 0.0;
+  return _fak && !empty(_fak);
 }
 
 
@@ -597,6 +597,16 @@ Double_t RooUnfoldResponseT<Hist,Hist2D>::FakeEntries() const
 template class RooUnfoldResponseT<TH1,TH2>;
 
 namespace {
+  template<class Hist> int entries(const Hist* hist);
+
+  template<class Hist> int entries(const Hist* hist){
+    return hist->GetEntries();
+  }
+
+  template int entries<TH1>(TH1 const*);
+  template int entries<TH2>(TH2 const*);
+  template int entries<TH3>(TH3 const*);  
+
   template<class Hist> Hist* copy(const Hist* orighist){
     Bool_t oldstat= TH1::AddDirectoryStatus();
     TH1::AddDirectory (kFALSE);
@@ -604,6 +614,78 @@ namespace {
     TH1::AddDirectory (oldstat);
     return hist;
   }
+
+  template<class Hist, class Hist2D> void projectY(Hist2D* _res, Hist* _tru, bool overflow);
+  template<class Hist, class Hist2D> void projectX(Hist2D* _res, Hist* _mes, bool overflow);
+  template<class Hist, class Hist2D> void subtractProjectX(Hist2D* _res, Hist* _mes, Hist* _fak, bool overflow);
+
+  template<> void projectY<TH1>(TH2* _res, TH1* _tru, bool overflow){
+    Int_t s= _res->GetSumw2N();
+    for (Int_t j= 1-overflow; j<_res->GetNbinsY()+1+overflow; j++) {
+      Double_t ntru= 0.0, wtru= 0.0;
+      for (Int_t i= 0; i<_res->GetNbinsX()+2; i++) {
+        ntru +=      _res->GetBinContent (i, j);
+        if (s) wtru += pow (_res->GetBinError   (i, j), 2);
+      }
+      Int_t b= bin<TH1>(_tru, j, overflow);
+      _tru->SetBinContent (b,      ntru);
+      if (s) _tru->SetBinError   (b, sqrt(wtru));
+    }
+  }
+  template<> void projectX<TH1>(TH2* _res, TH1* _mes, bool overflow){
+    Int_t s= _res->GetSumw2N();
+    for (Int_t i= 1-overflow; i<_res->GetNbinsX()+1+overflow; i++) {
+      Double_t nmes= 0.0, wmes= 0.0;
+      for (Int_t j= 0; j<_res->GetNbinsY(); j++) {
+        nmes +=      _res->GetBinContent (i, j);
+        if (s) wmes += pow (_res->GetBinError   (i, j), 2);
+      }
+      Int_t b= RooUnfolding::bin (_mes, i, overflow);
+      _mes->SetBinContent (b,      nmes );
+      if (s) _mes->SetBinError   (b, sqrt(wmes));
+    }
+  }
+  template<> void subtractProjectX<TH1>(TH2* _res, TH1* _mes, TH1* _fak, bool overflow){
+    Int_t s= _res->GetSumw2N();
+    Int_t sm= _mes->GetSumw2N(), nfake=0;
+    for (Int_t i= 1-overflow; i<_res->GetNbinsX()+1+overflow; i++) {
+      Double_t nmes= 0.0, wmes= 0.0;
+      for (Int_t j= 0; j<_res->GetNbinsY()+2; j++) {
+        nmes +=      _res->GetBinContent (i, j);
+        if (s) wmes += pow (_res->GetBinError   (i, j), 2);
+      }
+      Int_t b= RooUnfolding::bin (_mes, i, overflow);
+      Double_t fake= _mes->GetBinContent (b) - nmes;
+      if (fake!=0.0) nfake++;
+      if (!s) wmes= nmes;
+      _fak->SetBinContent (b, fake);
+      _fak->SetBinError   (b, sqrt (wmes + (sm ? pow(_mes->GetBinError(b),2) : _mes->GetBinContent(b))));
+    }
+#if ROOT_VERSION_CODE >= ROOT_VERSION(5,13,0)
+    _fak->SetEntries (_fak->GetEffectiveEntries());  // 0 entries if 0 fakes
+#else
+    _fak->SetEntries (nfake);  // 0 entries if 0 fakes
+#endif    
+  }
+
+
+  template<class Hist> int fill(Hist* hist, double x, double w);
+  template<class Hist> int fill(Hist* hist, double x, double y, double w);
+  template<class Hist> int fill(Hist* hist, double x, double y, double z, double w);
+  template<> int fill<TH1>(TH1* hist, double x, double w){
+    return hist->Fill (x, w);
+  }
+  template<> int fill<TH1>(TH1* hist, double x, double y, double w){
+    return ((TH2*)hist)->Fill (x, y, w);
+  }
+  template<> int fill<TH1>(TH1* hist, double x, double y, double z, double w){
+    return ((TH3*)hist)->Fill (x, y, z, w);
+  }    
+  template<> int fill<TH2>(TH2* hist, double x, double y, double w){
+    return hist->Fill (x, y, w);
+  } 
+
+
 }
 
 
@@ -765,7 +847,7 @@ RooUnfoldResponse::Merge (TCollection* others)
     if (RooUnfoldResponse* other= dynamic_cast<RooUnfoldResponse*>(o))
       Add (*other);
   }
-  return Long64_t(entries(_res));
+  return Long64_t(::entries(_res));
 }
 
 RooUnfoldResponse&
@@ -852,7 +934,7 @@ RooUnfoldResponse::Setup (const TH1* measured, const TH1* truth, const TH2* resp
          << ", but matrix is " << nBins(_res,RooUnfolding::X)<< " X " << nBins(_res,RooUnfolding::Y) << endl;
   }
 
-  if (!measured || entries(_mes) == 0.0) {
+  if (!measured || ::entries(_mes) == 0.0) {
     // Similar to _res->ProjectionX() but without stupid reset of existing histograms
     // Always include under/overflows in sum of truth.
     projectX(_res,_mes,_overflow);
@@ -862,7 +944,7 @@ RooUnfoldResponse::Setup (const TH1* measured, const TH1* truth, const TH2* resp
     subtractProjectX(_res,_mes,_fak,_overflow);
   }
 
-  if (!truth || entries(_tru) == 0.0) {
+  if (!truth || ::entries(_tru) == 0.0) {
     // similar to _res->ProjectionY() but without stupid reset of existing histograms
     // Always include under/overflows in sum of measurements.
     projectY(_res,_tru,_overflow);
@@ -990,6 +1072,13 @@ RooUnfoldResponse::Fake (Double_t xr, Double_t yr, Double_t zr, Double_t w)
   if (Cached()) ClearCache();
   fill(_mes, xr, yr, zr, w);
   return fill(_fak, xr, yr, zr, w);
+}
+
+
+Long64_t RooUnfoldResponse::FakeEntries() const
+{
+  // Return number of fake entries
+  return _fak ? entries(_fak) : 0.0;
 }
 
 ClassImp (RooUnfoldResponse);

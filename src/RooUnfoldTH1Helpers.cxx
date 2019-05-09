@@ -79,11 +79,11 @@ namespace RooUnfolding {
   template<class Hist> Variable<Hist> var(const Hist* h, Dimension d){
     return Variable<Hist>(nBins(h,d),min(h,d),max(h,d),"");
   }
+  template<class Hist> bool empty(const Hist* hist){
+    return hist->GetEntries() == 0;
+  }
   template<class Hist> int sumW2N(const Hist* hist){
     return hist->GetSumw2N();
-  }
-  template<class Hist> int entries(const Hist* hist){
-    return hist->GetEntries();
   }
   template<class Hist> int bin(const Hist* h, Int_t i, Bool_t overflow){
     // vector index (0..nx*ny-1) -> multi-dimensional histogram
@@ -111,66 +111,6 @@ namespace RooUnfolding {
     const TAxis* ax = getAxis(h,d);
     return ax->GetBinLowEdge(i);
   }
-  template<> void projectY<TH1>(TH2* _res, TH1* _tru, bool overflow){
-    Int_t s= _res->GetSumw2N();
-    for (Int_t j= 1-overflow; j<_res->GetNbinsY()+1+overflow; j++) {
-      Double_t ntru= 0.0, wtru= 0.0;
-      for (Int_t i= 0; i<_res->GetNbinsX()+2; i++) {
-        ntru +=      _res->GetBinContent (i, j);
-        if (s) wtru += pow (_res->GetBinError   (i, j), 2);
-      }
-      Int_t b= bin<TH1>(_tru, j, overflow);
-      _tru->SetBinContent (b,      ntru);
-      if (s) _tru->SetBinError   (b, sqrt(wtru));
-    }
-  }
-  template<> void projectX<TH1>(TH2* _res, TH1* _mes, bool overflow){
-    Int_t s= _res->GetSumw2N();
-    for (Int_t i= 1-overflow; i<_res->GetNbinsX()+1+overflow; i++) {
-      Double_t nmes= 0.0, wmes= 0.0;
-      for (Int_t j= 0; j<_res->GetNbinsY(); j++) {
-        nmes +=      _res->GetBinContent (i, j);
-        if (s) wmes += pow (_res->GetBinError   (i, j), 2);
-      }
-      Int_t b= RooUnfolding::bin (_mes, i, overflow);
-      _mes->SetBinContent (b,      nmes );
-      if (s) _mes->SetBinError   (b, sqrt(wmes));
-    }
-  }
-  template<> void subtractProjectX<TH1>(TH2* _res, TH1* _mes, TH1* _fak, bool overflow){
-    Int_t s= _res->GetSumw2N();
-    Int_t sm= _mes->GetSumw2N(), nfake=0;
-    for (Int_t i= 1-overflow; i<_res->GetNbinsX()+1+overflow; i++) {
-      Double_t nmes= 0.0, wmes= 0.0;
-      for (Int_t j= 0; j<_res->GetNbinsY()+2; j++) {
-        nmes +=      _res->GetBinContent (i, j);
-        if (s) wmes += pow (_res->GetBinError   (i, j), 2);
-      }
-      Int_t b= RooUnfolding::bin (_mes, i, overflow);
-      Double_t fake= _mes->GetBinContent (b) - nmes;
-      if (fake!=0.0) nfake++;
-      if (!s) wmes= nmes;
-      _fak->SetBinContent (b, fake);
-      _fak->SetBinError   (b, sqrt (wmes + (sm ? pow(_mes->GetBinError(b),2) : _mes->GetBinContent(b))));
-    }
-#if ROOT_VERSION_CODE >= ROOT_VERSION(5,13,0)
-    _fak->SetEntries (_fak->GetEffectiveEntries());  // 0 entries if 0 fakes
-#else
-    _fak->SetEntries (nfake);  // 0 entries if 0 fakes
-#endif    
-  }
-  template<> int fill<TH1>(TH1* hist, double x, double w){
-    return hist->Fill (x, w);
-  }
-  template<> int fill<TH1>(TH1* hist, double x, double y, double w){
-    return ((TH2*)hist)->Fill (x, y, w);
-  }
-  template<> int fill<TH1>(TH1* hist, double x, double y, double z, double w){
-    return ((TH3*)hist)->Fill (x, y, z, w);
-  }    
-  template<> int fill<TH2>(TH2* hist, double x, double y, double w){
-    return hist->Fill (x, y, w);
-  } 
   template<> void binXYZ<TH1>(const TH1* tru, int i, int& jx, int& jy, int& jz){
     Int_t j= RooUnfolding::bin<TH1>(tru, i, false);
     if (dim(tru)>1) tru->GetBinXYZ (j, jx, jy, jz);
@@ -585,9 +525,6 @@ template double RooUnfolding::binWidth<TH3>(TH3 const*, int, RooUnfolding::Dimen
 template TH1* RooUnfolding::resize<TH1>(TH1*, int, int, int);
 template TH2* RooUnfolding::resize<TH2>(TH2*, int, int, int);
 template TH3* RooUnfolding::resize<TH3>(TH3*, int, int, int);
-template int RooUnfolding::entries<TH1>(TH1 const*);
-template int RooUnfolding::entries<TH2>(TH2 const*);
-template int RooUnfolding::entries<TH3>(TH3 const*);
 template int RooUnfolding::dim<TH1>(TH1 const*);
 template int RooUnfolding::dim<TH2>(TH2 const*);
 template int RooUnfolding::dim<TH3>(TH3 const*);
@@ -608,6 +545,8 @@ template TVectorT<double> RooUnfolding::h2v<TH1>(TH1 const*, bool);
 template TVectorT<double> RooUnfolding::h2ve<TH1>(TH1 const*, bool);
 template void RooUnfolding::h2ve<TH1>(TH1 const*, TVectorT<double>&, bool);
 template void RooUnfolding::printTable<TH1>(std::ostream&, TH1 const*, TH1 const*, TH1 const*, TH1 const*, TH1 const*, bool, RooUnfolding::ErrorTreatment, double);
-
+template bool RooUnfolding::empty<TH1>(const TH1*);
+template bool RooUnfolding::empty<TH2>(const TH2*);
+template bool RooUnfolding::empty<TH3>(const TH3*);
   
 
