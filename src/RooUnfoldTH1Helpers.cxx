@@ -294,7 +294,7 @@ namespace RooUnfolding {
     int ny = m.GetNcols();
     TH2* h = createHist<TH2>(name,title,x,y);
     for (Int_t i= 0; i < nx; i++) {
-      for (Int_t j= 0; j < nx; j++) {
+      for (Int_t j= 0; j < ny; j++) {
         Int_t n= RooUnfolding::bin<TH1>(h, i, j, false);
         h->SetBinContent (n, m(i,j));
       }
@@ -307,7 +307,7 @@ namespace RooUnfolding {
     int ny = m.GetNcols();
     TH2* h = createHist<TH2>(name,title,x,y);
     for (Int_t i= 0; i < nx; i++) {
-      for (Int_t j= 0; j < nx; j++) {
+      for (Int_t j= 0; j < ny; j++) {
         Int_t n= RooUnfolding::bin<TH1>(h, i, j, false);
         h->SetBinContent (n, m(i,j));
         h->SetBinError   (n, me(i,j));
@@ -512,7 +512,9 @@ namespace RooUnfolding {
 }
   
 
-
+template int RooUnfolding::nBins<TH1>(TH1 const*, RooUnfolding::Dimension, bool);
+template int RooUnfolding::nBins<TH2>(TH2 const*, RooUnfolding::Dimension, bool);
+template int RooUnfolding::nBins<TH3>(TH3 const*, RooUnfolding::Dimension, bool);
 template int RooUnfolding::sumW2N<TH1>(TH1 const*);
 template int RooUnfolding::sumW2N<TH2>(TH2 const*);
 template int RooUnfolding::sumW2N<TH3>(TH3 const*);
@@ -534,10 +536,13 @@ template std::vector<RooUnfolding::Variable<TH3> > RooUnfolding::vars<TH3>(TH3 c
 template RooUnfolding::Variable<TH1> RooUnfolding::var<TH1>(TH1 const*, RooUnfolding::Dimension);
 template RooUnfolding::Variable<TH2> RooUnfolding::var<TH2>(TH2 const*, RooUnfolding::Dimension);
 template RooUnfolding::Variable<TH3> RooUnfolding::var<TH3>(TH3 const*, RooUnfolding::Dimension);
+template TH1* RooUnfolding::createHist<TH1>(char const*, char const*, RooUnfolding::Variable<TH1> const&);
 template TH1* RooUnfolding::createHist<TH1>(char const*, char const*, std::vector<RooUnfolding::Variable<TH1> > const&);
 template TH2* RooUnfolding::createHist<TH2>(char const*, char const*, std::vector<RooUnfolding::Variable<TH2> > const&);
 template TH1* RooUnfolding::createHist<TH1>(TVectorT<double> const&, char const*, char const*, RooUnfolding::Variable<TH1> const&, bool);
-template TH2* RooUnfolding::createHist<TH2>(TVectorT<double> const&, char const*, char const*, RooUnfolding::Variable<TH2> const&, bool);
+template TH1* RooUnfolding::createHist<TH1>(TVectorT<double> const&, char const*, char const*, std::vector<RooUnfolding::Variable<TH1> > const&, bool);
+template TH2* RooUnfolding::createHist<TH2>(TVectorT<double> const&, char const*, char const*, std::vector<RooUnfolding::Variable<TH2> > const&, bool);
+template TH1* RooUnfolding::createHist<TH1>(TVectorT<double> const&, TVectorT<double> const&, char const*, char const*, RooUnfolding::Variable<TH1> const&, bool);
 template TH1* RooUnfolding::createHist<TH1>(TVectorT<double> const&, TVectorT<double> const&, char const*, char const*, std::vector<RooUnfolding::Variable<TH1> > const&, bool);
 template TH2* RooUnfolding::createHist<TH2>(TVectorT<double> const&, TVectorT<double> const&, char const*, char const*, std::vector<RooUnfolding::Variable<TH2> > const&, bool);
 template void RooUnfolding::h2v<TH1>(TH1 const*, TVectorT<double>&, bool);

@@ -151,7 +151,6 @@ RooUnfoldSvdT<Hist,Hist2D>::Unfold()
     return;
   }
 
-  Bool_t oldstat= TH1::AddDirectoryStatus();
   this->_meas1d=  ::histNoOverflow (this->_meas,             this->_overflow);
   this->_train1d= ::histNoOverflow (this->_res->Hmeasured(), this->_overflow);
   this->_truth1d= ::histNoOverflow (this->_res->Htruth(),    this->_overflow);

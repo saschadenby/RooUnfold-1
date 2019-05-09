@@ -160,7 +160,7 @@ RooUnfoldT<Hist,Hist2D>::New (RooUnfolding::Algorithm alg, const RooUnfoldRespon
     5 = kInvert:   Unfold using inversion of response matrix
     7 = kIDS:      Unfold using iterative dynamically stabilized (IDS) method
     */
-  RooUnfoldT<Hist,Hist2D>* unfold;
+  RooUnfoldT<Hist,Hist2D>* unfold(NULL);
   switch (alg) {
     case kNone:
       unfold= new RooUnfoldT<Hist,Hist2D>         (res, meas);
@@ -196,7 +196,7 @@ RooUnfoldT<Hist,Hist2D>::New (RooUnfolding::Algorithm alg, const RooUnfoldRespon
 //    case kIDS:
 //      unfold= new RooUnfoldIds      (res, meas);
 //      break;
-//    default:
+  default:
       cerr << "Unknown RooUnfold method " << Int_t(alg) << endl;
       return 0;
   }
@@ -222,7 +222,7 @@ RooUnfoldT<TH1,TH2>::New (RooUnfolding::Algorithm alg, const RooUnfoldResponseT<
     5 = kInvert:   Unfold using inversion of response matrix
     7 = kIDS:      Unfold using iterative dynamically stabilized (IDS) method
     */
-  RooUnfold* unfold;
+  RooUnfold* unfold = NULL;
   switch (alg) {
     case kNone:
       unfold= new RooUnfold         (res, meas);

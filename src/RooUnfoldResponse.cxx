@@ -169,13 +169,13 @@ RooUnfoldResponseT<Hist,Hist2D>::setup()
 template <class Hist, class Hist2D> void
 RooUnfoldResponseT<Hist,Hist2D>::ClearCache()
 {
-  if(_vMes) delete _vMes; _vMes= 0;
-  if(_eMes) delete _eMes; _eMes= 0;
-  if(_vFak) delete _vFak; _vFak= 0;
-  if(_vTru) delete _vTru; _vTru= 0;
-  if(_eTru) delete _eTru; _eTru= 0;
-  if(_mRes) delete _mRes; _mRes= 0;
-  if(_eRes) delete _eRes; _eRes= 0;
+  if(_vMes){ delete _vMes; _vMes= 0; }
+  if(_eMes){ delete _eMes; _eMes= 0; }
+  if(_vFak){ delete _vFak; _vFak= 0; }
+  if(_vTru){ delete _vTru; _vTru= 0; }
+  if(_eTru){ delete _eTru; _eTru= 0; }
+  if(_mRes){ delete _mRes; _mRes= 0; }
+  if(_eRes){ delete _eRes; _eRes= 0; }
   _cached= false;
 }
 
@@ -605,7 +605,6 @@ namespace {
 
   template int entries<TH1>(TH1 const*);
   template int entries<TH2>(TH2 const*);
-  template int entries<TH3>(TH3 const*);  
 
   template<class Hist> Hist* copy(const Hist* orighist){
     Bool_t oldstat= TH1::AddDirectoryStatus();

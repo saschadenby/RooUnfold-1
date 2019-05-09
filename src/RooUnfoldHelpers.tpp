@@ -20,8 +20,6 @@ namespace RooUnfolding {
   {
     // Prints entries from truth, measured, and reconstructed data for each bin.
     if (withError==kDefault) withError= sumW2N(hReco) ? kErrors : kNoError;
-    int _nm= nBins(hTrain,X);
-    int  _nt= nBins(hTrainTrue,X);
     Int_t d= dim(hReco), ntxb= nBins(hReco,X)+2*overflow, ntyb= nBins(hReco,Y)+2*overflow;
     if (dim(hMeas) != d || nBins(hMeas,X)+2*overflow != ntxb || nBins(hMeas,Y)+2*overflow != ntyb) d= 1;
     printTable(o,d,
