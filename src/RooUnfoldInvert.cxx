@@ -48,7 +48,7 @@ RooUnfoldInvert::RooUnfoldInvert (const RooUnfoldInvert& rhs)
   Init();
 }
 
-RooUnfoldInvert::RooUnfoldInvert (const RooUnfoldResponse* res, const TH1* meas,
+RooUnfoldInvert::RooUnfoldInvert (const RooUnfoldResponseT<TH1,TH2>* res, const TH1* meas,
                                   const char* name, const char* title)
   : RooUnfold (res, meas, name, title)
 {

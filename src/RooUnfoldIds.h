@@ -26,7 +26,7 @@ public:
 
    // Special constructors
 
-   RooUnfoldIds(const RooUnfoldResponse *res, const TH1 *meas, Int_t niter = 1);
+   RooUnfoldIds(const RooUnfoldResponseT<TH1,TH2> *res, const TH1 *meas, Int_t niter = 1);
 
    // Method-neutral method SetRegParm just calls SetNIter
    virtual void  SetRegParm (Double_t parm);

@@ -171,17 +171,6 @@ namespace RooUnfolding {
   template<> int fill<TH2>(TH2* hist, double x, double y, double w){
     return hist->Fill (x, y, w);
   } 
-  template<class Hist> Hist* maybeCopy(const Hist* orighist){
-    Bool_t oldstat= TH1::AddDirectoryStatus();
-    TH1::AddDirectory (kFALSE);
-    Hist* hist = (Hist*)(orighist ->Clone());
-    TH1::AddDirectory (oldstat);
-    return hist;
-  }
-  template<class Hist> bool maybeDelete(Hist* hist){
-    delete hist;
-    return true;
-  }  
   template<> void binXYZ<TH1>(const TH1* tru, int i, int& jx, int& jy, int& jz){
     Int_t j= RooUnfolding::bin<TH1>(tru, i, false);
     if (dim(tru)>1) tru->GetBinXYZ (j, jx, jy, jz);
@@ -608,12 +597,6 @@ template std::vector<RooUnfolding::Variable<TH3> > RooUnfolding::vars<TH3>(TH3 c
 template RooUnfolding::Variable<TH1> RooUnfolding::var<TH1>(TH1 const*, RooUnfolding::Dimension);
 template RooUnfolding::Variable<TH2> RooUnfolding::var<TH2>(TH2 const*, RooUnfolding::Dimension);
 template RooUnfolding::Variable<TH3> RooUnfolding::var<TH3>(TH3 const*, RooUnfolding::Dimension);
-template TH1* RooUnfolding::maybeCopy<TH1>(TH1 const*);
-template TH2* RooUnfolding::maybeCopy<TH2>(TH2 const*);
-template TH3* RooUnfolding::maybeCopy<TH3>(TH3 const*);
-template bool RooUnfolding::maybeDelete<TH1>(TH1*);
-template bool RooUnfolding::maybeDelete<TH2>(TH2*);
-template bool RooUnfolding::maybeDelete<TH3>(TH3*);
 template TH1* RooUnfolding::createHist<TH1>(char const*, char const*, std::vector<RooUnfolding::Variable<TH1> > const&);
 template TH2* RooUnfolding::createHist<TH2>(char const*, char const*, std::vector<RooUnfolding::Variable<TH2> > const&);
 template TH1* RooUnfolding::createHist<TH1>(TVectorT<double> const&, char const*, char const*, RooUnfolding::Variable<TH1> const&, bool);

@@ -36,46 +36,9 @@ public:
   // Standard methods
 
   RooUnfoldResponseT(); // default constructor
+  virtual ~RooUnfoldResponseT(); // destructor
   RooUnfoldResponseT(const char* name, const char* title); // named constructor
   RooUnfoldResponseT(const TString& name, const TString& title); // named constructor
-  RooUnfoldResponseT(const RooUnfoldResponseT& rhs); // copy constructor
-  virtual ~RooUnfoldResponseT(); // destructor
-  virtual RooUnfoldResponseT& operator= (const RooUnfoldResponseT& rhs); // assignment operator
-
-  // Special constructors
-
-  RooUnfoldResponseT(Int_t nb, Double_t xlo, Double_t xhi, const char* name= 0, const char* title= 0);  // constructor -  simple 1D case with same binning, measured vs truth
-  RooUnfoldResponseT(Int_t nm, Double_t mlo, Double_t mhi, Int_t nt, Double_t tlo, Double_t thi, const char* name= 0, const char* title= 0);  // constructor -  simple 1D case
-  RooUnfoldResponseT(const Hist* measured, const Hist* truth, const char* name= 0, const char* title= 0, bool overflow=false);  // constructor - measured and truth only used for shape
-  RooUnfoldResponseT(const Hist* measured, const Hist* truth, const Hist2D* response, const char* name= 0, const char* title= 0, bool overflow=false);  // create from already-filled histograms
-
-  // Set up an existing object
-
-  virtual RooUnfoldResponseT& Reset ();  // clear an existing object
-  virtual RooUnfoldResponseT& Setup (const RooUnfoldResponseT& rhs);  // set up based on another instance
-  virtual RooUnfoldResponseT& Setup (Int_t nb, Double_t xlo, Double_t xhi);  // set up simple 1D case with same binning, measured vs truth
-  virtual RooUnfoldResponseT& Setup (Int_t nm, Double_t mlo, Double_t mhi, Int_t nt, Double_t tlo, Double_t thi);  // set up simple 1D case
-  virtual RooUnfoldResponseT& Setup (const Hist* measured, const Hist* truth);  // set up - measured and truth only used for shape
-  virtual RooUnfoldResponseT& Setup (const Hist* measured, const Hist* truth, const Hist2D* response);  // set up from already-filled histograms
-
-  // Fill with training data
-
-  virtual Int_t Fill (Double_t xr, Double_t xt, Double_t w= 1.0);  // Fill 1D Response Matrix
-  virtual Int_t Fill (Double_t xr, Double_t yr, Double_t xt, Double_t yt, Double_t w= 1.0);  // Fill 2D Response Matrix
-  virtual Int_t Fill (Double_t xr, Double_t yr, Double_t zr, Double_t xt, Double_t yt, Double_t zt, Double_t w= 1.0);  // Fill 3D Response Matrix
-
-          Int_t Miss (Double_t xt);  // Fill missed event into 1D Response Matrix
-          Int_t Miss (Double_t xt, Double_t w);  // Fill missed event into 1D (with weight) or 2D Response Matrix
-          Int_t Miss (Double_t xt, Double_t yt, Double_t w);  // Fill missed event into 2D (with weight) or 3D Response Matrix
-  virtual Int_t Miss (Double_t xt, Double_t yt, Double_t zt, Double_t w);  // Fill missed event into 3D Response Matrix
-
-          Int_t Fake (Double_t xr);  // Fill fake event into 1D Response Matrix
-          Int_t Fake (Double_t xr, Double_t w);  // Fill fake event into 1D (with weight) or 2D Response Matrix
-          Int_t Fake (Double_t xr, Double_t yr, Double_t w);  // Fill fake event into 2D (with weight) or 3D Response Matrix
-  virtual Int_t Fake (Double_t xr, Double_t yr, Double_t zr, Double_t w);  // Fill fake event into 3D Response Matrix
-
-  virtual void Add (const RooUnfoldResponseT& rhs);
-  virtual Long64_t Merge (TCollection* others);
 
   // Accessors
 
@@ -109,26 +72,17 @@ public:
   Double_t FakeEntries() const;                // Return number of bins with fakes
   virtual void Print (Option_t* option="") const;
 
-  template < typename = typename std::enable_if< !std::is_same<Hist,Hist2D>::value > >
-  static Int_t   FindBin(const Hist*  h, Double_t x);  // return vector index for bin containing (x)
-  static Int_t   FindBin(const Hist*  h, Double_t x, Double_t y);  // return vector index for bin containing (x,y)
-  static Int_t   FindBin(const Hist*  h, Double_t x, Double_t y, Double_t z);  // return vector index for bin containing (x,y,z)
-
   Hist* ApplyToTruth (const Hist* truth= 0, const char* name= "AppliedResponse") const; // If argument is 0, applies itself to its own truth
   TF1* MakeFoldingFunction (TF1* func, Double_t eps=1e-12, Bool_t verbose=false) const;
 
   RooUnfoldResponseT* RunToy() const;
 
-private:
+protected:
 
-  virtual RooUnfoldResponseT& Init();
-  virtual RooUnfoldResponseT& Setup();
+  virtual void setup();
   virtual void ClearCache();
+  virtual bool Cached() const;
   virtual void SetNameTitleDefault (const char* defname= 0, const char* deftitle= 0);
-  virtual Int_t Miss1D (Double_t xt, Double_t w= 1.0);  // Fill missed event into 1D Response Matrix (with weight)
-  virtual Int_t Miss2D (Double_t xt, Double_t yt, Double_t w= 1.0);  // Fill missed event into 2D Response Matrix (with weight)
-  virtual Int_t Fake1D (Double_t xr, Double_t w= 1.0);  // Fill fake event into 1D Response Matrix (with weight)
-  virtual Int_t Fake2D (Double_t xr, Double_t yr, Double_t w= 1.0);  // Fill fake event into 2D Response Matrix (with weight)
 
   static Int_t GetBinDim (const Hist* h, Int_t i);
 
@@ -142,8 +96,9 @@ private:
   Hist*  _fak;      // Fakes    histogram
   Hist*  _tru;      // Truth    histogram
   Hist2D*_res;      // Response histogram
-  Int_t _overflow; // Use histogram under/overflows if 1
+  Int_t _overflow = 0; // Use histogram under/overflows if 1
 
+private:
   mutable TVectorD* _vMes;   //! Cached measured vector
   mutable TVectorD* _eMes;   //! Cached measured error
   mutable TVectorD* _vFak;   //! Cached fakes    vector
@@ -158,7 +113,65 @@ public:
   ClassDefT (RooUnfoldResponseT, 1) // Respose Matrix
 };
 
-typedef RooUnfoldResponseT<TH1,TH2> RooUnfoldResponse;
+class RooUnfoldResponse : public RooUnfoldResponseT<TH1,TH2> {
+public:
+
+  RooUnfoldResponse(){}; // default constructor
+  virtual ~RooUnfoldResponse(){}; // destructor
+  RooUnfoldResponse(const char* name, const char* title) : RooUnfoldResponseT(name,title) {}; // named constructor
+  RooUnfoldResponse(const TString& name, const TString& title) : RooUnfoldResponseT(name,title) {}; // named constructor
+
+  // Special constructors
+  
+  RooUnfoldResponse(Int_t nb, Double_t xlo, Double_t xhi, const char* name= 0, const char* title= 0);  // constructor -  simple 1D case with same binning, measured vs truth
+  RooUnfoldResponse(Int_t nm, Double_t mlo, Double_t mhi, Int_t nt, Double_t tlo, Double_t thi, const char* name= 0, const char* title= 0);  // constructor -  simple 1D case
+  RooUnfoldResponse(const TH1* measured, const TH1* truth, const char* name= 0, const char* title= 0, bool overflow=false);  // constructor - measured and truth only used for shape
+  RooUnfoldResponse(const TH1* measured, const TH1* truth, const TH2* response, const char* name= 0, const char* title= 0, bool overflow=false);  // create from already-filled histograms
+  RooUnfoldResponse(const RooUnfoldResponse& rhs); // copy constructor
+  virtual RooUnfoldResponse& operator= (const RooUnfoldResponse& rhs); // assignment operator
+
+  // Set up an existing object
+
+
+  virtual RooUnfoldResponse& Reset ();  // clear an existing object
+  virtual RooUnfoldResponse& Setup (const RooUnfoldResponse& rhs);  // set up based on another instance
+  virtual RooUnfoldResponse& Setup (Int_t nb, Double_t xlo, Double_t xhi);  // set up simple 1D case with same binning, measured vs truth
+  virtual RooUnfoldResponse& Setup (Int_t nm, Double_t mlo, Double_t mhi, Int_t nt, Double_t tlo, Double_t thi);  // set up simple 1D case
+  virtual RooUnfoldResponse& Setup (const TH1* measured, const TH1* truth);  // set up - measured and truth only used for shape
+  virtual RooUnfoldResponse& Setup (const TH1* measured, const TH1* truth, const TH2* response);  // set up from already-filled histograms
+
+  // Fill with training data
+
+  static Int_t   FindBin(const TH1*  h, Double_t x);  // return vector index for bin containing (x)
+  static Int_t   FindBin(const TH1*  h, Double_t x, Double_t y);  // return vector index for bin containing (x,y)
+  static Int_t   FindBin(const TH1*  h, Double_t x, Double_t y, Double_t z);  // return vector index for bin containing (x,y,z)
+
+  virtual Int_t Fill (Double_t xr, Double_t xt, Double_t w= 1.0);  // Fill 1D Response Matrix
+  virtual Int_t Fill (Double_t xr, Double_t yr, Double_t xt, Double_t yt, Double_t w= 1.0);  // Fill 2D Response Matrix
+  virtual Int_t Fill (Double_t xr, Double_t yr, Double_t zr, Double_t xt, Double_t yt, Double_t zt, Double_t w= 1.0);  // Fill 3D Response Matrix
+
+          Int_t Miss (Double_t xt);  // Fill missed event into 1D Response Matrix
+          Int_t Miss (Double_t xt, Double_t w);  // Fill missed event into 1D (with weight) or 2D Response Matrix
+          Int_t Miss (Double_t xt, Double_t yt, Double_t w);  // Fill missed event into 2D (with weight) or 3D Response Matrix
+  virtual Int_t Miss (Double_t xt, Double_t yt, Double_t zt, Double_t w);  // Fill missed event into 3D Response Matrix
+
+          Int_t Fake (Double_t xr);  // Fill fake event into 1D Response Matrix
+          Int_t Fake (Double_t xr, Double_t w);  // Fill fake event into 1D (with weight) or 2D Response Matrix
+          Int_t Fake (Double_t xr, Double_t yr, Double_t w);  // Fill fake event into 2D (with weight) or 3D Response Matrix
+  virtual Int_t Fake (Double_t xr, Double_t yr, Double_t zr, Double_t w);  // Fill fake event into 3D Response Matrix
+
+  virtual void Add (const RooUnfoldResponse& rhs);
+  virtual Long64_t Merge (TCollection* others);
+
+private:
+  virtual Int_t Miss1D (Double_t xt, Double_t w= 1.0);  // Fill missed event into 1D Response Matrix (with weight)
+  virtual Int_t Miss2D (Double_t xt, Double_t yt, Double_t w= 1.0);  // Fill missed event into 2D Response Matrix (with weight)
+  virtual Int_t Fake1D (Double_t xr, Double_t w= 1.0);  // Fill fake event into 1D Response Matrix (with weight)
+  virtual Int_t Fake2D (Double_t xr, Double_t yr, Double_t w= 1.0);  // Fill fake event into 2D Response Matrix (with weight)
+
+  ClassDef (RooUnfoldResponse, 1) // Respose Matrix
+};
+
 typedef RooUnfoldResponseT<RooAbsReal,RooAbsReal> RooFitUnfoldResponse;
 
 #endif

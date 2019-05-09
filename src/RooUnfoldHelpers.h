@@ -60,9 +60,6 @@ namespace RooUnfolding {
   template<class Hist> void subtract(Hist* hist, const TVectorD& vec, double fac);
   template<class Hist, class V> V subtract(const TVectorD& orig, const Hist* hist, bool overflow);
 
-  template<class Hist> Hist* maybeCopy(const Hist* orighist);
-  template<class Hist> bool maybeDelete(Hist* orighist);  
-  
   template<class Hist> int findBin(const Hist* h, double x, RooUnfolding::Dimension d);
   template<class Hist1D> int findBin(const Hist1D* h, Double_t x);
   template<class Hist2D> int findBin(const Hist2D* h, Double_t x, Double_t y);

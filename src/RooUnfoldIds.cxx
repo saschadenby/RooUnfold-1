@@ -31,7 +31,7 @@ RooUnfoldIds::RooUnfoldIds(const RooUnfoldIds &rhs)
 }
 
 //______________________________________________________________________________
-RooUnfoldIds::RooUnfoldIds(const RooUnfoldResponse *res, const TH1 *meas, Int_t niter)
+RooUnfoldIds::RooUnfoldIds(const RooUnfoldResponseT<TH1,TH2> *res, const TH1 *meas, Int_t niter)
 : RooUnfold(res, meas)
 , _niter(niter)
 , _lambdaL(0.)

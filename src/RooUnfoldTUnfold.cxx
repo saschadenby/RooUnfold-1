@@ -66,7 +66,7 @@ RooUnfoldTUnfold::RooUnfoldTUnfold (const RooUnfoldTUnfold& rhs)
   CopyData (rhs);
 }
 
-RooUnfoldTUnfold::RooUnfoldTUnfold (const RooUnfoldResponse* res, const TH1* meas, TUnfold::ERegMode reg,
+RooUnfoldTUnfold::RooUnfoldTUnfold (const RooUnfoldResponseT<TH1,TH2>* res, const TH1* meas, TUnfold::ERegMode reg,
                             const char* name, const char* title)
   : RooUnfold (res, meas, name, title),_reg_method(reg)
 {
@@ -74,7 +74,7 @@ RooUnfoldTUnfold::RooUnfoldTUnfold (const RooUnfoldResponse* res, const TH1* mea
   Init();
 }
 
-RooUnfoldTUnfold::RooUnfoldTUnfold (const RooUnfoldResponse* res, const TH1* meas, Double_t tau, TUnfold::ERegMode reg,
+RooUnfoldTUnfold::RooUnfoldTUnfold (const RooUnfoldResponseT<TH1,TH2>* res, const TH1* meas, Double_t tau, TUnfold::ERegMode reg,
                             const char* name, const char* title)
   : RooUnfold (res, meas, name, title),_reg_method(reg)
 {

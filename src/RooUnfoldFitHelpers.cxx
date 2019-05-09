@@ -61,12 +61,6 @@ namespace RooUnfolding {
   template<> int fill<RooAbsReal>(RooAbsReal* hist, double x, double y, double z, double w){
     return 0;
   }  
-  template<> RooAbsReal* maybeCopy<RooAbsReal>(const RooAbsReal* r){
-    return const_cast<RooAbsReal*>(r);
-  }
-  template<> bool maybeDelete<RooAbsReal>(RooAbsReal* r){
-    return false;
-  }  
   template<> int entries<RooAbsReal>(const RooAbsReal* hist){
     // TODO
     return 0;

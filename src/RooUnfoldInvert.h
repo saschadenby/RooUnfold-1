@@ -32,7 +32,7 @@ public:
   virtual ~RooUnfoldInvert(); // destructor
   RooUnfoldInvert& operator= (const RooUnfoldInvert& rhs); // assignment operator
   virtual RooUnfoldInvert* Clone (const char* newname= 0) const;
-  RooUnfoldInvert (const RooUnfoldResponse* res, const TH1* meas, const char* name=0, const char* title=0);
+  RooUnfoldInvert (const RooUnfoldResponseT<TH1,TH2>* res, const TH1* meas, const char* name=0, const char* title=0);
 
   virtual void Reset();
   TDecompSVD* Impl();

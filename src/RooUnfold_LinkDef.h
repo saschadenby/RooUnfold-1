@@ -14,7 +14,8 @@
 #pragma link C++ class RooFitUnfoldSvd::SVDUnfold-;
 #pragma link C++ class RooUnfoldBinByBin+;
 #pragma link C++ class RooFitUnfoldBinByBin+;
-#pragma link C++ class RooUnfoldResponse-;
+#pragma link C++ class RooUnfoldResponseT<TH1,TH2>-;
+#pragma link C++ class RooUnfoldResponse+;
 #pragma link C++ class RooFitUnfoldResponse-;
 #pragma link C++ class RooUnfoldErrors+;
 #pragma link C++ class RooUnfoldParms+;

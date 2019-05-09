@@ -213,11 +213,9 @@ namespace RooUnfolding {
 
   void printTable (std::ostream& o, const TVectorD& vTrainTrue, const TVectorD& vTrain,
                    const TVectorD& vMeas, const TVectorD& vReco){
-    int nm= vTrain    .GetNrows();
-    int nt= vTrainTrue.GetNrows();
-    TVectorD vTrue(nt);
+    TVectorD vTrue(0);
     TVectorD eTrue(0);
     TVectorD eReco(0);        
-    printTable (o, 1, nt, 0, vTrainTrue, vTrain, vTrue, vMeas, vReco, kNoError, eTrue, eReco, -999.0,false);
+    printTable (o, 1, vTrainTrue.GetNrows(), 0, vTrainTrue, vTrain, vTrue, vMeas, vReco, kNoError, eTrue, eReco, -999.0,false);
   }
 }
