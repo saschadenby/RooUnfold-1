@@ -267,7 +267,7 @@ RooUnfoldTUnfold::Unfold()
   if (_verbose>=2) {
     TH1* train1d= ::histNoOverflow (_res->Hmeasured(), _overflow);
     TH1* truth1d= ::histNoOverflow (_res->Htruth(),    _overflow);
-    printTable<TH1> (cout, truth1d, train1d, 0, meas, &reco, _nm, _nt, kTRUE);
+    printTable<TH1> (cout, truth1d, train1d, 0, meas, &reco, kTRUE);
     delete truth1d;
     delete train1d;
   }

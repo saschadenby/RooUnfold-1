@@ -610,7 +610,7 @@ RooUnfoldT<Hist,Hist2D>::PrintTable (std::ostream& o, const Hist* hTrue, ErrorTr
   Double_t chi_squ= -999.0;
   if (hTrue && (withError==kCovariance || withError==kCovToy)) chi_squ = Chi2(hTrue,withError);
   printTable (o, response()->Htruth(), response()->Hmeasured(), hTrue, Hmeasured(), hReco,
-              _nm, _nt, _overflow, withError, chi_squ);
+              _overflow, withError, chi_squ);
 }
 
 

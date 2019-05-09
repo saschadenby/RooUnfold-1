@@ -211,4 +211,4 @@ namespace RooUnfolding {
 
 template RooAbsReal* RooUnfolding::createHist<RooAbsReal>(TVectorT<double> const&, char const*, char const*, RooUnfolding::Variable<RooAbsReal> const&, bool);
 template std::vector<RooUnfolding::Variable<RooAbsReal> > RooUnfolding::vars<RooAbsReal>(RooAbsReal const*); 
-template void RooUnfolding::printTable<RooAbsReal>(std::ostream&, RooAbsReal const*, RooAbsReal const*, RooAbsReal const*, RooAbsReal const*, RooAbsReal const*, int, int, bool, RooUnfolding::ErrorTreatment, double);
+template void RooUnfolding::printTable<RooAbsReal>(std::ostream&, RooAbsReal const*, RooAbsReal const*, RooAbsReal const*, RooAbsReal const*, RooAbsReal const*, bool, RooUnfolding::ErrorTreatment, double);

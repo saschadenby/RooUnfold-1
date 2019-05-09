@@ -1,3 +1,5 @@
+// -*- mode: c++ -*-
+
 namespace RooUnfolding {
   template<class Hist> Hist* createHist(const TVectorD& vec, const char* name, const char* title, const Variable<Hist>& x, bool overflow) { return createHist<Hist>(vec,name,title,std::vector<Variable<Hist>>{x},overflow); };
   template<class Hist> Hist* createHist(const TVectorD& vec, const TVectorD& errvec, const char* name, const char* title, const Variable<Hist>& x, bool overflow) { return createHist<Hist>(vec,errvec,name,title,std::vector<Variable<Hist>>{x},overflow); };
@@ -13,13 +15,13 @@ namespace RooUnfolding {
 
   template<class Hist> void printTable (std::ostream& o, const Hist* hTrainTrue, const Hist* hTrain,
                    const Hist* hTrue, const Hist* hMeas, const Hist* hReco,
-                   Int_t _nm, Int_t _nt, Bool_t overflow,
+                   Bool_t overflow,
                    ErrorTreatment withError, Double_t chi_squ)
   {
     // Prints entries from truth, measured, and reconstructed data for each bin.
     if (withError==kDefault) withError= sumW2N(hReco) ? kErrors : kNoError;
-    if (_nm<=0) _nm= nBins(hTrain,X);
-    if (_nt<=0) _nt= nBins(hTrainTrue,X);
+    int _nm= nBins(hTrain,X);
+    int  _nt= nBins(hTrainTrue,X);
     Int_t d= dim(hReco), ntxb= nBins(hReco,X)+2*overflow, ntyb= nBins(hReco,Y)+2*overflow;
     if (dim(hMeas) != d || nBins(hMeas,X)+2*overflow != ntxb || nBins(hMeas,Y)+2*overflow != ntyb) d= 1;
     printTable(o,d,

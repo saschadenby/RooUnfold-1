@@ -624,7 +624,7 @@ template void RooUnfolding::h2v<TH1>(TH1 const*, TVectorT<double>&, bool);
 template TVectorT<double> RooUnfolding::h2v<TH1>(TH1 const*, bool);
 template TVectorT<double> RooUnfolding::h2ve<TH1>(TH1 const*, bool);
 template void RooUnfolding::h2ve<TH1>(TH1 const*, TVectorT<double>&, bool);
-template void RooUnfolding::printTable<TH1>(std::ostream&, TH1 const*, TH1 const*, TH1 const*, TH1 const*, TH1 const*, int, int, bool, RooUnfolding::ErrorTreatment, double);
+template void RooUnfolding::printTable<TH1>(std::ostream&, TH1 const*, TH1 const*, TH1 const*, TH1 const*, TH1 const*, bool, RooUnfolding::ErrorTreatment, double);
 
   
 

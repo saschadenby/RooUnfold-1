@@ -212,10 +212,9 @@ namespace RooUnfolding {
   }
 
   void printTable (std::ostream& o, const TVectorD& vTrainTrue, const TVectorD& vTrain,
-                   const TVectorD& vMeas, const TVectorD& vReco,
-                   Int_t nm, Int_t nt){
-    if (nm<=0) nm= vTrain    .GetNrows();
-    if (nt<=0) nt= vTrainTrue.GetNrows();
+                   const TVectorD& vMeas, const TVectorD& vReco){
+    int nm= vTrain    .GetNrows();
+    int nt= vTrainTrue.GetNrows();
     TVectorD vTrue(nt);
     TVectorD eTrue(0);
     TVectorD eReco(0);        

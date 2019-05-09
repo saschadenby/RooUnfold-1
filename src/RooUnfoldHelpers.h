@@ -55,12 +55,10 @@ namespace RooUnfolding {
   template<class Hist> void h2ve  (const Hist* h, TVectorD& v,bool overflow = false);
   template<class Hist> const char* varname(const Hist* h, Dimension d);
   template<class Hist> void printHistogram(const Hist* h);
-  template<class Hist> void printTable (std::ostream& o, const Hist* hTrainTrue, const Hist* hTrain, const Hist* hTrue, const Hist* hMeas, const Hist* hReco, Int_t _nm=0, Int_t _nt=0, Bool_t _overflow=kFALSE, RooUnfolding::ErrorTreatment withError=RooUnfolding::kDefault, Double_t chi_squ=-999.0);
+  template<class Hist> void printTable (std::ostream& o, const Hist* hTrainTrue, const Hist* hTrain, const Hist* hTrue, const Hist* hMeas, const Hist* hReco, Bool_t _overflow=kFALSE, RooUnfolding::ErrorTreatment withError=RooUnfolding::kDefault, Double_t chi_squ=-999.0);
   template<class Hist> Hist* resize (Hist* h, Int_t nx, Int_t ny = 0, Int_t nz = 0);  
   template<class Hist> void subtract(Hist* hist, const TVectorD& vec, double fac);
   template<class Hist, class V> V subtract(const TVectorD& orig, const Hist* hist, bool overflow);
-
-  template<class Hist2D> int fill(Hist2D* hist, double x, double y, double w);
 
   template<class Hist> Hist* maybeCopy(const Hist* orighist);
   template<class Hist> bool maybeDelete(Hist* orighist);  
@@ -93,7 +91,7 @@ namespace RooUnfolding {
   template<class Hist> Hist* createHist(const TVectorD& vec, const TVectorD& errvec, const char* name, const char* title, const std::vector<Variable<Hist>>& x, bool overflow=false);
   template<class Hist> Hist* createHist(const TVectorD& vec, const TVectorD& errvec, const char* name, const char* title, const Variable<Hist>& x, bool overflow=false);
   
-  void printTable (std::ostream& o, const TVectorD& vTrainTrue, const TVectorD& vTrain, const TVectorD& vMeas, const TVectorD& vReco, Int_t nm, Int_t nt);
+  void printTable (std::ostream& o, const TVectorD& vTrainTrue, const TVectorD& vTrain, const TVectorD& vMeas, const TVectorD& vReco);
   void printTable (std::ostream& o, int dim, int ntxb, int ntyb,
                    const TVectorD& vTrainTrue, const TVectorD& vTrain, const TVectorD& vTrue,const TVectorD& vMeas, const TVectorD& vReco,
                    ErrorTreatment withError, const TVectorD& eTrue, const TVectorD& eReco, double chi_squ=-999., bool overflow=false);

@@ -180,7 +180,7 @@ RooUnfoldSvdT<Hist,Hist2D>::Unfold()
   this->_rec = this->_svd->UnfoldV (this->_kreg);
 
   if (this->_verbose>=2) {
-    printTable (cout, h2v(this->_truth1d), h2v(this->_train1d), h2v(this->_meas1d), this->_rec, this->_nb, this->_nb);
+    printTable (cout, h2v(this->_truth1d), h2v(this->_train1d), h2v(this->_meas1d), this->_rec);
     TMatrixD resmat(h2m(this->_reshist));
     printMatrix(resmat,"SVDUnfold response matrix");
   }
