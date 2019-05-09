@@ -135,7 +135,7 @@ RooUnfoldDagostini::Unfold()
   }
 
   Int_t ntf= nt;
-  if (_res->FakeEntries()) {
+  if (_res->HasFakes()) {
     TVectorD fakes= _res->Vfakes();
     Double_t nfakes= fakes.Sum();
     if (_verbose>=1) cout << "Add truth bin for " << nfakes << " fakes" << endl;
