@@ -66,7 +66,7 @@ RooUnfoldDagostini::RooUnfoldDagostini (const RooUnfoldDagostini& rhs)
   _niter= rhs._niter;
 }
 
-RooUnfoldDagostini::RooUnfoldDagostini (const RooUnfoldResponse* res, const TH1* meas,
+RooUnfoldDagostini::RooUnfoldDagostini (const RooUnfoldResponseT<TH1,TH2>* res, const TH1* meas,
                             Int_t niter, const char* name, const char* title)
   : RooUnfold (res, meas, name, title), _niter(niter)
 {

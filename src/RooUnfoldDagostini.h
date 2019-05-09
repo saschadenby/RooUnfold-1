@@ -30,7 +30,7 @@ public:
   virtual ~RooUnfoldDagostini(); // destructor
   RooUnfoldDagostini& operator= (const RooUnfoldDagostini& rhs); // assignment operator
   virtual RooUnfoldDagostini* Clone (const char* newname= 0) const;
-  RooUnfoldDagostini (const RooUnfoldResponse* res, const TH1* meas, Int_t niter= 4, const char* name=0, const char* title=0);
+  RooUnfoldDagostini (const RooUnfoldResponseT<TH1,TH2>* res, const TH1* meas, Int_t niter= 4, const char* name=0, const char* title=0);
 
   void SetIterations (Int_t niter= 4);
   Int_t GetIterations() const;
