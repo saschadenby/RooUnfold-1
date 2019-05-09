@@ -9,4 +9,29 @@ namespace RooUnfolding {
     if(d>2) v.push_back(var(h,Z));
     return v;
   }
+
+
+  template<class Hist> void printTable (std::ostream& o, const Hist* hTrainTrue, const Hist* hTrain,
+                   const Hist* hTrue, const Hist* hMeas, const Hist* hReco,
+                   Int_t _nm, Int_t _nt, Bool_t overflow,
+                   ErrorTreatment withError, Double_t chi_squ)
+  {
+    // Prints entries from truth, measured, and reconstructed data for each bin.
+    if (withError==kDefault) withError= sumW2N(hReco) ? kErrors : kNoError;
+    if (_nm<=0) _nm= nBins(hTrain,X);
+    if (_nt<=0) _nt= nBins(hTrainTrue,X);
+    Int_t d= dim(hReco), ntxb= nBins(hReco,X)+2*overflow, ntyb= nBins(hReco,Y)+2*overflow;
+    if (dim(hMeas) != d || nBins(hMeas,X)+2*overflow != ntxb || nBins(hMeas,Y)+2*overflow != ntyb) d= 1;
+    printTable(o,d,
+               ntxb,ntyb,
+               h2v(hTrainTrue,overflow),
+               h2v(hTrain,overflow),
+               h2v(hTrue,overflow),
+               h2v(hMeas,overflow),
+               h2v(hReco,overflow),
+               withError,
+               h2ve(hTrue,overflow),
+               h2ve(hReco,overflow),               
+               chi_squ,overflow);
+  }
 }

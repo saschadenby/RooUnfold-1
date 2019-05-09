@@ -223,7 +223,12 @@ RooUnfoldResponseT<Hist,Hist2D>::operator= (const RooUnfoldResponseT<Hist,Hist2D
 }
 
 template <class Hist, class Hist2D> void
-RooUnfoldResponseT<Hist,Hist2D>::Add (const RooUnfoldResponseT<Hist,Hist2D>& rhs)
+RooUnfoldResponseT<Hist,Hist2D>::Add (const RooUnfoldResponseT<Hist,Hist2D>& rhs){
+  throw std::runtime_error(TString::Format("adding not supported for %s",this->ClassName()).Data());
+}
+
+template <> void
+RooUnfoldResponseT<TH1,TH2>::Add (const RooUnfoldResponseT<TH1,TH2>& rhs)
 {
   // Add another RooUnfoldResponseT<class Hist, class Hist2D>, accumulating contents
   if (_res == 0) {
@@ -237,10 +242,10 @@ RooUnfoldResponseT<Hist,Hist2D>::Add (const RooUnfoldResponseT<Hist,Hist2D>& rhs
   assert (_tru != 0 && rhs._tru != 0);
   assert (_res != 0 && rhs._res != 0);
   if (_cached) ClearCache();
-  add(_mes,rhs._mes);
-  add(_fak,rhs._fak);
-  add(_tru,rhs._tru);
-  add(_res,rhs._res);
+  _mes->Add(rhs._mes);
+  _fak->Add(rhs._fak);
+  _tru->Add(rhs._tru);
+  _res->Add(rhs._res);
 }
 
 
@@ -262,10 +267,10 @@ RooUnfoldResponseT<Hist,Hist2D>::Reset()
 {
   // Resets object to initial state.
   ClearCache();
-  if(_mes) delete _mes;
+  if(_mes) maybeDelete( _mes);
   if(_fak) delete _fak;
-  if(_tru) delete _tru;
-  if(_res) delete _res;
+  if(_tru) maybeDelete( _tru);
+  if(_res) maybeDelete( _res);
   return Setup();
 }
 
@@ -317,9 +322,9 @@ RooUnfoldResponseT<Hist,Hist2D>::Setup (const Hist* measured, const Hist* truth)
 {
   // set up - measured and truth only used for shape
   Reset();
-  _mes= copy(measured,true,measured->GetName(),measured->GetTitle());
-  _fak= copy(measured,true,"fakes","Fakes");
-  _tru= copy(truth,true,"truth",truth->GetTitle());
+  _mes= createHist<Hist>(measured->GetName(),measured->GetTitle(), vars(measured));
+  _fak= createHist<Hist>("fakes","Fakes",vars(measured));
+  _tru= createHist<Hist>("truth",truth->GetTitle(), vars(truth));
   _mdim= dim(_mes);
   _tdim= dim(_tru);
   if (_overflow && (_mdim > 1 || _tdim > 1)) {
@@ -344,18 +349,17 @@ RooUnfoldResponseT<Hist,Hist2D>::Setup (const Hist* measured, const Hist* truth,
   // "measured" and/or "truth" can be specified as 0 (1D case only) or an empty histograms (no entries) as a shortcut
   // to indicate, respectively, no fakes and/or no inefficiency.
   Reset();
-  _res= copy(response,false,response->GetName(),response->GetTitle());
+  _res= maybeCopy(response);
   if (measured) {
-    _mes= copy(measured,false,measured->GetName(),measured->GetTitle());
-    _fak= copy(measured,true,"fakes","Fakes");
+    _mes= maybeCopy(measured);
     _mdim= dim(_mes);
   } else {
     _mes= createHist<Hist>("measured", "Measured", Variable<Hist>(nBins(response,RooUnfolding::X), 0.0, 1.0, "xm"));
-    _fak= copy(_mes,false,"fakes","Fakes");
     _mdim= 1;
   }
+  _fak= createHist<Hist>("fakes","Fakes",vars(measured));
   if (truth) {
-    _tru= copy(truth,false,truth->GetName(),truth->GetTitle());
+    _tru= maybeCopy(truth);
     _tdim= dim(_tru);
   } else {
     _tru= createHist<Hist>("truth",    "Truth",    Variable<Hist>(nBins(response,RooUnfolding::Y), 0.0, 1.0, "xt"));
@@ -528,7 +532,10 @@ RooUnfoldResponseT<Hist,Hist2D>::Fake (Double_t xr, Double_t yr, Double_t zr, Do
 template <class Hist, class Hist2D> Hist2D*
 RooUnfoldResponseT<Hist,Hist2D>::HresponseNoOverflow() const
 {
-  return copyHistogram(Hresponse(),_overflow);
+  const Hist2D* res = Hresponse();
+  TVectorD vals(h2v<Hist>(res,_overflow));
+  TVectorD errs(h2ve<Hist>(res,_overflow));  
+  return createHist<Hist2D>(vals,errs,res->GetName(),res->GetTitle(),vars(res),_overflow);
 }
 
 template <class Hist, class Hist2D> void
@@ -622,7 +629,6 @@ template <class Hist, class Hist2D> RooUnfoldResponseT<Hist,Hist2D>*
 RooUnfoldResponseT<Hist,Hist2D>::RunToy() const
 {
   // Returns new RooUnfoldResponse object with smeared response matrix elements for use as a toy.
-  if (!FakeEntries()) reset(_fak);
   const Hist2D* hres= this->Hresponse();
   TMatrixD values = h2m(hres);
   TMatrixD errors = h2me(hres);

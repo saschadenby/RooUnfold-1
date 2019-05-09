@@ -15,9 +15,6 @@ namespace RooUnfolding {
     return Variable<RooAbsReal>(NULL);
   }
   
-  template<> void reset<RooAbsReal>(RooAbsReal* r){
-    // TODO
-  }
   template<> int findBin<RooAbsReal>(const RooAbsReal* h, double x, RooUnfolding::Dimension d){
     // TODO
     return 0;
@@ -46,9 +43,6 @@ namespace RooUnfolding {
   template<> int sumW2N<RooAbsReal>(const RooAbsReal* hist){
     return 0;
   }
-  template<> void add<RooAbsReal>(RooAbsReal* hista, const RooAbsReal* histb){
-    // TODO
-  }  
   template<> void projectY<RooAbsReal>(RooAbsReal* _res, RooAbsReal* _tru, bool overflow){
     // TODO
   } 
@@ -67,12 +61,12 @@ namespace RooUnfolding {
   template<> int fill<RooAbsReal>(RooAbsReal* hist, double x, double y, double z, double w){
     return 0;
   }  
-  template<> RooAbsReal* copy<RooAbsReal>(const RooAbsReal* r, bool reset, const char* name, const char* title){
-    RooAbsReal* retval = (RooAbsReal*)(r->clone());
-    if(name) retval->SetName(name);
-    if(title) retval->SetTitle(title);
-    return retval;
+  template<> RooAbsReal* maybeCopy<RooAbsReal>(const RooAbsReal* r){
+    return const_cast<RooAbsReal*>(r);
   }
+  template<> bool maybeDelete<RooAbsReal>(RooAbsReal* r){
+    return false;
+  }  
   template<> int entries<RooAbsReal>(const RooAbsReal* hist){
     // TODO
     return 0;
@@ -141,10 +135,6 @@ namespace RooUnfolding {
     // TODO
     return 0;
   }
-  template<> RooAbsReal* copyHistogram<RooAbsReal>(const RooAbsReal* h, bool includeOverflow){
-    // TODO
-    return 0;
-  }
   template<> RooAbsReal* createHist<RooAbsReal>(const TVectorD& v, const char* name, const char* title, const std::vector<Variable<RooAbsReal>>& x, bool overflow){
     // TODO
     return 0;
@@ -167,12 +157,6 @@ namespace RooUnfolding {
     // TODO
     TVectorD res;
     return res;
-  }
-  template<> void printTable<RooAbsReal> (std::ostream& o, const RooAbsReal* hTrainTrue, const RooAbsReal* hTrain,
-                   const RooAbsReal* hTrue, const RooAbsReal* hMeas, const RooAbsReal* hReco,
-                   Int_t _nm, Int_t _nt, Bool_t _overflow,
-                   RooUnfolding::ErrorTreatment withError, Double_t chi_squ){
-    // TODO
   }
   template<> RooAbsReal* resize<RooAbsReal> (RooAbsReal* h, Int_t nx, Int_t ny, Int_t nz){
     // TOOD
@@ -236,5 +220,4 @@ namespace RooUnfolding {
 
 template RooAbsReal* RooUnfolding::createHist<RooAbsReal>(TVectorT<double> const&, char const*, char const*, RooUnfolding::Variable<RooAbsReal> const&, bool);
 template std::vector<RooUnfolding::Variable<RooAbsReal> > RooUnfolding::vars<RooAbsReal>(RooAbsReal const*); 
-
-
+template void RooUnfolding::printTable<RooAbsReal>(std::ostream&, RooAbsReal const*, RooAbsReal const*, RooAbsReal const*, RooAbsReal const*, RooAbsReal const*, int, int, bool, RooUnfolding::ErrorTreatment, double);

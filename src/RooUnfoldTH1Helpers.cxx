@@ -43,9 +43,6 @@ namespace{
 }
 
 namespace RooUnfolding { 
-  template<> void reset<TH1>(TH1* h){
-    h->Reset();
-  }
   template<> int findBin<TH1>(const TH1* h, double x, RooUnfolding::Dimension d){
     return getAxis(h,d)->FindBin(x);
   }
@@ -114,10 +111,6 @@ namespace RooUnfolding {
     const TAxis* ax = getAxis(h,d);
     return ax->GetBinLowEdge(i);
   }
-  template<class Hist> void add(Hist* hista, const Hist* histb){
-    hista->Add(histb);
-  }
-
   template<> void projectY<TH1>(TH2* _res, TH1* _tru, bool overflow){
     Int_t s= _res->GetSumw2N();
     for (Int_t j= 1-overflow; j<_res->GetNbinsY()+1+overflow; j++) {
@@ -178,16 +171,17 @@ namespace RooUnfolding {
   template<> int fill<TH2>(TH2* hist, double x, double y, double w){
     return hist->Fill (x, y, w);
   } 
-  template<class Hist> Hist* copy(const Hist* orighist, bool reset, const char* name, const char* title){
+  template<class Hist> Hist* maybeCopy(const Hist* orighist){
     Bool_t oldstat= TH1::AddDirectoryStatus();
     TH1::AddDirectory (kFALSE);
     Hist* hist = (Hist*)(orighist ->Clone());
-    if(name) hist->SetName(name);
-    if(title) hist->SetTitle(title);
-    if(reset) hist->Reset();
-    return hist;
     TH1::AddDirectory (oldstat);
+    return hist;
   }
+  template<class Hist> bool maybeDelete(Hist* hist){
+    delete hist;
+    return true;
+  }  
   template<> void binXYZ<TH1>(const TH1* tru, int i, int& jx, int& jy, int& jz){
     Int_t j= RooUnfolding::bin<TH1>(tru, i, false);
     if (dim(tru)>1) tru->GetBinXYZ (j, jx, jy, jz);
@@ -282,7 +276,7 @@ namespace RooUnfolding {
     return m;
   }
 
-  template<> void h2v<TH1>  (const TH1* h, TVectorD& v, bool overflow){
+  template<class Hist> void h2v  (const Hist* h, TVectorD& v, bool overflow){
     // sets Vector to values of bins in an input histogram
     int nbinstotal = nBins(h,true);
     v.ResizeTo(nBins(h,overflow));
@@ -295,7 +289,7 @@ namespace RooUnfolding {
       ++n;
     }
   }
-  template<> void h2ve<TH1>  (const TH1* h, TVectorD& v, bool overflow){
+  template<class Hist> void h2ve  (const Hist* h, TVectorD& v, bool overflow){
     // sets Vector to values of bins in an input histogram
     int nbinstotal = nBins(h,true);
     v.ResizeTo(nBins(h,overflow));
@@ -308,58 +302,19 @@ namespace RooUnfolding {
       ++n;
     }  
   }    
-  template<> TVectorD h2v<TH1>  (const TH1* h, bool overflow){
+  template<class Hist> TVectorD h2v  (const Hist* h, bool overflow){
     // Returns Vector of values of bins in an input histogram
     TVectorD v(nBins(h,overflow));
     h2v(h,v,overflow);
     return v;
   }
-  template<> TVectorD h2ve<TH1>  (const TH1* h, bool overflow){
+  template<class Hist> TVectorD h2ve  (const Hist* h, bool overflow){
     // Returns Vector of values of bins in an input histogram
     TVectorD v(nBins(h,overflow));
     h2ve(h,v,overflow);
     return v;
   }
   
-  template<> TH2* copyHistogram<TH2>(const TH2* h, bool includeOverflow){
-    Int_t nx= nBins(h,RooUnfolding::X), ny= nBins(h,RooUnfolding::Y), s= h->GetSumw2N();
-    if (includeOverflow) {  // implies truth/measured both 1D
-      Double_t xlo= min(h,X), xhi= max(h,X), xb= (xhi-xlo)/nx;
-      Double_t ylo= min(h,Y), yhi= max(h,Y), yb= (yhi-ylo)/ny;
-      nx += 2; ny += 2;
-      TH2* hx= new TH2D(h->GetName(), h->GetTitle(), nx, xlo-xb, xhi+xb, ny, ylo-yb, yhi+yb);
-      for (Int_t i= 0; i < nx; i++) {
-        for (Int_t j= 0; j < ny; j++) {
-          hx->SetBinContent (i+1, j+1, h->GetBinContent (i, j));
-          if (s) hx->SetBinError   (i+1, j+1, h->GetBinError   (i, j));
-        }
-      }
-      return hx;
-    } else if (dynamic_cast<const TH2D*>(h)) {
-      TH2* hx= dynamic_cast<TH2*>(h->Clone());
-      // clear under/overflows
-      for (Int_t i= 0; i <= nx+1; i++) {
-        hx->SetBinContent (i, 0,    0.0);
-        hx->SetBinContent (i, ny+1, 0.0);
-      }
-      for (Int_t i= 1; i <= ny;   i++) {
-        hx->SetBinContent (0,    i, 0.0);
-        hx->SetBinContent (nx+1, i, 0.0);
-      }
-      return hx;
-    } else {
-      Double_t xlo= h->GetXaxis()->GetXmin(), xhi= h->GetXaxis()->GetXmax();
-      Double_t ylo= h->GetYaxis()->GetXmin(), yhi= h->GetYaxis()->GetXmax();
-      TH2* hx= new TH2D (h->GetName(), h->GetTitle(), nx, xlo, xhi, ny, ylo, yhi);
-      for (Int_t i= 0; i < nx+2; i++) {
-        for (Int_t j= 0; j < ny+2; j++) {
-          hx->SetBinContent (i, j, h->GetBinContent (i, j));
-          if (s) hx->SetBinError   (i, j, h->GetBinError   (i, j));
-        }
-      }
-      return hx;
-    }
-  }
   template<> TH1* createHist<TH1>(const char* name, const char* title, const std::vector<Variable<TH1>>& x){
     Bool_t oldstat= TH1::AddDirectoryStatus();
     TH1::AddDirectory (kFALSE);
@@ -376,20 +331,32 @@ namespace RooUnfolding {
     TH1::AddDirectory (oldstat);
     return hist;
   }
-  template<> TH1* createHist<TH1>(const TVectorD& v, const char* name, const char* title, const std::vector<Variable<TH1>>& x, bool overflow){  
+  template<> TH2* createHist<TH2>(const char* name, const char* title, const std::vector<Variable<TH2>>& x){
+    Bool_t oldstat= TH1::AddDirectoryStatus();
+    TH1::AddDirectory (kFALSE);
+    TH2* hist = NULL;
+    if(x.size() == 2){
+      hist = new TH2D (name,title, x[0]._nBins, x[0]._min, x[0]._max, x[1]._nBins, x[1]._min, x[1]._max);
+    } else {
+      throw std::runtime_error(TString::Format("invalid dimensionality for ROOT histogram: %d",(int)x.size()).Data());
+    }
+    TH1::AddDirectory (oldstat);
+    return hist;
+  }  
+  template<class Hist> Hist* createHist(const TVectorD& v, const char* name, const char* title, const std::vector<Variable<Hist>>& x, bool overflow){  
     // Sets the bin content of the histogram as that element of the input vector
     int nb = v.GetNrows();
-    TH1* h = createHist<TH1>(name,title,x);
+    Hist* h = createHist<Hist>(name,title,x);
     for (Int_t i= 0; i < nb; i++) {
       Int_t j= RooUnfolding::bin<TH1>(h, i, overflow);
       h->SetBinContent (j, v(i));
     }
     return h;
   }
-  template<> TH1* createHist<TH1>(const TVectorD& v, const TVectorD& ve, const char* name, const char* title, const std::vector<Variable<TH1>>& x, bool overflow){  
+  template<class Hist> Hist* createHist(const TVectorD& v, const TVectorD& ve, const char* name, const char* title, const std::vector<Variable<Hist>>& x, bool overflow){  
     // Sets the bin content of the histogram as that element of the input vector
     int nb = v.GetNrows();
-    TH1* h = createHist<TH1>(name,title,x);
+    Hist* h = createHist<Hist>(name,title,x);
     if (overflow) nb += 2;
     for (Int_t i= 0; i < nb; i++) {
       Int_t j= RooUnfolding::bin<TH1>(h, i, overflow);
@@ -444,146 +411,6 @@ namespace RooUnfolding {
     }
     return res;
   }
-
-  template<> void printTable<TH1> (std::ostream& o, const TH1* hTrainTrue, const TH1* hTrain,
-                   const TH1* hTrue, const TH1* hMeas, const TH1* hReco,
-                   Int_t _nm, Int_t _nt, Bool_t _overflow,
-                   ErrorTreatment withError, Double_t chi_squ)
-  {
-    // Prints entries from truth, measured, and reconstructed data for each bin.
-    if (withError==kDefault) withError= hReco->GetSumw2N() ? kErrors : kNoError;
-    if (_nm<=0) _nm= hTrain    ->GetNbinsX();
-    if (_nt<=0) _nt= hTrainTrue->GetNbinsX();
-    std::ostringstream fmt;
-    fmt.copyfmt (o);
-    Int_t dim= hReco->GetDimension(), ntxb= hReco->GetNbinsX()+2, ntyb= hReco->GetNbinsY()+2;
-    if (hMeas->GetDimension() != dim || hMeas->GetNbinsX()+2 != ntxb || hMeas->GetNbinsY()+2 != ntyb) dim= 1;
-    Int_t iwid= (dim==3) ? 8 : (dim==2) ? 7 : 5;
-    const char* xwid= (dim==3) ? "===" : (dim==2) ? "==" : "";
-    o << "===============================================================================" << xwid << std::endl
-      << std::setw(iwid) << ""      << std::setw(9) << "Train" << std::setw(9) << "Train"    << std::setw(9) << "Test"  << std::setw(9) << "Test"  << std::setw(9) << "Unfolded";
-    if (withError)
-      o << std::setw(10)<<"Error on"<<std::setw(9) << "Diff" << std::setw(9) << "Pull" << std::endl;
-    else
-      o << std::setw(9) << "Diff" << std::endl;
-    o << std::setw(iwid) << "Bin"   << std::setw(9) << "Truth" << std::setw(9) << "Measured" << std::setw(9) << "Truth" << std::setw(9) << "Input" << std::setw(9) << "Output";
-    if (withError)
-      o << std::setw(10)<<"Unfolding";
-    o << std::endl;
-    o << "===============================================================================" << xwid << std::endl;
-    Double_t true_train_tot=0;
-    Double_t meas_train_tot=0;
-    Double_t true_test_tot=0;
-    Double_t meas_test_tot=0;
-    Double_t unf_tot=0;
-    Double_t chi2= 0.0;
-    Int_t ndf= 0, first= (_overflow ? 0 : 1);
-    Int_t maxbin= _nt < _nm ? _nm : _nt;
-    for (Int_t i = 0 ; i < maxbin; i++) {
-      Int_t it= RooUnfolding::bin<TH1>(hReco, i, _overflow);
-      Int_t im= RooUnfolding::bin<TH1>(hMeas, i, _overflow);
-
-      if (dim==2 || dim==3) {
-        Int_t iw= (dim==2) ? 3 : 2;
-        Int_t ix= it%ntxb;
-        Int_t iy= ((it-ix)/ntxb)%ntyb;
-        o << std::setw(iw) << ix << ',' << std::setw(iw) << iy;
-        if (dim==3) o << ',' << std::setw(iw) << ((it-ix)/ntxb - iy)/ntyb;
-      } else
-        o << std::setw(iwid) << i+first;
-      o << std::fixed << std::setprecision(0);
-      true_train_tot+=hTrainTrue->GetBinContent(it);
-      meas_train_tot+=hTrain->GetBinContent(im);
-      if (hTrue) true_test_tot+=hTrue->GetBinContent(it);
-      meas_test_tot+=hMeas->GetBinContent(im);
-      unf_tot+=hReco->GetBinContent(it);
-      if (i<_nt){
-        o << ' ' << std::setw(8) << hTrainTrue->GetBinContent(it);
-      }
-      else
-        o << std::setw(9) << ' ';
-      if (i<_nm)
-        o << ' ' << std::setw(8) << hTrain->GetBinContent(im);
-      else
-        o << std::setw(9) << ' ';
-      if (hTrue && i<_nt)
-        o << ' ' << std::setw(8) << hTrue->GetBinContent(it);
-      else
-        o << std::setw(9) << ' ';
-      if (i<_nm)
-        o << ' ' << std::setw(8) << hMeas->GetBinContent(im);
-      else
-        o << std::setw(9) << ' ';
-      o << std::setprecision(1);
-      if (i<_nt) {
-        Double_t y= hReco->GetBinContent(it), yerr = hReco->GetBinError(it);
-        o << ' ' << std::setw(8) << y;
-        if (withError)
-          o << ' ' << std::setw(9) << yerr;
-        if (hTrue &&
-            (                       y!=0.0 || (withError &&                   yerr>0.0)) &&
-            (hTrue->GetBinContent(it)!=0.0 || (withError && hTrue->GetBinError(it)>0.0))) {
-          Double_t ydiff= y - hTrue->GetBinContent(it);
-          o << ' ' << std::setw(8) << ydiff;
-          if (withError && yerr>0.0) {
-            ndf++;
-            Double_t ypull = ydiff/yerr;
-            chi2 += ypull*ypull;
-            o << ' ' << std::setw(8) << ypull;
-          }
-        }
-      }
-      o << std::endl;
-
-    }
-
-    o << "===============================================================================" << xwid << std::endl
-      << std::setw(iwid) << "" << std::fixed << std::setprecision(0)
-      << ' ' << std::setw(8) << true_train_tot
-      << ' ' << std::setw(8) << meas_train_tot;
-    if (hTrue)
-      o << ' ' << std::setw(8) << true_test_tot;
-    else
-      o << std::setw(9) << ' ';
-    Double_t toterr= 0.0;
-    if (meas_test_tot>0.0 && meas_train_tot>0.0) toterr= sqrt(meas_test_tot)*true_train_tot/meas_train_tot;
-    o << ' ' << std::setw(8) << meas_test_tot << std::setprecision(1)
-      << ' ' << std::setw(8) << unf_tot;
-    if (withError) 
-      o << ' ' << std::setw(9) << toterr;
-    o << ' ' << std::setw(8) << unf_tot-true_test_tot;
-    if(withError && toterr>0.0)
-      o << ' ' << std::setw(8) <<(unf_tot-true_test_tot)/toterr;
-    o << std::endl
-      << "===============================================================================" << xwid << std::endl;
-    o.copyfmt (fmt);
-    if (hTrue) {
-      if (chi_squ!=-999.0) {
-        o << "Chi^2/NDF=" << chi_squ << "/" << ndf << " (bin-by-bin Chi^2=" << chi2 << ")" << std::endl;
-      } else {
-        o << "Bin-by-bin Chi^2/NDF=" << chi2 << "/" << ndf << std::endl;
-        chi_squ= chi2;
-      }
-      if (chi_squ<=0.0) std::cerr << "Warning: Invalid Chi^2 Value" << std::endl;
-    }
-  }
-  void printTable (std::ostream& o, const TVectorD& vTrainTrue, const TVectorD& vTrain,
-                   const TVectorD& vMeas, const TVectorD& vReco,
-                   Int_t nm, Int_t nt)
-  {
-    if (nm<=0) nm= vTrain    .GetNrows();
-    if (nt<=0) nt= vTrainTrue.GetNrows();
-    TH1* hTrainTrue =  RooUnfolding::createHist<TH1>(vTrainTrue, "","",Variable<TH1>(nt,0.0,nt,"xt"),false);
-    TH1* hTrain     =  RooUnfolding::createHist<TH1>(vTrain,     "","",Variable<TH1>(nm,0.0,nm,"xm"),false);
-    TH1* hMeas      =  RooUnfolding::createHist<TH1>(vMeas,      "","",Variable<TH1>(nm,0.0,nm,"xm"),false);
-    TH1* hReco      =  RooUnfolding::createHist<TH1>(vReco,      "","",Variable<TH1>(nt,0.0,nt,"xt"),false);
-    printTable<TH1> (o, hTrainTrue, hTrain, 0, hMeas, hReco, nm, nt);
-    delete hTrainTrue;
-    delete hTrain    ;
-    delete hMeas     ;
-    delete hReco     ;
-  }
-
 
   template<> TH1* histNoOverflow<TH1> (const TH1* h, Bool_t overflow){
     if (!overflow) {   // also for 2D+
@@ -806,9 +633,6 @@ template TH3* RooUnfolding::resize<TH3>(TH3*, int, int, int);
 template int RooUnfolding::entries<TH1>(TH1 const*);
 template int RooUnfolding::entries<TH2>(TH2 const*);
 template int RooUnfolding::entries<TH3>(TH3 const*);
-template void RooUnfolding::add<TH1>(TH1*, TH1 const*);
-template void RooUnfolding::add<TH2>(TH2*, TH2 const*);
-template void RooUnfolding::add<TH3>(TH3*, TH3 const*);
 template int RooUnfolding::dim<TH1>(TH1 const*);
 template int RooUnfolding::dim<TH2>(TH2 const*);
 template int RooUnfolding::dim<TH3>(TH3 const*);
@@ -818,11 +642,23 @@ template std::vector<RooUnfolding::Variable<TH3> > RooUnfolding::vars<TH3>(TH3 c
 template RooUnfolding::Variable<TH1> RooUnfolding::var<TH1>(TH1 const*, RooUnfolding::Dimension);
 template RooUnfolding::Variable<TH2> RooUnfolding::var<TH2>(TH2 const*, RooUnfolding::Dimension);
 template RooUnfolding::Variable<TH3> RooUnfolding::var<TH3>(TH3 const*, RooUnfolding::Dimension);
-template TH1* RooUnfolding::copy<TH1>(TH1 const*, bool, char const*, char const*);
-template TH2* RooUnfolding::copy<TH2>(TH2 const*, bool, char const*, char const*);
-template TH3* RooUnfolding::copy<TH3>(TH3 const*, bool, char const*, char const*);
+template TH1* RooUnfolding::maybeCopy<TH1>(TH1 const*);
+template TH2* RooUnfolding::maybeCopy<TH2>(TH2 const*);
+template TH3* RooUnfolding::maybeCopy<TH3>(TH3 const*);
+template bool RooUnfolding::maybeDelete<TH1>(TH1*);
+template bool RooUnfolding::maybeDelete<TH2>(TH2*);
+template bool RooUnfolding::maybeDelete<TH3>(TH3*);
+template TH1* RooUnfolding::createHist<TH1>(char const*, char const*, std::vector<RooUnfolding::Variable<TH1> > const&);
+template TH2* RooUnfolding::createHist<TH2>(char const*, char const*, std::vector<RooUnfolding::Variable<TH2> > const&);
 template TH1* RooUnfolding::createHist<TH1>(TVectorT<double> const&, char const*, char const*, RooUnfolding::Variable<TH1> const&, bool);
-
+template TH2* RooUnfolding::createHist<TH2>(TVectorT<double> const&, char const*, char const*, RooUnfolding::Variable<TH2> const&, bool);
+template TH1* RooUnfolding::createHist<TH1>(TVectorT<double> const&, TVectorT<double> const&, char const*, char const*, std::vector<RooUnfolding::Variable<TH1> > const&, bool);
+template TH2* RooUnfolding::createHist<TH2>(TVectorT<double> const&, TVectorT<double> const&, char const*, char const*, std::vector<RooUnfolding::Variable<TH2> > const&, bool);
+template void RooUnfolding::h2v<TH1>(TH1 const*, TVectorT<double>&, bool);
+template TVectorT<double> RooUnfolding::h2v<TH1>(TH1 const*, bool);
+template TVectorT<double> RooUnfolding::h2ve<TH1>(TH1 const*, bool);
+template void RooUnfolding::h2ve<TH1>(TH1 const*, TVectorT<double>&, bool);
+template void RooUnfolding::printTable<TH1>(std::ostream&, TH1 const*, TH1 const*, TH1 const*, TH1 const*, TH1 const*, int, int, bool, RooUnfolding::ErrorTreatment, double);
 
   
 

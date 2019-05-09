@@ -29,7 +29,6 @@ namespace RooUnfolding {
   enum Dimension { X, Y, Z };
   template<class Hist> struct Variable;
 
-  template<class Hist> void reset(Hist* h);
   template<class Hist> double min(const Hist* hist, RooUnfolding::Dimension d);
   template<class Hist> double max(const Hist* hist, RooUnfolding::Dimension d);
   template<class Hist> int sumW2N(const Hist* hist);
@@ -43,11 +42,9 @@ namespace RooUnfolding {
   template<class Hist> double binWidth(const Hist*h, int i, RooUnfolding::Dimension d);
   template<class Hist> double binHighEdge(const Hist*h, int i, RooUnfolding::Dimension d);
   template<class Hist> double binLowEdge(const Hist*h, int i, RooUnfolding::Dimension d);
-  template<class Hist> void add(Hist* hista, const Hist* histb);
   template<class Hist> int fill(Hist* hist, double x, double w);
   template<class Hist> int fill(Hist* hist, double x, double y, double w);
   template<class Hist> int fill(Hist* hist, double x, double y, double z, double w);
-  template<class Hist> Hist* copy(const Hist* orighist, bool reset, const char* name, const char* title);
   template<class Hist> void binXYZ(const Hist* tru, int i, int& jx, int& jy, int& jz);
   template<class Hist> double binError(const Hist* h, int i, bool overflow);
   template<class Hist> double binContent (const Hist* h, int i, bool overflow);
@@ -65,9 +62,10 @@ namespace RooUnfolding {
   template<class Hist, class V> V subtract(const TVectorD& orig, const Hist* hist, bool overflow);
 
   template<class Hist2D> int fill(Hist2D* hist, double x, double y, double w);
-  template<class Hist2D> Hist2D* copy(const Hist2D* orighist, bool reset, const char* name, const char* title);
-  template<class Hist2D> Hist2D* copyHistogram(const Hist2D* h, bool includeOverflow);
 
+  template<class Hist> Hist* maybeCopy(const Hist* orighist);
+  template<class Hist> bool maybeDelete(Hist* orighist);  
+  
   template<class Hist> int findBin(const Hist* h, double x, RooUnfolding::Dimension d);
   template<class Hist1D> int findBin(const Hist1D* h, Double_t x);
   template<class Hist2D> int findBin(const Hist2D* h, Double_t x, Double_t y);
@@ -99,6 +97,9 @@ namespace RooUnfolding {
   template<class Hist> Hist* createHist(const TVectorD& vec, const TVectorD& errvec, const char* name, const char* title, const Variable<Hist>& x, bool overflow=false);
   
   void printTable (std::ostream& o, const TVectorD& vTrainTrue, const TVectorD& vTrain, const TVectorD& vMeas, const TVectorD& vReco, Int_t nm, Int_t nt);
+  void printTable (std::ostream& o, int dim, int ntxb, int ntyb,
+                   const TVectorD& vTrainTrue, const TVectorD& vTrain, const TVectorD& vTrue,const TVectorD& vMeas, const TVectorD& vReco,
+                   ErrorTreatment withError, const TVectorD& eTrue, const TVectorD& eReco, double chi_squ=-999., bool overflow=false);
 
   void printVector(const char* name, const TVectorD& vec);
   void printMatrix (const TMatrixD& m, const char* name="matrix", const char* format=0, Int_t cols_per_sheet=10);

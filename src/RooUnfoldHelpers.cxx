@@ -75,26 +75,150 @@ namespace RooUnfolding {
     }
   }
   printf("\n");
-}
+  }
 
 
-TMatrixD& ABAT (const TMatrixD& a, const TMatrixD& b, TMatrixD& c){
-  // Fills C such that C = A * B * A^T. Note that C cannot be the same object as A.
-  TMatrixD d (b, TMatrixD::kMultTranspose, a);
-  c.Mult (a, d);
-  return c;
-}
+  TMatrixD& ABAT (const TMatrixD& a, const TMatrixD& b, TMatrixD& c){
+    // Fills C such that C = A * B * A^T. Note that C cannot be the same object as A.
+    TMatrixD d (b, TMatrixD::kMultTranspose, a);
+    c.Mult (a, d);
+    return c;
+  }
 
-TMatrixD& ABAT (const TMatrixD& a, const TVectorD& b, TMatrixD& c){
-  // Fills C such that C = A * B * A^T, where B is a diagonal matrix specified by the vector.
-  // Note that C cannot be the same object as A.
-  TMatrixD d (TMatrixD::kTransposed, a);
-  d.NormByColumn (b, "M");
-  c.Mult (a, d);
-  return c;
-}
+  TMatrixD& ABAT (const TMatrixD& a, const TVectorD& b, TMatrixD& c){
+    // Fills C such that C = A * B * A^T, where B is a diagonal matrix specified by the vector.
+    // Note that C cannot be the same object as A.
+    TMatrixD d (TMatrixD::kTransposed, a);
+    d.NormByColumn (b, "M");
+    c.Mult (a, d);
+    return c;
+  }
 
+  void printTable (std::ostream& o, int dim, int ntxb, int ntyb,
+                   const TVectorD& vTrainTrue, const TVectorD& vTrain, const TVectorD& vTrue,const TVectorD& vMeas, const TVectorD& vReco,
+                   ErrorTreatment withError, const TVectorD& eTrue, const TVectorD& eReco, double chi_squ, bool overflow){
+    // Prints entries from truth, measured, and reconstructed data for each bin.
+    int _nm= vTrain    .GetNrows();
+    int _nt= vTrainTrue.GetNrows();
+    std::ostringstream fmt;
+    fmt.copyfmt (o);
+    Int_t iwid= (dim==3) ? 8 : (dim==2) ? 7 : 5;
+    const char* xwid= (dim==3) ? "===" : (dim==2) ? "==" : "";
+    o << "===============================================================================" << xwid << std::endl
+      << std::setw(iwid) << ""      << std::setw(9) << "Train" << std::setw(9) << "Train"    << std::setw(9) << "Test"  << std::setw(9) << "Test"  << std::setw(9) << "Unfolded";
+    if (withError)
+      o << std::setw(10)<<"Error on"<<std::setw(9) << "Diff" << std::setw(9) << "Pull" << std::endl;
+    else
+      o << std::setw(9) << "Diff" << std::endl;
+    o << std::setw(iwid) << "Bin"   << std::setw(9) << "Truth" << std::setw(9) << "Measured" << std::setw(9) << "Truth" << std::setw(9) << "Input" << std::setw(9) << "Output";
+    if (withError)
+      o << std::setw(10)<<"Unfolding";
+    o << std::endl;
+    o << "===============================================================================" << xwid << std::endl;
+    Double_t true_train_tot=0;
+    Double_t meas_train_tot=0;
+    Double_t true_test_tot=0;
+    Double_t meas_test_tot=0;
+    Double_t unf_tot=0;
+    Double_t chi2= 0.0;
+    Int_t ndf= 0, first= (overflow ? 0 : 1);
+    Int_t maxbin= _nt < _nm ? _nm : _nt;
+    for (Int_t i = 0 ; i < maxbin; i++) {
+      Int_t it= i%_nt;
+      Int_t im= i%_nm;
+      if (dim==2 || dim==3) {
+        Int_t iw= (dim==2) ? 3 : 2;
+        Int_t ix= it%ntxb;
+        Int_t iy= ((it-ix)/ntxb)%ntyb;
+        o << std::setw(iw) << ix+first << ',' << std::setw(iw) << iy + first;
+        if (dim==3) o << ',' << std::setw(iw) << ((it-ix)/ntxb - iy)/ntyb + first;
+      } else {
+        o << std::setw(iwid) << i+first;
+      }
+      o << std::fixed << std::setprecision(0);
+      true_train_tot+=vTrainTrue(it);
+      meas_train_tot+=vTrain(im);
+      if (vTrue.GetNrows()>0) true_test_tot+=vTrue(it);
+      meas_test_tot+=vMeas(im);
+      unf_tot+=vReco(it);
+      if (i<_nt){
+        o << ' ' << std::setw(8) << vTrainTrue(it);
+      }
+      else
+        o << std::setw(9) << ' ';
+      if (i<_nm)
+        o << ' ' << std::setw(8) << vTrain(im);
+      else
+        o << std::setw(9) << ' ';
+      if (vTrue.GetNrows()>0 && i<_nt)
+        o << ' ' << std::setw(8) << vTrue(it);
+      else
+        o << std::setw(9) << ' ';
+      if (i<_nm)
+        o << ' ' << std::setw(8) << vMeas(im);
+      else
+        o << std::setw(9) << ' ';
+      o << std::setprecision(1);
+      if (i<_nt) {
+        Double_t y= vReco(it), yerr = eReco(it);
+        o << ' ' << std::setw(8) << y;
+        if (withError)
+          o << ' ' << std::setw(9) << yerr;
+        if (vTrue.GetNrows()>0 &&
+            (                       y!=0.0 || (withError &&                   yerr>0.0)) &&
+            (vTrue(it)!=0.0 || (withError && eTrue(it)>0.0))) {
+          Double_t ydiff= y - vTrue(it);
+          o << ' ' << std::setw(8) << ydiff;
+          if (withError && yerr>0.0) {
+            ndf++;
+            Double_t ypull = ydiff/yerr;
+            chi2 += ypull*ypull;
+            o << ' ' << std::setw(8) << ypull;
+          }
+        }
+      }
+      o << std::endl;
+    }
 
+    o << "===============================================================================" << xwid << std::endl
+      << std::setw(iwid) << "" << std::fixed << std::setprecision(0)
+      << ' ' << std::setw(8) << true_train_tot
+      << ' ' << std::setw(8) << meas_train_tot;
+    if (vTrue.GetNrows()>0)
+      o << ' ' << std::setw(8) << true_test_tot;
+    else
+      o << std::setw(9) << ' ';
+    Double_t toterr= 0.0;
+    if (meas_test_tot>0.0 && meas_train_tot>0.0) toterr= sqrt(meas_test_tot)*true_train_tot/meas_train_tot;
+    o << ' ' << std::setw(8) << meas_test_tot << std::setprecision(1)
+      << ' ' << std::setw(8) << unf_tot;
+    if (withError) 
+      o << ' ' << std::setw(9) << toterr;
+    o << ' ' << std::setw(8) << unf_tot-true_test_tot;
+    if(withError && toterr>0.0)
+      o << ' ' << std::setw(8) <<(unf_tot-true_test_tot)/toterr;
+    o << std::endl
+      << "===============================================================================" << xwid << std::endl;
+    o.copyfmt (fmt);
+    if (vTrue.GetNrows()>0) {
+      if (chi_squ!=-999.0) {
+        o << "Chi^2/NDF=" << chi_squ << "/" << ndf << " (bin-by-bin Chi^2=" << chi2 << ")" << std::endl;
+      } else {
+        o << "Bin-by-bin Chi^2/NDF=" << chi2 << "/" << ndf << std::endl;
+        chi_squ= chi2;
+      }
+      if (chi_squ<=0.0) std::cerr << "Warning: Invalid Chi^2 Value" << std::endl;
+    }
+  }
 
-
+  void printTable (std::ostream& o, const TVectorD& vTrainTrue, const TVectorD& vTrain,
+                   const TVectorD& vMeas, const TVectorD& vReco,
+                   Int_t nm, Int_t nt){
+    if (nm<=0) nm= vTrain    .GetNrows();
+    if (nt<=0) nt= vTrainTrue.GetNrows();
+    TVectorD vTrue(nt);
+    TVectorD eTrue(0);
+    TVectorD eReco(0);        
+    printTable (o, 1, nt, 0, vTrainTrue, vTrain, vTrue, vMeas, vReco, kNoError, eTrue, eReco, -999.0,false);
+  }
 }

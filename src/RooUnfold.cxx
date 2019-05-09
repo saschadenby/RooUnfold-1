@@ -639,11 +639,10 @@ RooUnfoldT<Hist,Hist2D>::Hreco (ErrorTreatment withError)
     */
 
   if (!UnfoldWithErrors (withError)) withError= kNoError;
+  const Hist* t = _res->Htruth();
   if (!_unfolded){
-    Hist* reco= copy(_res->Htruth(),true,GetName(),GetTitle());
-    return reco;
+    return createHist<Hist>(t->GetName(),t->GetTitle(),vars(t));
   } else {
-
     TVectorD rec(this->_nt);
     TVectorD errors(this->_nt);
     for (Int_t i= 0; i < _nt; i++) {
@@ -656,10 +655,7 @@ RooUnfoldT<Hist,Hist2D>::Hreco (ErrorTreatment withError)
         errors[i] = (sqrt (fabs (_err_mat(i,i))));
       }
     }
-
-    const Hist* t = _res->Htruth();
-    Hist* reco = createHist<Hist>(rec,errors,t->GetName(),t->GetTitle(),vars(t),_overflow);
-    return reco;
+    return createHist<Hist>(rec,errors,t->GetName(),t->GetTitle(),vars(t),_overflow);
   }
 }
 
