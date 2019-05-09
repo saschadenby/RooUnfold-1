@@ -206,20 +206,6 @@ namespace RooUnfolding {
     // Bin content by vector index
     return h->GetBinContent (bin (h, i, j, overflow));
   }
-  template<> TH1* h2h1d<TH1,TH2>(const TH1* h, int nb){
-    return dynamic_cast<TH1*>(h->Clone());
-  }  
-  template<> TH1* h2h1d<TH1,TH2>(const TH2* h, int nb){
-    TH1* h1d= new TH1F(h->GetName(), h->GetTitle(), nb, 0.0, 1.0);
-    Int_t s= h->GetSumw2N();
-    for (Int_t i= 0; i < nb; i++) {
-      Int_t j= bin (h, i, false);  // don't bother with under/overflow bins (not supported for >1D)
-      h1d->SetBinContent (i+1, h->GetBinContent (j));
-      if (s) h1d->SetBinError   (i+1, h->GetBinError   (j));
-    }
-    return h1d;
-  }
-
   template<> void h2mNorm<TH1,TH2>  (const TH2* h, TMatrixD& m, const TH1* norm, bool overflow){
     // sets Matrix to values of bins in a 2D input histogram
     m.ResizeTo(h->GetNbinsX()+2*overflow,h->GetNbinsY()+2*overflow);

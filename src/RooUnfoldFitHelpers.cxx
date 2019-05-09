@@ -131,10 +131,6 @@ namespace RooUnfolding {
     return NULL;
   }
 
-  template<> RooAbsReal* h2h1d<RooAbsReal>(const RooAbsReal* h, int nb){
-    // TODO
-    return 0;
-  }
   template<> RooAbsReal* createHist<RooAbsReal>(const TVectorD& v, const char* name, const char* title, const std::vector<Variable<RooAbsReal>>& x, bool overflow){
     // TODO
     return 0;

@@ -70,8 +70,6 @@ namespace RooUnfolding {
   template<class Hist2D> int findBin(const Hist2D* h, Double_t x, Double_t y);
   template<class Hist3D> int findBin(const Hist3D* h, Double_t x, Double_t y, double_t z);
 
-  template<class Hist, class Hist2D> Hist* h2h1d(const Hist* h, int nb);
-  template<class Hist, class Hist2D> Hist* h2h1d(const Hist2D* h, int nb);
   template<class Hist, class Hist2D> void h2mNorm  (const Hist2D* h, TMatrixD& m, const Hist* norm, bool overflow = false);
   template<class Hist, class Hist2D> void h2meNorm  (const Hist2D* h, TMatrixD& m, const Hist* norm, bool overflow = false);  
   template<class Hist, class Hist2D> TMatrixD h2mNorm  (const Hist2D* h, const Hist* norm, bool overflow = false);  
