@@ -59,6 +59,8 @@ elif method == "svd":
   unfold= ROOT.RooUnfoldSvd     (response, hMeas, 20);     #  OR
 elif method == "bbb":
   unfold= ROOT.RooUnfoldBinByBin     (response, hMeas);     #  OR  
+elif method == "inv":
+  unfold= ROOT.RooUnfoldInvert     (response, hMeas);     #  OR  
 elif method == "root":
   unfold= RooUnfoldTUnfold (response, hMeas);         #  OR
 elif method == "ids":
