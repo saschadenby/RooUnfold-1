@@ -149,9 +149,8 @@ RooUnfoldSvdT<Hist,Hist2D>::SVDUnfold::SVDUnfold( const Hist *bdat, const TMatri
      fToyMode    (kFALSE),
      fMatToyMode (kFALSE) 
 {
-
   if(sumW2N(Adet)){
-    h2me<Hist2D>(Adet,fAdet);
+    h2me<Hist2D>(Adet,fAdetE);
   }
   
    // Default constructor
@@ -219,6 +218,21 @@ RooUnfoldSvdT<Hist,Hist2D>::SVDUnfold::~SVDUnfold()
 
 }
 
+namespace {
+  void sanitize(TMatrixD& m,double eps){
+    for(int i=0; i<m.GetNrows(); ++i){
+      for(int j=0; j<m.GetNcols(); ++j){
+        if(std::isnan(m(i,j))) m(i,j) = eps;
+      }
+    }
+  }
+  void sanitize(TVectorD& v,double eps){
+    for(int j=0; j<v.GetNrows(); ++j){
+      if(std::isnan(v(j))) v(j) = eps;
+    }
+  }
+}
+
 //_______________________________________________________________________
 template<class Hist,class Hist2D>
 TVectorD RooUnfoldSvdT<Hist,Hist2D>::SVDUnfold::UnfoldV( Int_t kreg )
@@ -229,7 +243,6 @@ TVectorD RooUnfoldSvdT<Hist,Hist2D>::SVDUnfold::UnfoldV( Int_t kreg )
    // Create vectors and matrices
    TVectorD vb(fNdim), vberr(fNdim);
    TMatrixD mB(fBcov), mA(fNdim, fNdim), mCurv(fNdim, fNdim), mC(fNdim, fNdim);
-
    Double_t eps = 1e-12;
 
    // Copy histogams entries into vector
@@ -238,6 +251,9 @@ TVectorD RooUnfoldSvdT<Hist,Hist2D>::SVDUnfold::UnfoldV( Int_t kreg )
 
    TVectorD vbini(h2v(fBini));
    TVectorD vxini(h2v(fXini));
+
+   sanitize(mB,eps);
+   sanitize(vberr,eps);
 
    if (fMatToyMode) mA = fToymat;
    else        mA=fAdet;
