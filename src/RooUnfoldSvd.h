@@ -166,7 +166,7 @@ protected:
   mutable const Hist2D *_reshist, *_meascov;
 
 public:
-  ClassDefT (RooUnfoldSvdT, 0) // SVD Unfolding (interface to TSVDUnfold)
+  ClassDefT (RooUnfoldSvdT, 1) // SVD Unfolding (interface to TSVDUnfold)
 };
 
 typedef RooUnfoldSvdT<TH1,TH2> RooUnfoldSvd;

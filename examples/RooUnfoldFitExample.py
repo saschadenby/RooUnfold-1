@@ -10,31 +10,14 @@
 #
 # ==============================================================================
 
-# ==============================================================================
-#  Gaussian smearing, systematic translation, and variable inefficiency
-# ==============================================================================
-
-def smear(xt):
-  from ROOT import gRandom
-  xeff= 0.3 + (1.0-0.3)/20*(xt+10.0);  #  efficiency
-  x= gRandom.Rndm();
-  if x>xeff: return None;
-  xsmear= gRandom.Gaus(-2.5,0.2);     #  bias and smear
-  return xt+xsmear;
-
-# ==============================================================================
-#  Example Unfolding
-# ==============================================================================
-
 infname = "hist_tmp.root"
 
-
-def prepare():
+def prepare(smear):
   import ROOT
 
   response= ROOT.RooUnfoldResponse (40, -10.0, 10.0);
 
-  nevents = 10000
+  nevents = 100000
 
   sig_theory= ROOT.TH1D ("sig_theory", "Test Truth",    40, -10.0, 10.0);
   sig_theory_alt= ROOT.TH1D ("sig_theory_alt", "Test Truth",    40, -10.0, 10.0);
@@ -354,7 +337,15 @@ def runFit(ws):
 def main(args):
   from os.path import exists
   
-  prepare()
+  def smear(xt):
+    from ROOT import gRandom
+    xeff= 0.3 + (1.0-0.3)/20*(xt+10.0);  #  efficiency
+    x= gRandom.Rndm();
+    if x>xeff: return None;
+    xsmear= gRandom.Gaus(args.bias,args.smear);     #  bias and smear
+    return xt+xsmear;
+
+  prepare(smear)
   
   if exists("ws-aux.root") and exists("ws.root"):
     mainws = loadws("ws.root","combined")
@@ -384,4 +375,6 @@ if __name__=="__main__":
   from argparse import ArgumentParser
   parser = ArgumentParser(description="RooUnfold testing script")
   parser.add_argument("method",default="bayes",type=str)
+  parser.add_argument("--bias",default=-2.5,type=float)
+  parser.add_argument("--smear",default=.2,type=float)
   main(parser.parse_args())

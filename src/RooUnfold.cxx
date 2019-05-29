@@ -1217,6 +1217,7 @@ ClassImp (RooUnfoldT_RooFitHist);
 
 
 template<class Base>RooUnfolding::RooFitWrapper<Base>::RooFitWrapper(const char* name, const char* title, const RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>* unf) : Base(name,title), _unfolding((RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>*)(unf->Clone())) {
+  this->_unfolding->SetVerbose(0);
   const RooUnfoldResponseT<RooFitHist,RooFitHist>* res = this->_unfolding->response();
   if(res){
     const RooFitHist* htruth = res->Htruth();

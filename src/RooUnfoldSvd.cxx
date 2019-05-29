@@ -189,8 +189,7 @@ RooUnfoldSvdT<Hist,Hist2D>::Unfold() const
   
   const TMatrixD& cov(this->GetMeasuredCov());
 
-  if (this->_verbose>=1) cout << "SVD init " << nBins(this->_reshist,X) << " x " << nBins(this->_reshist,Y)
-                        << " bins, kreg=" << this->_kreg << endl;
+  if (this->_verbose>=1) cout << "SVD init " << nBins(this->_reshist,X) << " x " << nBins(this->_reshist,Y) << " bins, kreg=" << this->_kreg << endl;
   if(!this->_meas1d) throw std::runtime_error("no meas1d given!");
   if(!this->_train1d) throw std::runtime_error("no train1d given!");
   if(!this->_truth1d) throw std::runtime_error("no truth1d given!");
