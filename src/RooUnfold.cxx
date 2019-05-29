@@ -1353,12 +1353,18 @@ Int_t RooUnfolding::RooFitWrapper<Base>::getAnalyticalIntegralWN(RooArgSet &allV
 
 template<class Base>
 Double_t RooUnfolding::RooFitWrapper<Base>::analyticalIntegralWN(Int_t code, const RooArgSet *normSet, const char *rangeName) const {
-  return this->_unfolding->response()->Htruth()->func()->analyticalIntegralWN(code,normSet,rangeName);
+  double val = 0;
+  auto vec = this->_unfolding->Vreco();
+  for(size_t i=0; i<vec.GetNrows(); ++i){
+    // assuming uniform binning for now
+    val += vec[i];
+  }
+  return val;
 }
 
 template<class Base>
 void RooUnfolding::RooFitWrapper<Base>::printMetaArgs(std::ostream &os) const {
-  return this->_unfolding->response()->Hresponse()->func()->printMetaArgs(os);
+  return this->_unfolding->response()->Htruth()->func()->printMetaArgs(os);
 }
 
 template<class Base>
