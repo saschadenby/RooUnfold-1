@@ -31,25 +31,23 @@ public:
   RooUnfoldInvert (const RooUnfoldInvert& rhs); // copy constructor
   virtual ~RooUnfoldInvert(); // destructor
   RooUnfoldInvert& operator= (const RooUnfoldInvert& rhs); // assignment operator
-  virtual RooUnfoldInvert* Clone (const char* newname= 0) const;
   RooUnfoldInvert (const RooUnfoldResponseT<TH1,TH2>* res, const TH1* meas, const char* name=0, const char* title=0);
 
-  virtual void Reset();
+  virtual void Reset() override;
   TDecompSVD* Impl();
 
 protected:
-  virtual void Unfold();
-  virtual void GetCov();
-  virtual void GetSettings();
+  virtual void Unfold() const override;
+  virtual void GetCov() const override;
 
 private:
   void Init();
-  Bool_t InvertResponse();
+  Bool_t InvertResponse() const;
 
 protected:
   // instance variables
-  TDecompSVD* _svd;
-  TMatrixD*   _resinv;
+  mutable TDecompSVD* _svd;
+  mutable TMatrixD*   _resinv;
 
 public:
   ClassDef (RooUnfoldInvert, 1)  // Unregularised unfolding

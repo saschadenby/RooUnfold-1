@@ -4,7 +4,6 @@
 
 variables:
   GIT_SUBMODULE_STRATEGY: recursive
-  PYTHONUNBUFFERED: 1
   
 stages:
   - build
@@ -48,7 +47,7 @@ stages:
 .GNUmake: &GNUmake    
   stage: build
   script:
-    make -j1
+    make -j1 NOROOFIT=1
   artifacts:
     paths:
       - libRooUnfold.so

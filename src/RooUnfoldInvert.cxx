@@ -56,15 +56,6 @@ RooUnfoldInvert::RooUnfoldInvert (const RooUnfoldResponseT<TH1,TH2>* res, const 
   Init();
 }
 
-RooUnfoldInvert*
-RooUnfoldInvert::Clone (const char* newname) const
-{
-  RooUnfoldInvert* unfold= new RooUnfoldInvert(*this);
-  if (newname && strlen(newname)) unfold->SetName(newname);
-  return unfold;
-}
-
-
 RooUnfoldInvert::~RooUnfoldInvert()
 {
   delete _svd;
@@ -95,7 +86,7 @@ RooUnfoldInvert::Impl()
 }
 
 void
-RooUnfoldInvert::Unfold()
+RooUnfoldInvert::Unfold() const
 {
   if (_nt>_nm) {
     TMatrixD resT (TMatrixD::kTransposed, _res->Mresponse());
@@ -107,8 +98,8 @@ RooUnfoldInvert::Unfold()
     cerr <<"Warning: response matrix bad condition= "<<_svd->Condition()<<endl;
   }
 
-  _rec.ResizeTo(_nm);
-  _rec= Vmeasured();
+  _cache._rec.ResizeTo(_nm);
+  _cache._rec= Vmeasured();
 
   if (_res->HasFakes()) {
     TVectorD fakes= _res->Vfakes();
@@ -116,37 +107,37 @@ RooUnfoldInvert::Unfold()
     if (fac!=0.0) fac=  Vmeasured().Sum() / fac;
     if (_verbose>=1) cout << "Subtract " << fac*fakes.Sum() << " fakes from measured distribution" << endl;
     fakes *= fac;
-    _rec -= fakes;
+    _cache._rec -= fakes;
   }
 
   Bool_t ok;
   if (_nt>_nm) {
     ok= InvertResponse();
-    if (ok) _rec *= *_resinv;
+    if (ok) _cache._rec *= *_resinv;
   } else
-    ok= _svd->Solve (_rec);
+    ok= _svd->Solve (_cache._rec);
 
-  _rec.ResizeTo(_nt);
+  _cache._rec.ResizeTo(_nt);
   if (!ok) {
     cerr << "Response matrix Solve failed" << endl;
     return;
   }
 
-  _unfolded= true;
-  _haveCov=  false;
+  _cache._unfolded= true;
+  _cache._haveCov=  false;
 }
 
 void
-RooUnfoldInvert::GetCov()
+RooUnfoldInvert::GetCov() const
 {
     if (!InvertResponse()) return;
-    _cov.ResizeTo(_nt,_nt);
-    ABAT (*_resinv, GetMeasuredCov(), _cov);
-    _haveCov= true;
+    _cache._cov.ResizeTo(_nt,_nt);
+    ABAT (*_resinv, GetMeasuredCov(), _cache._cov);
+    _cache._haveCov= true;
 }
 
 Bool_t
-RooUnfoldInvert::InvertResponse()
+RooUnfoldInvert::InvertResponse() const
 {
     if (!_svd)   return false;
     if (_resinv) return true;
@@ -166,10 +157,3 @@ RooUnfoldInvert::InvertResponse()
     return true;
 }
 
-void
-RooUnfoldInvert::GetSettings(){
-    _minparm=0;
-    _maxparm=0;
-    _stepsizeparm=0;
-    _defaultparm=0;
-}

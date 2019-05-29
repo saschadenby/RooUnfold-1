@@ -28,7 +28,9 @@ END_HTML */
 
 #include "RooUnfoldBayes.h"
 #include "RooUnfoldTH1Helpers.h"
+#ifndef NOROOFIT
 #include "RooUnfoldFitHelpers.h"
+#endif
 
 #include <iostream>
 #include <iomanip>
@@ -72,15 +74,6 @@ RooUnfoldBayesT<Hist,Hist2D>::RooUnfoldBayesT (const RooUnfoldResponseT<Hist,His
   Init();
 }
 
-template<class Hist,class Hist2D>
-RooUnfoldBayesT<Hist,Hist2D>* RooUnfoldBayesT<Hist,Hist2D>::Clone (const char* newname) const
-{
-  // Creates a copy of the RooUnfoldBayesT<Hist,Hist2D> object
-  RooUnfoldBayesT<Hist,Hist2D>* unfold= new RooUnfoldBayesT<Hist,Hist2D>(*this);
-  if (newname && strlen(newname)) unfold->SetName(newname);
-  return unfold;
-}
-
 template<class Hist,class Hist2D> void
 RooUnfoldBayesT<Hist,Hist2D>::Init()
 {
@@ -111,7 +104,7 @@ RooUnfoldBayesT<Hist,Hist2D>::CopyData (const RooUnfoldBayesT<Hist,Hist2D>& rhs)
 }
 
 template<class Hist,class Hist2D> void
-RooUnfoldBayesT<Hist,Hist2D>::Unfold()
+RooUnfoldBayesT<Hist,Hist2D>::Unfold() const
 {
   this->setup();
   if (this->verbose() >= 2) {
@@ -121,33 +114,33 @@ RooUnfoldBayesT<Hist,Hist2D>::Unfold()
   if (this->verbose() >= 1) cout << "Now unfolding..." << endl;
   unfold();
   if (this->verbose() >= 2) Print();
-  this->_rec.ResizeTo(this->_nc);
-  this->_rec = this->_nbarCi;
-  this->_rec.ResizeTo(this->_nt);  // drop fakes in final bin
-  this->_unfolded= true;
-  this->_haveCov=  false;
+  this->_cache._rec.ResizeTo(this->_nc);
+  this->_cache._rec = this->_nbarCi;
+  this->_cache._rec.ResizeTo(this->_nt);  // drop fakes in final bin
+  this->_cache._unfolded= true;
+  this->_cache._haveCov=  false;
 }
 
 template<class Hist,class Hist2D> void
-RooUnfoldBayesT<Hist,Hist2D>::GetCov()
+RooUnfoldBayesT<Hist,Hist2D>::GetCov() const
 {
   getCovariance();
-  this->_cov.ResizeTo (this->_nt, this->_nt);  // drop fakes in final bin
-  this->_haveCov= true;
+  this->_cache._cov.ResizeTo (this->_nt, this->_nt);  // drop fakes in final bin
+  this->_cache._haveCov= true;
 }
 
 template<class Hist,class Hist2D> void
-RooUnfoldBayesT<Hist,Hist2D>::GetSettings()
+RooUnfoldBayesT<Hist,Hist2D>::GetSettings() const
 {
-    this->_minparm=1;
-    this->_maxparm=15;
-    this->_stepsizeparm=1;
-    this->_defaultparm=4;
+    this->_cache._minparm=1;
+    this->_cache._maxparm=15;
+    this->_cache._stepsizeparm=1;
+    this->_cache._defaultparm=4;
 }
 
 //-------------------------------------------------------------------------
 template<class Hist,class Hist2D> void
-RooUnfoldBayesT<Hist,Hist2D>::setup()
+RooUnfoldBayesT<Hist,Hist2D>::setup() const
 {
   this->_nc = this->_nt;
   this->_ne = this->_nm;
@@ -193,7 +186,7 @@ RooUnfoldBayesT<Hist,Hist2D>::setup()
 
 //-------------------------------------------------------------------------
 template<class Hist,class Hist2D> void
-RooUnfoldBayesT<Hist,Hist2D>::unfold()
+RooUnfoldBayesT<Hist,Hist2D>::unfold() const
 {
   // Calculate the unfolding matrix.
   // _niter = number of iterations to perform (3 by default).
@@ -343,24 +336,24 @@ RooUnfoldBayesT<Hist,Hist2D>::unfold()
 
 //-------------------------------------------------------------------------
 template<class Hist,class Hist2D> void
-RooUnfoldBayesT<Hist,Hist2D>::getCovariance()
+RooUnfoldBayesT<Hist,Hist2D>::getCovariance() const
 {
   if (this->_dosys!=2) {
     if (this->verbose()>=1) cout << "Calculating covariances due to number of measured events" << endl;
 
     // Create the covariance matrix of result from that of the measured distribution
-    this->_cov.ResizeTo (this->_nc, this->_nc);
+    this->_cache._cov.ResizeTo (this->_nc, this->_nc);
 #ifdef OLDERRS
     const TMatrixD& Dprop= this->_Mij;
 #else
     const TMatrixD& Dprop= this->_dnCidnEj;
 #endif
-    if (this->_haveCovMes) {
-      ABAT (Dprop, this->GetMeasuredCov(), this->_cov);
+    if (this->_covMes) {
+      ABAT (Dprop, this->GetMeasuredCov(), this->_cache._cov);
     } else {
       TVectorD v= this->Emeasured();
       v.Sqr();
-      ABAT (Dprop, v, this->_cov);
+      ABAT (Dprop, v, this->_cache._cov);
     }
   }
 
@@ -380,10 +373,10 @@ RooUnfoldBayesT<Hist,Hist2D>::getCovariance()
     if (this->_dosys!=2) {
       TMatrixD covres(this->_nc,this->_nc);
       ABAT (this->_dnCidPjk, Vjk, covres);
-      this->_cov += covres;
+      this->_cache._cov += covres;
     } else {
-      this->_cov.ResizeTo (this->_nc, this->_nc);
-      ABAT (this->_dnCidPjk, Vjk, this->_cov);
+      this->_cache._cov.ResizeTo (this->_nc, this->_nc);
+      ABAT (this->_dnCidPjk, Vjk, this->_cache._cov);
     }
   }
 }
@@ -565,5 +558,7 @@ double RooUnfoldBayesT<Hist,Hist2D>::GetRegParm() const
 template class RooUnfoldBayesT<TH1,TH2>;
 ClassImp (RooUnfoldBayes);
 
-template class RooUnfoldBayesT<RooAbsReal,RooAbsReal>;
+#ifndef NOROOFIT
+template class RooUnfoldBayesT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>;
 ClassImp (RooFitUnfoldBayes);
+#endif

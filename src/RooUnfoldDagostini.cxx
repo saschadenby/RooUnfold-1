@@ -75,15 +75,6 @@ RooUnfoldDagostini::RooUnfoldDagostini (const RooUnfoldResponseT<TH1,TH2>* res, 
   Init();
 }
 
-RooUnfoldDagostini*
-RooUnfoldDagostini::Clone (const char* newname) const
-{
-  RooUnfoldDagostini* unfold= new RooUnfoldDagostini(*this);
-  if (newname && strlen(newname)) unfold->SetName(newname);
-  return unfold;
-}
-
-
 RooUnfoldDagostini::~RooUnfoldDagostini()
 {
 }
@@ -120,7 +111,7 @@ RooUnfoldDagostini::Unfold()
     cerr << nm << " measured bins is too large - maximum is "  << SIZE_E << endl;
     nm= SIZE_E;
   }
-  if (_haveCovMes) cerr << "Warning: BAYES does not account for bin-bin correlations on measured input" << endl;
+  if (_covMes) cerr << "Warning: BAYES does not account for bin-bin correlations on measured input" << endl;
   
   const TMatrixD& res= _res->Mresponse();
   const TVectorD& tru= _res->Vtruth();
@@ -156,29 +147,29 @@ RooUnfoldDagostini::Unfold()
   bayes_ (&ntf, &nm, &_niter, &mode, &er_mode, &keep, &ier);
   if (ier != 0) cerr << "BAYES returned error " << ier << endl;
 
-  _rec.ResizeTo (_nt);
+  this->_cache._rec.ResizeTo (_nt);
   for (Int_t i= 0; i < nt; i++)
-    _rec(i)= bayesc_.nc[i];
+    this->_cache._rec(i)= bayesc_.nc[i];
 
-  _unfolded= true;
-  _haveCov=  false;
+  this->_cache._unfolded= true;
+  this->_cache._haveCov=  false;
 }
 
 void
 RooUnfoldDagostini::GetCov()
 {
   Int_t nt= _nt < SIZE_C ? _nt : SIZE_C;
-  _cov.ResizeTo(_nt,_nt);
+  this->_cache._cov.ResizeTo(_nt,_nt);
   for (Int_t i= 0; i < nt; i++)
     for (Int_t j= 0; j < nt; j++)
-      _cov(i,j)= bayesc_.Vc0_u[j][i];
-  _haveCov= true;
+      this->_cache._cov(i,j)= bayesc_.Vc0_u[j][i];
+  this->_cache._haveCov= true;
 }
 
 void
 RooUnfoldDagostini::GetSettings(){
-  _minparm=1;
-  _maxparm=15;
-  _stepsizeparm=1;
-  _defaultparm=4;
+  this->_cache._minparm=1;
+  this->_cache._maxparm=15;
+  this->_cache._stepsizeparm=1;
+  this->_cache._defaultparm=4;
 }

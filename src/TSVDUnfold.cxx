@@ -64,7 +64,9 @@ End_Html */
 
 #include "RooUnfoldHelpers.h"
 #include "RooUnfoldTH1Helpers.h"
+#ifndef NOROOFIT
 #include "RooUnfoldFitHelpers.h"
+#endif
 
 #include "RooUnfoldSvd.h"
 #include "TH1D.h"
@@ -223,7 +225,7 @@ TVectorD RooUnfoldSvdT<Hist,Hist2D>::SVDUnfold::UnfoldV( Int_t kreg )
 {
    // Perform the unfolding with regularisation parameter kreg
    fKReg = kreg;
-   
+
    // Create vectors and matrices
    TVectorD vb(fNdim), vberr(fNdim);
    TMatrixD mB(fBcov), mA(fNdim, fNdim), mCurv(fNdim, fNdim), mC(fNdim, fNdim);
@@ -256,7 +258,7 @@ TVectorD RooUnfoldSvdT<Hist,Hist2D>::SVDUnfold::UnfoldV( Int_t kreg )
    TMatrixD mCinv((CVort*CSVM)*CUort);
 
    //Rescale using the data covariance matrix
-   TDecompSVD BSVD( mB );
+   TDecompSVD BSVD( mB );   
    TMatrixD QT(BSVD.GetU());
    QT.Transpose(QT);
    TVectorD B2SV(BSVD.GetSig());
@@ -300,7 +302,7 @@ TVectorD RooUnfoldSvdT<Hist,Hist2D>::SVDUnfold::UnfoldV( Int_t kreg )
    TVectorD vd(Uort*vb);
 
    if (!fToyMode && !fMatToyMode) {
-     fDHist = createHist<Hist>(vd,fBdat->GetName(),fBdat->GetTitle(),vars(fBdat),false);
+     fDHist = createHist<Hist>(vd,name(fBdat),title(fBdat),vars(fBdat),false);
    }
 
    // Damping coefficient
@@ -373,7 +375,7 @@ Hist* RooUnfoldSvdT<Hist,Hist2D>::SVDUnfold::Unfold( Int_t kreg )
 {
 
   TVectorD vx(UnfoldV(kreg));
-  return createHist<Hist>(vx,"unfoldingresult",fBdat->GetTitle(),vars(fBdat),false);
+  return createHist<Hist>(vx,"unfoldingresult",title(fBdat),vars(fBdat),false);
 }
 
 //_______________________________________________________________________
@@ -793,5 +795,7 @@ void RooUnfoldSvdT<Hist,Hist2D>::SVDUnfold::RegularisedSymMatInvert( TMatrixDSym
 template class RooUnfoldSvdT<TH1,TH2>::SVDUnfold;
 ClassImp (RooUnfoldSvd::SVDUnfold);
 
-template class RooUnfoldSvdT<RooAbsReal,RooAbsReal>::SVDUnfold;
+#ifndef NOROOFIT
+template class RooUnfoldSvdT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>::SVDUnfold;
 ClassImp (RooFitUnfoldSvd::SVDUnfold);
+#endif

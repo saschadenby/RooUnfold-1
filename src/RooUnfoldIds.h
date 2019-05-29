@@ -49,42 +49,41 @@ public:
 
    virtual void Reset();
 
-   TH2* GetUnfoldCovMatrix(const TH2 *cov, Int_t ntoys, Int_t seed = 1);
-   TH2* GetAdetCovMatrix(Int_t ntoys, Int_t seed = 1);
+   TH2* GetUnfoldCovMatrix(const TH2 *cov, Int_t ntoys, Int_t seed = 1) const;
+   TH2* GetAdetCovMatrix(Int_t ntoys, Int_t seed = 1) const;
 
 protected:
    void Assign(const RooUnfoldIds &rhs); // implementation of assignment operator
-   virtual void Unfold();
-   virtual void GetCov();
-   virtual void GetSettings();
+   virtual void Unfold() const override;
+   virtual void GetCov() const override;
 
 private:
    void Init();
    void Destroy();
    void CopyData(const RooUnfoldIds &rhs);
 
-   TH1* GetIDSUnfoldedSpectrum(const TH1 *h_RecoMC, const TH1 *h_TruthMC, const TH2 *h_2DSmear, const TH1 *h_RecoData, Int_t iter);
-   Double_t Probability(Double_t deviation, Double_t sigma, Double_t lambda);
-   Double_t MCnormalizationCoeff(const TVectorD *vd, const TVectorD *errvd, const TVectorD *vRecmc, const Int_t dim, const Double_t estNknownd, const Double_t Nmc, const Double_t lambda, const TVectorD *soustr_ );
-   Double_t MCnormalizationCoeffIter(const TVectorD *vd, const TVectorD *errvd, const TVectorD *vRecmc, const Int_t dim, const Double_t estNknownd, const Double_t Nmc, const TVectorD *soustr_, Double_t lambdaN = 0., Int_t NiterMax = 5, Int_t messAct = 1);
-   void IdsUnfold(const TVectorD &b, const TVectorD &errb, const TMatrixD &A, const Int_t dim, const Double_t lambda, TVectorD *soustr_, TVectorD *unf);
-   void ComputeSoustrTrue(const TMatrixD *A, const TVectorD *unfres, const TVectorD *unfresErr, Int_t N, TVectorD *soustr_, Double_t lambdaS);
-   void ModifyMatrix(TMatrixD *Am, const TMatrixD *A, const TVectorD *unfres, const TVectorD *unfresErr, Int_t N, const Double_t lambdaM_, TVectorD *soustr_, const Double_t lambdaS_);
-   void PerformIterations(const TVectorD &data, const TVectorD &dataErr, const TMatrixD &A_, const Int_t &N_, Double_t lambdaL_, Int_t NstepsOptMin_, Double_t lambdaU_, Double_t lambdaM_, Double_t lambdaS_, TVectorD* unfres1IDS_, TVectorD* unfres2IDS_);
+   TH1* GetIDSUnfoldedSpectrum(const TH1 *h_RecoMC, const TH1 *h_TruthMC, const TH2 *h_2DSmear, const TH1 *h_RecoData, Int_t iter) const;
+   Double_t Probability(Double_t deviation, Double_t sigma, Double_t lambda) const;
+   Double_t MCnormalizationCoeff(const TVectorD *vd, const TVectorD *errvd, const TVectorD *vRecmc, const Int_t dim, const Double_t estNknownd, const Double_t Nmc, const Double_t lambda, const TVectorD *soustr_ ) const;
+   Double_t MCnormalizationCoeffIter(const TVectorD *vd, const TVectorD *errvd, const TVectorD *vRecmc, const Int_t dim, const Double_t estNknownd, const Double_t Nmc, const TVectorD *soustr_, Double_t lambdaN = 0., Int_t NiterMax = 5, Int_t messAct = 1) const;
+   void IdsUnfold(const TVectorD &b, const TVectorD &errb, const TMatrixD &A, const Int_t dim, const Double_t lambda, TVectorD *soustr_, TVectorD *unf) const;
+   void ComputeSoustrTrue(const TMatrixD *A, const TVectorD *unfres, const TVectorD *unfresErr, Int_t N, TVectorD *soustr_, Double_t lambdaS) const;
+   void ModifyMatrix(TMatrixD *Am, const TMatrixD *A, const TVectorD *unfres, const TVectorD *unfresErr, Int_t N, const Double_t lambdaM_, TVectorD *soustr_, const Double_t lambdaS_) const;
+   void PerformIterations(const TVectorD &data, const TVectorD &dataErr, const TMatrixD &A_, const Int_t &N_, Double_t lambdaL_, Int_t NstepsOptMin_, Double_t lambdaU_, Double_t lambdaM_, Double_t lambdaS_, TVectorD* unfres1IDS_, TVectorD* unfres2IDS_) const;
    TMatrixD* GetSqrtMatrix(const TMatrixD& covMat);
-   void GenGaussRnd(TArrayD& v, const TMatrixD& sqrtMat, TRandom3& R);
+   void GenGaussRnd(TArrayD& v, const TMatrixD& sqrtMat, TRandom3& R) const;
 
 protected:
-   Int_t _niter;
-   Int_t _nb;
+   mutable Int_t _niter;
+   mutable Int_t _nb;
 
-   Double_t _lambdaL; // initial unfolding regularization (before folding matrix improvement)
-   Double_t _lambdaUmin; // regularize Unfolding
-   Double_t _lambdaMmin; // regularize Modification of folding matrix
-   Double_t _lambdaS; // regularize background Subtraction
+   mutable Double_t _lambdaL; // initial unfolding regularization (before folding matrix improvement)
+   mutable Double_t _lambdaUmin; // regularize Unfolding
+   mutable Double_t _lambdaMmin; // regularize Modification of folding matrix
+   mutable Double_t _lambdaS; // regularize background Subtraction
 
-   TH1 *_meas1d, *_train1d, *_truth1d;
-   TH2 *_reshist;
+   mutable TH1 *_meas1d, *_train1d, *_truth1d;
+   mutable TH2 *_reshist;
 
 public:
    ClassDef(RooUnfoldIds, 1)

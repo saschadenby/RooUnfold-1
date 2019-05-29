@@ -33,7 +33,6 @@ public:
   RooUnfoldBayesT (const TString& name, const TString& title); // named constructor
   RooUnfoldBayesT (const RooUnfoldBayesT<Hist,Hist2D>& rhs); // copy constructor
   RooUnfoldBayesT& operator= (const RooUnfoldBayesT<Hist,Hist2D>& rhs); // assignment operator
-  virtual RooUnfoldBayesT<Hist,Hist2D>* Clone (const char* newname= 0) const;
 
   // Special constructors
 
@@ -53,13 +52,13 @@ public:
 
 protected:
   void Assign (const RooUnfoldBayesT<Hist,Hist2D>& rhs); // implementation of assignment operator
-  virtual void Unfold();
-  virtual void GetCov();
-  virtual void GetSettings();
+  virtual void Unfold() const override ;
+  virtual void GetCov() const override ;
+  virtual void GetSettings() const override;
 
-  void setup();
-  void unfold();
-  void getCovariance();
+  void setup() const;
+  void unfold() const;
+  void getCovariance() const;
 
   void smooth(TVectorD& PbarCi) const;
   double getChi2(const TVectorD& prob1,
@@ -72,27 +71,27 @@ private:
 
 protected:
   // instance variables
-  int _niter;
-  int _smoothit;
+  mutable int _niter;
+  mutable int _smoothit;
 
-  int _nc;              // number of causes  (same as _nt)
-  int _ne;              // number of effects (same as _nm)
-  double _N0C;          // number of events in prior
-  double _nbartrue;     // best estimate of number of true events
+  mutable int _nc;              // number of causes  (same as _nt)
+  mutable int _ne;              // number of effects (same as _nm)
+  mutable double _N0C;          // number of events in prior
+  mutable double _nbartrue;     // best estimate of number of true events
 
-  TVectorD _nEstj;        // Number of measured events from Effect E_j
-  TVectorD _nCi;          // Number of true events from cause C_i
-  TVectorD _nbarCi;       // Estimated number of true events from cause C_i
-  TVectorD _efficiencyCi; // efficiency for detecting cause C_i
-  TVectorD _P0C;          // prior before last iteration
-  TVectorD _UjInv;        // 1 / (folded prior) from last iteration
+  mutable TVectorD _nEstj;        // Number of measured events from Effect E_j
+  mutable TVectorD _nCi;          // Number of true events from cause C_i
+  mutable TVectorD _nbarCi;       // Estimated number of true events from cause C_i
+  mutable TVectorD _efficiencyCi; // efficiency for detecting cause C_i
+  mutable TVectorD _P0C;          // prior before last iteration
+  mutable TVectorD _UjInv;        // 1 / (folded prior) from last iteration
 
-  TMatrixD _Nji;          // mapping of causes to effects
-  TMatrixD _Mij;          // unfolding matrix
-  TMatrixD _Vij;          // covariance matrix
-  TMatrixD _VnEstij;      // covariance matrix of effects
-  TMatrixD _dnCidnEj;     // measurement error propagation matrix
-  TMatrixD _dnCidPjk;     // response error propagation matrix (stack j,k into each column)
+  mutable TMatrixD _Nji;          // mapping of causes to effects
+  mutable TMatrixD _Mij;          // unfolding matrix
+  mutable TMatrixD _Vij;          // covariance matrix
+  mutable TMatrixD _VnEstij;      // covariance matrix of effects
+  mutable TMatrixD _dnCidnEj;     // measurement error propagation matrix
+  mutable TMatrixD _dnCidPjk;     // response error propagation matrix (stack j,k into each column)
 
 public:
   ClassDefT (RooUnfoldBayesT, 0) // Bayesian Unfolding
@@ -100,6 +99,8 @@ public:
 
 
 typedef RooUnfoldBayesT<TH1,TH2> RooUnfoldBayes;
-typedef RooUnfoldBayesT<RooAbsReal,RooAbsReal> RooFitUnfoldBayes;
+#ifndef NOROOFIT
+typedef RooUnfoldBayesT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist> RooFitUnfoldBayes;
+#endif
 
 #endif

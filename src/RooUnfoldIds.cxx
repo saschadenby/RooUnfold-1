@@ -107,7 +107,7 @@ namespace{
   
 //______________________________________________________________________________
 void
-RooUnfoldIds::Unfold()
+RooUnfoldIds::Unfold() const
 {
    // Data and MC reco/truth must have the same number of bins
    if (_res->HasFakes()) {
@@ -144,21 +144,21 @@ RooUnfoldIds::Unfold()
    // Perform IDS unfolding
    TH1 *rechist = dynamic_cast<TH1*>(GetIDSUnfoldedSpectrum(_train1d, _truth1d, _reshist, _meas1d, _niter));
 
-   _rec.ResizeTo(_nt);
+   _cache._rec.ResizeTo(_nt);
    for (Int_t i = 0; i < _nt; ++i) {
-     _rec[i] = rechist->GetBinContent(i+1);
+     _cache._rec[i] = rechist->GetBinContent(i+1);
    }
 
    delete rechist;
    TH1::AddDirectory(oldstat);
 
-   _unfolded = kTRUE;
-   _haveCov = kFALSE;
+   _cache._unfolded = kTRUE;
+   _cache._haveCov = kFALSE;
 }
 
 //______________________________________________________________________________
 void
-RooUnfoldIds::GetCov()
+RooUnfoldIds::GetCov() const
 {
    if (!_meas1d) return;
 
@@ -176,10 +176,10 @@ RooUnfoldIds::GetCov()
    TH2 *adetCov     = GetAdetCovMatrix(_NToys);
 
 
-   _cov.ResizeTo(_nt, _nt);
+   _cache._cov.ResizeTo(_nt, _nt);
    for (Int_t i = 0; i < _nt; i++) {
       for (Int_t j = 0; j < _nt; ++j) {
-         _cov(i,j) = unfoldedCov->GetBinContent(i+1, j+1) + adetCov->GetBinContent(i+1, j+1);
+         _cache._cov(i,j) = unfoldedCov->GetBinContent(i+1, j+1) + adetCov->GetBinContent(i+1, j+1);
       }
    }
 
@@ -188,12 +188,12 @@ RooUnfoldIds::GetCov()
    delete meascov;
    TH1::AddDirectory(oldstat);
 
-   _haveCov = kTRUE;
+   _cache._haveCov = kTRUE;
 }
 
 //______________________________________________________________________________
 TH2*
-RooUnfoldIds::GetUnfoldCovMatrix(const TH2 *cov, Int_t ntoys, Int_t seed)
+RooUnfoldIds::GetUnfoldCovMatrix(const TH2 *cov, Int_t ntoys, Int_t seed) const
 {
    // Determine for given input error matrix covariance matrix of unfolded
    // spectrum from toy simulation given the passed covariance matrix on measured spectrum
@@ -294,7 +294,7 @@ RooUnfoldIds::GetUnfoldCovMatrix(const TH2 *cov, Int_t ntoys, Int_t seed)
 
 //______________________________________________________________________________
 TH2*
-RooUnfoldIds::GetAdetCovMatrix(Int_t ntoys, Int_t seed)
+RooUnfoldIds::GetAdetCovMatrix(Int_t ntoys, Int_t seed) const
 {
    // Determine covariance matrix of unfolded spectrum from finite statistics in
    // response matrix using pseudo experiments
@@ -368,15 +368,8 @@ RooUnfoldIds::GetAdetCovMatrix(Int_t ntoys, Int_t seed)
 }
 
 //______________________________________________________________________________
-void
-RooUnfoldIds::GetSettings()
-{
-   // Nothing to do here?
-}
-
-//______________________________________________________________________________
 TH1*
-RooUnfoldIds::GetIDSUnfoldedSpectrum(const TH1 *h_RecoMC, const TH1 *h_TruthMC, const TH2 *h_2DSmear, const TH1 *h_RecoData, Int_t iter)
+RooUnfoldIds::GetIDSUnfoldedSpectrum(const TH1 *h_RecoMC, const TH1 *h_TruthMC, const TH2 *h_2DSmear, const TH1 *h_RecoData, Int_t iter) const
 {
    Int_t nbinsx = h_RecoData->GetNbinsX();
    Int_t nbinsy = h_RecoData->GetNbinsY();
@@ -471,7 +464,7 @@ RooUnfoldIds::GetIDSUnfoldedSpectrum(const TH1 *h_RecoMC, const TH1 *h_TruthMC, 
 
 //______________________________________________________________________________
 Double_t
-RooUnfoldIds::Probability( Double_t deviation, Double_t sigma, Double_t lambda )
+RooUnfoldIds::Probability( Double_t deviation, Double_t sigma, Double_t lambda ) const
 {
    if( lambda < 0.00001 ){ return 1.;}
    if( lambda > 1000. ){ return 0.;}
@@ -480,7 +473,7 @@ RooUnfoldIds::Probability( Double_t deviation, Double_t sigma, Double_t lambda )
 
 //______________________________________________________________________________
 Double_t
-RooUnfoldIds::MCnormalizationCoeff(const TVectorD *vd, const TVectorD *errvd, const TVectorD *vRecmc, const Int_t dim, const Double_t estNknownd, const Double_t Nmc, const Double_t lambda, const TVectorD *soustr_ )
+RooUnfoldIds::MCnormalizationCoeff(const TVectorD *vd, const TVectorD *errvd, const TVectorD *vRecmc, const Int_t dim, const Double_t estNknownd, const Double_t Nmc, const Double_t lambda, const TVectorD *soustr_ ) const
 {
    Double_t Nknownd = estNknownd;
    for(Int_t i=0; i<dim; i++){
@@ -496,7 +489,7 @@ RooUnfoldIds::MCnormalizationCoeff(const TVectorD *vd, const TVectorD *errvd, co
 
 //______________________________________________________________________________
 Double_t
-RooUnfoldIds::MCnormalizationCoeffIter(const TVectorD *vd, const TVectorD *errvd, const TVectorD *vRecmc, const Int_t dim, const Double_t estNknownd, const Double_t Nmc, const TVectorD *soustr_, Double_t lambdaN, Int_t NiterMax, Int_t messAct)
+RooUnfoldIds::MCnormalizationCoeffIter(const TVectorD *vd, const TVectorD *errvd, const TVectorD *vRecmc, const Int_t dim, const Double_t estNknownd, const Double_t Nmc, const TVectorD *soustr_, Double_t lambdaN, Int_t NiterMax, Int_t messAct) const
 {
    Double_t Nkd = 0., estNknownd_ = estNknownd;
    for(Int_t i=0; i<NiterMax; i++ ){
@@ -512,7 +505,7 @@ RooUnfoldIds::MCnormalizationCoeffIter(const TVectorD *vd, const TVectorD *errvd
 
 //______________________________________________________________________________
 void
-RooUnfoldIds::IdsUnfold( const TVectorD &b, const TVectorD &errb, const TMatrixD &A, const Int_t dim, const Double_t lambda, TVectorD *soustr_, TVectorD *unf)
+RooUnfoldIds::IdsUnfold( const TVectorD &b, const TVectorD &errb, const TMatrixD &A, const Int_t dim, const Double_t lambda, TVectorD *soustr_, TVectorD *unf) const
 {
    // compute the mc true and reco spectra and normalize them
    TVectorD reco_mcN(dim), true_mcN(dim);
@@ -568,7 +561,7 @@ RooUnfoldIds::IdsUnfold( const TVectorD &b, const TVectorD &errb, const TMatrixD
 
 //______________________________________________________________________________
 void
-RooUnfoldIds::ComputeSoustrTrue( const TMatrixD *A, const TVectorD *unfres, const TVectorD *unfresErr, Int_t N, TVectorD *soustr_, Double_t lambdaS )
+RooUnfoldIds::ComputeSoustrTrue( const TMatrixD *A, const TVectorD *unfres, const TVectorD *unfresErr, Int_t N, TVectorD *soustr_, Double_t lambdaS ) const
 {
 
    TVectorD *true_mcT = new TVectorD(N), *active = new TVectorD(N);
@@ -613,7 +606,7 @@ RooUnfoldIds::ComputeSoustrTrue( const TMatrixD *A, const TVectorD *unfres, cons
 
 //______________________________________________________________________________
 void
-RooUnfoldIds::ModifyMatrix( TMatrixD *Am, const TMatrixD *A, const TVectorD *unfres, const TVectorD *unfresErr, Int_t N, const Double_t lambdaM_, TVectorD *soustr_, const Double_t lambdaS_ )
+RooUnfoldIds::ModifyMatrix( TMatrixD *Am, const TMatrixD *A, const TVectorD *unfres, const TVectorD *unfresErr, Int_t N, const Double_t lambdaM_, TVectorD *soustr_, const Double_t lambdaS_ ) const
 {
    ComputeSoustrTrue( A, unfres, unfresErr, N, soustr_, lambdaS_ );
 
@@ -652,7 +645,7 @@ RooUnfoldIds::ModifyMatrix( TMatrixD *Am, const TMatrixD *A, const TVectorD *unf
 
 //______________________________________________________________________________
 void
-RooUnfoldIds::PerformIterations(const TVectorD &data, const TVectorD &dataErr, const TMatrixD &A_, const Int_t &N_, const Double_t lambdaL_, const Int_t NstepsOptMin_, const Double_t lambdaU_, const Double_t lambdaM_, const Double_t lambdaS_, TVectorD* unfres1IDS_, TVectorD* unfres2IDS_)
+RooUnfoldIds::PerformIterations(const TVectorD &data, const TVectorD &dataErr, const TMatrixD &A_, const Int_t &N_, const Double_t lambdaL_, const Int_t NstepsOptMin_, const Double_t lambdaU_, const Double_t lambdaM_, const Double_t lambdaS_, TVectorD* unfres1IDS_, TVectorD* unfres2IDS_) const
 {
    TVectorD soustr(N_);
    for (Int_t i = 0; i < N_; i++) soustr[i] = 0.;
@@ -704,7 +697,7 @@ RooUnfoldIds::GetSqrtMatrix( const TMatrixD& covMat )
 
 //______________________________________________________________________________
 void
-RooUnfoldIds::GenGaussRnd( TArrayD& v, const TMatrixD& sqrtMat, TRandom3& R )
+RooUnfoldIds::GenGaussRnd( TArrayD& v, const TMatrixD& sqrtMat, TRandom3& R ) const
 {
    // generate vector of correlated Gaussian-distributed random numbers
    // sanity check

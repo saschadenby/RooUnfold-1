@@ -16,6 +16,8 @@
 #include "RooUnfoldResponse.h"
 #include "TVectorD.h"
 
+#include "RooUnfoldFitHelpers.h"
+
 template<class Hist, class Hist2D>
 class RooUnfoldBinByBinT : public RooUnfoldT<Hist,Hist2D> {
 
@@ -26,26 +28,30 @@ public:
   RooUnfoldBinByBinT (const RooUnfoldBinByBinT<Hist,Hist2D>& rhs); // copy constructor
   virtual ~RooUnfoldBinByBinT(); // destructor
   RooUnfoldBinByBinT<Hist,Hist2D>& operator= (const RooUnfoldBinByBinT<Hist,Hist2D>& rhs); // assignment operator
-  virtual RooUnfoldBinByBinT<Hist,Hist2D>* Clone (const char* newname= 0) const;
   RooUnfoldBinByBinT (const RooUnfoldResponseT<Hist,Hist2D>* res, const Hist* meas, const char* name=0, const char* title=0);
 
   TVectorD* Impl();
 
 protected:
-  virtual void Unfold();
-  virtual void GetCov();
-  virtual void GetSettings();
+  virtual void Unfold() const override;
+  virtual void GetCov() const override;
 
 protected:
-  // instance variables
-  TVectorD _factors;
+  // cache
+  class Cache {
+  public:
+    TVectorD _factors;
+  };
+  mutable Cache _specialcache;  
 
 public:
   ClassDefT (RooUnfoldBinByBinT, 0)  // Bin-by-bin unfolding
 };
 
 typedef RooUnfoldBinByBinT<TH1,TH2> RooUnfoldBinByBin;
-typedef RooUnfoldBinByBinT<RooAbsReal,RooAbsReal> RooFitUnfoldBinByBin;
+#ifndef NOROOFIT
+typedef RooUnfoldBinByBinT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist> RooFitUnfoldBinByBin;
+#endif
 
 
 #endif /*ROOUNFOLDBINBYBIN_H_*/

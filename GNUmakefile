@@ -221,13 +221,12 @@ endif
 ifneq ($(NOROOFIT),)
 CPPFLAGS     += -DNOROOFIT
 else
-ROOFITLIBS   += -lRooFit
 # Different versions of ROOT require different libraries with RooFit, so
 # include all the ones that exist.
 # Note that if the ROOT shared libraries were linked against them
 # (configure --enable-explicitlink ?), as is done in the CERN AFS versions,
 # then these are not required. But they do no harm.
-ROOFITLIBS   += $(patsubst $(ROOTLIBDIR)/lib%.$(DllSuf),-l%,$(wildcard $(patsubst %,$(ROOTLIBDIR)/lib%.$(DllSuf),RooFitCore Thread Minuit Foam MathMore Html)))
+ROOFITLIBS   += -lRooFit -lRooFitCore $(patsubst $(ROOTLIBDIR)/lib%.$(DllSuf),-l%,$(wildcard $(patsubst %,$(ROOTLIBDIR)/lib%.$(DllSuf),Thread Minuit Foam MathMore Html)))
 endif
 
 # === Internal configuration ===================================================
@@ -439,7 +438,7 @@ $(SHLIBFILE) : $(OLIST) $(CINTOBJ)
 	@echo "Making $@"
 	@mkdir -p $(SHLIBDIR)
 	@rm -f $@
-	$(_)$(LD) $(SOFLAGS) $(LDFLAGS) $^ $(OutPutOpt)$@ $(ROOTLIBS) $(GCCLIBS)
+	$(_)$(LD) $(SOFLAGS) $(ROOFITLIBS) $(LDFLAGS) $^ $(OutPutOpt)$@ $(ROOTLIBS) $(GCCLIBS)
 
 # Useful build targets
 depend: $(DLIST)

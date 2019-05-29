@@ -13,14 +13,24 @@ namespace RooUnfolding {
   }
 
 
+  template<class Hist> Hist* histNoOverflow(Hist* hist, bool overflow){
+    return createHist<Hist>(h2v<Hist>(hist,overflow),h2ve<Hist>(hist,overflow),name(hist),title(hist),vars(hist),overflow);
+  }
+
+  
   template<class Hist> void printTable (std::ostream& o, const Hist* hTrainTrue, const Hist* hTrain,
                    const Hist* hTrue, const Hist* hMeas, const Hist* hReco,
                    Bool_t overflow,
                    ErrorTreatment withError, Double_t chi_squ)
   {
     // Prints entries from truth, measured, and reconstructed data for each bin.
+    if(!hTrainTrue) throw std::runtime_error("unable to print: no trainTrue given!");
+    if(!hTrain) throw std::runtime_error("unable to print: no train given!");
+    if(!hMeas) throw std::runtime_error("unable to print: no measured given!");
+    if(!hReco) throw std::runtime_error("unable to print: no reco given!");    
     if (withError==kDefault) withError= sumW2N(hReco) ? kErrors : kNoError;
-    Int_t d= dim(hReco), ntxb= nBins(hReco,X)+2*overflow, ntyb= nBins(hReco,Y)+2*overflow;
+    Int_t d= dim(hReco);
+    int ntxb= nBins(hReco,X)+2*overflow, ntyb= nBins(hReco,Y)+2*overflow;
     if (dim(hMeas) != d || nBins(hMeas,X)+2*overflow != ntxb || nBins(hMeas,Y)+2*overflow != ntyb) d= 1;
     printTable(o,d,
                ntxb,ntyb,
