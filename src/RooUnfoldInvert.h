@@ -17,21 +17,19 @@
 #include "RooUnfold.h"
 #include "RooUnfoldResponse.h"
 
-class TH1;
-class TH1;
-class TH2D;
 class TDecompSVD;
 
-class RooUnfoldInvert : public RooUnfold {
+template<class Hist, class Hist2D>
+class RooUnfoldInvertT : public RooUnfoldT<Hist,Hist2D> {
 
 public:
-  RooUnfoldInvert(); // default constructor
-  RooUnfoldInvert (const char*    name, const char*    title); // named constructor
-  RooUnfoldInvert (const TString& name, const TString& title); // named constructor
-  RooUnfoldInvert (const RooUnfoldInvert& rhs); // copy constructor
-  virtual ~RooUnfoldInvert(); // destructor
-  RooUnfoldInvert& operator= (const RooUnfoldInvert& rhs); // assignment operator
-  RooUnfoldInvert (const RooUnfoldResponseT<TH1,TH2>* res, const TH1* meas, const char* name=0, const char* title=0);
+  RooUnfoldInvertT(); // default constructor
+  RooUnfoldInvertT (const char*    name, const char*    title); // named constructor
+  RooUnfoldInvertT (const TString& name, const TString& title); // named constructor
+  RooUnfoldInvertT (const RooUnfoldInvertT<Hist,Hist2D>& rhs); // copy constructor
+  virtual ~RooUnfoldInvertT(); // destructor
+  RooUnfoldInvertT& operator= (const RooUnfoldInvertT<Hist,Hist2D>& rhs); // assignment operator
+  RooUnfoldInvertT (const RooUnfoldResponseT<Hist,Hist2D>* res, const Hist* meas, const char* name=0, const char* title=0);
 
   virtual void Reset() override;
   TDecompSVD* Impl();
@@ -50,41 +48,12 @@ protected:
   mutable TMatrixD*   _resinv;
 
 public:
-  ClassDef (RooUnfoldInvert, 1)  // Unregularised unfolding
+  ClassDefT (RooUnfoldInvertT, 1)  // Unregularised unfolding
 };
 
-// Inline method definitions
-
-inline
-RooUnfoldInvert::RooUnfoldInvert()
-  : RooUnfold()
-{
-  // Default constructor. Use Setup() to prepare for unfolding.
-  Init();
-}
-
-inline
-RooUnfoldInvert::RooUnfoldInvert (const char* name, const char* title)
-  : RooUnfold(name,title)
-{
-  // Basic named constructor. Use Setup() to prepare for unfolding.
-  Init();
-}
-
-inline
-RooUnfoldInvert::RooUnfoldInvert (const TString& name, const TString& title)
-  : RooUnfold(name,title)
-{
-  // Basic named constructor. Use Setup() to prepare for unfolding.
-  Init();
-}
-
-inline
-RooUnfoldInvert& RooUnfoldInvert::operator= (const RooUnfoldInvert& rhs)
-{
-  // Assignment operator for copying RooUnfoldInvert settings.
-  Assign(rhs);
-  return *this;
-}
+typedef RooUnfoldInvertT<TH1,TH2> RooUnfoldInvert;
+#ifndef NOROOFIT
+typedef RooUnfoldInvertT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist> RooFitUnfoldInvert;
+#endif
 
 #endif /*ROOUNFOLDINVERT_H_*/

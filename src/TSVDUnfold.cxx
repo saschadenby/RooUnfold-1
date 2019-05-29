@@ -813,5 +813,6 @@ ClassImp (RooUnfoldSvd::SVDUnfold);
 
 #ifndef NOROOFIT
 template class RooUnfoldSvdT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>::SVDUnfold;
+typedef RooUnfoldSvdT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist> RooFitUnfoldSvd;
 ClassImp (RooFitUnfoldSvd::SVDUnfold);
 #endif

@@ -182,17 +182,12 @@ RooUnfoldT<Hist,Hist2D>::New (RooUnfolding::Algorithm alg, const RooUnfoldRespon
 //      cerr << "TUnfold library is not available" << endl;
 //      return 0;
 //#endif
-//    case kInvert:
-//      unfold = new RooUnfoldInvert  (res,meas);
-//      break;
-//    case kDagostini:
-//#ifdef HAVE_DAGOSTINI
-//      unfold = new RooUnfoldDagostini (res,meas);
-//      break;
-//#else
-//      cerr << "RooUnfoldDagostini is not available" << endl;
-//      return 0;
-//#endif
+    case kInvert:
+      unfold = new RooUnfoldInvertT<Hist,Hist2D>  (res,meas);
+      break;
+    case kDagostini:
+      cerr << "RooUnfoldDagostini is not available" << endl;
+      return 0;
 //    case kIDS:
 //      unfold= new RooUnfoldIds      (res, meas);
 //      break;

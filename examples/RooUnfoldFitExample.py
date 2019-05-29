@@ -264,6 +264,8 @@ def makeFinalWorkspace(method,mainws,auxws):
     unfold= ROOT.RooFitUnfoldBayes     (unfold_response, sig_reco_dataset, 4);     #  OR
   elif method == "bbb":
     unfold= ROOT.RooFitUnfoldBinByBin     (unfold_response, sig_reco_dataset);     #  OR    
+  elif method == "inv":
+    unfold= ROOT.RooFitUnfoldInvert     (unfold_response, sig_reco_dataset);     #  OR    
   elif method == "svd":
     unfold= ROOT.RooFitUnfoldSvd     (unfold_response, sig_reco_dataset, 20);     #  OR
   elif method == "root":

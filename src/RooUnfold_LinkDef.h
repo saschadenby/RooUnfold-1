@@ -19,10 +19,11 @@
 #pragma link C++ class RooUnfolding::RooFitWrapper<RooAbsPdf>+;
 #pragma link C++ class RooUnfoldFunc+;
 #pragma link C++ class RooUnfoldPdf+;
-#pragma link C++ class RooFitUnfoldBayes+;
-#pragma link C++ class RooFitUnfoldSvd-;
-#pragma link C++ class RooFitUnfoldSvd::SVDUnfold-;
-#pragma link C++ class RooFitUnfoldBinByBin+;
+#pragma link C++ class RooUnfoldInvertT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>+;
+#pragma link C++ class RooUnfoldBayesT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>+;
+#pragma link C++ class RooUnfoldSvdT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>-;
+#pragma link C++ class RooUnfoldSvdT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>::SVDUnfold-;
+#pragma link C++ class RooUnfoldBinByBinT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>+;
 #pragma link C++ class RooFitUnfoldResponse+;
 #endif
 #pragma link C++ class RooUnfoldErrors+;

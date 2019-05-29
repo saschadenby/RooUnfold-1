@@ -336,6 +336,7 @@ template class RooUnfoldSvdT<TH1,TH2>;
 ClassImp (RooUnfoldSvd);
 
 #ifndef NOROOFIT
+typedef RooUnfoldSvdT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist> RooFitUnfoldSvd;
 template class RooUnfoldSvdT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>;
 ClassImp (RooFitUnfoldSvd);
 #endif

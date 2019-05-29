@@ -136,6 +136,7 @@ template class RooUnfoldBinByBinT<TH1,TH2>;
 ClassImp (RooUnfoldBinByBin);
 
 #ifndef NOROOFIT
+typedef RooUnfoldBinByBinT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist> RooFitUnfoldBinByBin;
 template class RooUnfoldBinByBinT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>;
 ClassImp (RooFitUnfoldBinByBin);
 #endif
