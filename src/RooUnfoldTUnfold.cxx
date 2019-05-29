@@ -171,12 +171,12 @@ const TSpline* RooUnfoldTUnfold::GetLogTauY() const
 }
 
 void
-RooUnfoldTUnfold::Unfold()
+RooUnfoldTUnfold::Unfold() const
 {
   // Does the unfolding. Uses the optimal value of the unfolding parameter unless a value has already been set using FixTau
 
   if (_nm<_nt)     cerr << "Warning: fewer measured bins than truth bins. TUnfold may not work correctly." << endl;
-  if (_haveCovMes) cerr << "Warning: TUnfold does not account for bin-bin correlations on measured input"    << endl;
+  if (_covMes) cerr << "Warning: TUnfold does not account for bin-bin correlations on measured input"    << endl;
 
   Bool_t oldstat= TH1::AddDirectoryStatus();
   TH1::AddDirectory (kFALSE);
@@ -257,11 +257,11 @@ RooUnfoldTUnfold::Unfold()
   else{
     _unf->DoUnfold(_tau);
   }
-  TH1F reco("_rec","reconstructed dist",_nt,0.0,_nt);
+  TH1F reco("_cache._rec","reconstructed dist",_nt,0.0,_nt);
   _unf->GetOutput(&reco);
-  _rec.ResizeTo (_nt);
+  _cache._rec.ResizeTo (_nt);
   for (int i=0;i<_nt;i++){
-    _rec(i)=(reco.GetBinContent(i+1));
+    _cache._rec(i)=(reco.GetBinContent(i+1));
   }
 
   if (_verbose>=2) {
@@ -274,12 +274,12 @@ RooUnfoldTUnfold::Unfold()
 
   delete meas;
   delete Hres;
-  _unfolded= true;
-  _haveCov=  false;
+  _cache._unfolded= true;
+  _cache._haveCov=  false;
 }
 
 void
-RooUnfoldTUnfold::GetCov()
+RooUnfoldTUnfold::GetCov() const
 {
   //Gets Covariance matrix
   if (!_unf) return;
@@ -294,14 +294,14 @@ RooUnfoldTUnfold::GetCov()
 #endif
       cerr << "Did not use TUnfoldSys, so cannot calculate systematic errors" << endl;
   }
-  _cov.ResizeTo (_nt,_nt);
+  _cache._cov.ResizeTo (_nt,_nt);
   for (Int_t i= 0; i<_nt; i++) {
     for (Int_t j= 0; j<_nt; j++) {
-      _cov(i,j)= ematrix->GetBinContent(i+1,j+1);
+      _cache._cov(i,j)= ematrix->GetBinContent(i+1,j+1);
     }
   }
   delete ematrix;
-  _haveCov= true;
+  _cache._haveCov= true;
 }
 
 
@@ -337,10 +337,10 @@ RooUnfoldTUnfold::OptimiseTau()
 }
 
 void
-RooUnfoldTUnfold::GetSettings()
+RooUnfoldTUnfold::GetSettings() const
 {
-    _minparm=0;
-    _maxparm=1;
-    _stepsizeparm=1e-2;
-    _defaultparm=2;
+    _cache._minparm=0;
+    _cache._maxparm=1;
+    _cache._stepsizeparm=1e-2;
+    _cache._defaultparm=2;
 }

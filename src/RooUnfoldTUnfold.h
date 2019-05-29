@@ -38,36 +38,36 @@ public:
   RooUnfoldTUnfold (const RooUnfoldResponseT<TH1,TH2>* res, const TH1* meas,Double_t tau,TUnfold::ERegMode reg=TUnfold::kRegModeDerivative,
                     const char* name= 0, const char* title= 0);
 
-  void Reset();
+  virtual void Reset() override;
   TUnfold* Impl();
   void FixTau(Double_t tau);
   void OptimiseTau();
-  virtual void SetRegParm(Double_t parm);
+  virtual void SetRegParm(Double_t parm) override;
   Double_t GetTau() const;
   const TGraph*  GetLCurve()  const;
   const TSpline* GetLogTauX() const;
   const TSpline* GetLogTauY() const;
-  virtual Double_t GetRegParm() const;
+  virtual Double_t GetRegParm() const override;
   void SetRegMethod (TUnfold::ERegMode regmethod);
   TUnfold::ERegMode GetRegMethod() const;
 
 protected:
   void Init();
   void Destroy();
-  virtual void Unfold();
-  virtual void GetCov();
-  virtual void GetSettings();
+  virtual void Unfold() const override;
+  virtual void GetCov() const override;
+  virtual void GetSettings() const override;
   void Assign   (const RooUnfoldTUnfold& rhs); // implementation of assignment operator
   void CopyData (const RooUnfoldTUnfold& rhs);
 
 private:
   TUnfold::ERegMode _reg_method; //Regularisation method
-  TUnfold* _unf; //! Implementation in TUnfold object (no streamer)
-  Bool_t tau_set;
-  Double_t _tau;
-  TSpline* _logTauX;
-  TSpline* _logTauY;
-  TGraph*  _lCurve;
+  mutable TUnfold* _unf; //! Implementation in TUnfold object (no streamer)
+  mutable Bool_t tau_set;
+  mutable Double_t _tau;
+  mutable   TSpline* _logTauX;
+  mutable   TSpline* _logTauY;
+  mutable   TGraph*  _lCurve;
 
 public:
 

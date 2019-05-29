@@ -20,6 +20,7 @@ END_HTML */
 /////////////////////////////////////////////////////////////
 
 #include "RooUnfoldBinByBin.h"
+#include "RooUnfoldHelpers.h"
 
 #include <iostream>
 #include "TH1.h"
@@ -32,7 +33,7 @@ RooUnfoldBinByBinT<Hist,Hist2D>::RooUnfoldBinByBinT (const RooUnfoldBinByBinT<Hi
   : RooUnfoldT<Hist,Hist2D> (rhs)
 {
   // Copy constructor.
-  GetSettings();  
+  this->GetSettings();  
 }
 
 template<class Hist,class Hist2D>
@@ -41,7 +42,7 @@ RooUnfoldBinByBinT<Hist,Hist2D>::RooUnfoldBinByBinT (const RooUnfoldResponseT<Hi
   : RooUnfoldT<Hist,Hist2D> (res, meas, name, title)
 {
   // Constructor with response matrix object and measured unfolding input histogram.
-  GetSettings();
+  this->GetSettings();
 }
 
 template<class Hist,class Hist2D>
@@ -49,70 +50,53 @@ RooUnfoldBinByBinT<Hist,Hist2D>::~RooUnfoldBinByBinT()
 {
 }
 
-template<class Hist,class Hist2D>
-RooUnfoldBinByBinT<Hist,Hist2D>*
-RooUnfoldBinByBinT<Hist,Hist2D>::Clone (const char* newname) const
-{
-    //Clones object
-  RooUnfoldBinByBinT<Hist,Hist2D>* unfold= new RooUnfoldBinByBinT<Hist,Hist2D>(*this);
-  if (newname && strlen(newname)) unfold->SetName(newname);
-  return unfold;
-}
-
-
-
 template<class Hist,class Hist2D> TVectorD*
 RooUnfoldBinByBinT<Hist,Hist2D>::Impl()
 {
-  return &_factors;
+  return &_specialcache._factors;
+}
+
+
+#include <unistd.h>
+
+template<class Hist,class Hist2D> void
+RooUnfoldBinByBinT<Hist,Hist2D>::Unfold() const
+{
+  const TVectorD& vmeas(this->Vmeasured());
+  const TVectorD& vtrain(this->_res->Vmeasured());
+  const TVectorD& vtruth(this->_res->Vtruth());
+
+  TVectorD fakes(this->_res->Vfakes());
+  Double_t fac= 0.0;
+  if (this->_res->HasFakes()) { 
+    fac= vtrain.Sum();
+    if (fac!=0.0) fac= vmeas.Sum() / fac;
+    if (this->_verbose>=1) std::cout << "Subtract " << fac*fakes.Sum() << " fakes from measured distribution" << std::endl;
+  }
+  
+  this->_cache._rec.ResizeTo(this->_nt);
+  this->_specialcache._factors.ResizeTo(this->_nt);
+  Int_t nb= std::min(this->_nm,this->_nt);
+  for (int i=0; i<nb; i++) {
+    Double_t train= vtrain[i]-fakes[i];
+    if (train==0.0) continue;
+    Double_t c= vtruth[i]/train;
+    this->_specialcache._factors[i]= c;
+    this->_cache._rec[i]= c * (vmeas[i]-fac*fakes[i]);
+  }
+  this->_cache._unfolded= true;
 }
 
 template<class Hist,class Hist2D> void
-RooUnfoldBinByBinT<Hist,Hist2D>::Unfold()
+RooUnfoldBinByBinT<Hist,Hist2D>::GetCov() const
 {
-    const TVectorD& vmeas=  this->Vmeasured();
-    const TVectorD& vtrain= this->_res->Vmeasured();
-    const TVectorD& vtruth= this->_res->Vtruth();
-
-    TVectorD fakes= this->_res->Vfakes();
-    Double_t fac= 0.0;
-    if (this->_res->HasFakes()) {
-      fac= vtrain.Sum();
-      if (fac!=0.0) fac= vmeas.Sum() / fac;
-      if (this->_verbose>=1) std::cout << "Subtract " << fac*fakes.Sum() << " fakes from measured distribution" << std::endl;
-    }
-
-    this->_rec.ResizeTo(this->_nt);
-    this->_factors.ResizeTo(this->_nt);
-    Int_t nb= this->_nm < this->_nt ? this->_nm : this->_nt;
-    for (int i=0; i<nb; i++) {
-      Double_t train= vtrain[i]-fakes[i];
-      if (train==0.0) continue;
-      Double_t c= vtruth[i]/train;
-      this->_factors[i]= c;
-      this->_rec[i]= c * (vmeas[i]-fac*fakes[i]);
-    }
-    this->_unfolded= true;
-}
-
-template<class Hist,class Hist2D> void
-RooUnfoldBinByBinT<Hist,Hist2D>::GetCov()
-{
-    const TMatrixD& covmeas= this->GetMeasuredCov();
-    this->_cov.ResizeTo(this->_nt,this->_nt);
-    Int_t nb= this->_nm < this->_nt ? this->_nm : this->_nt;
+  const TMatrixD& covmeas(this->GetMeasuredCov());
+    this->_cache._cov.ResizeTo(this->_nt,this->_nt);
+    Int_t nb= std::min(this->_nm,this->_nt);
     for (int i=0; i<nb; i++)
       for (int j=0; j<nb; j++)
-        this->_cov(i,j)= this->_factors[i]*this->_factors[j]*covmeas(i,j);
-    this->_haveCov= true;
-}
-
-template<class Hist,class Hist2D> void
-RooUnfoldBinByBinT<Hist,Hist2D>::GetSettings(){
-    this->_minparm=0;
-    this->_maxparm=0;
-    this->_stepsizeparm=0;
-    this->_defaultparm=0;
+        this->_cache._cov(i,j)= pow(this->_specialcache._factors[i],2)*covmeas(i,j);
+    this->_cache._haveCov= true;
 }
 
 
@@ -121,7 +105,7 @@ RooUnfoldBinByBinT<Hist,Hist2D>::RooUnfoldBinByBinT()
   : RooUnfoldT<Hist,Hist2D>()
 {
   // Default constructor. Use Setup() to prepare for unfolding.
-  GetSettings();
+  this->GetSettings();
 }
 
 template<class Hist,class Hist2D> 
@@ -129,7 +113,7 @@ RooUnfoldBinByBinT<Hist,Hist2D>::RooUnfoldBinByBinT (const char* name, const cha
   : RooUnfoldT<Hist,Hist2D>(name,title)
 {
   // Basic named constructor. Use Setup() to prepare for unfolding.
-  GetSettings();
+  this->GetSettings();
 }
 
 template<class Hist,class Hist2D> 
@@ -137,7 +121,7 @@ RooUnfoldBinByBinT<Hist,Hist2D>::RooUnfoldBinByBinT (const TString& name, const 
   : RooUnfoldT<Hist,Hist2D>(name,title)
 {
   // Basic named constructor. Use Setup() to prepare for unfolding.
-  GetSettings();
+  this->GetSettings();
 }
 
 template<class Hist,class Hist2D> 
@@ -151,6 +135,8 @@ RooUnfoldBinByBinT<Hist,Hist2D>& RooUnfoldBinByBinT<Hist,Hist2D>::operator= (con
 template class RooUnfoldBinByBinT<TH1,TH2>;
 ClassImp (RooUnfoldBinByBin);
 
-template class RooUnfoldBinByBinT<RooAbsReal,RooAbsReal>;
+#ifndef NOROOFIT
+template class RooUnfoldBinByBinT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>;
 ClassImp (RooFitUnfoldBinByBin);
+#endif
 

@@ -14,9 +14,9 @@
 
 #include "TNamed.h"
 #include "TMatrixD.h"
-#include "RooAbsReal.h"
+#include "RooUnfoldFitHelpers.h"
 #include "RooRealVar.h"
-#include "RooDataHist.h"
+#include "RooAbsData.h"
 #include "TH1.h"
 #if ROOT_VERSION_CODE >= ROOT_VERSION(5,0,0)
 #include "TVectorDfwd.h"
@@ -26,7 +26,6 @@ class TVectorD;
 class TF1;
 class TH2;
 class TH2D;
-class TAxis;
 class TCollection;
 
 template<class Hist, class Hist2D>
@@ -39,6 +38,7 @@ public:
   virtual ~RooUnfoldResponseT(); // destructor
   RooUnfoldResponseT(const char* name, const char* title); // named constructor
   RooUnfoldResponseT(const TString& name, const TString& title); // named constructor
+  RooUnfoldResponseT(const RooUnfoldResponseT<Hist,Hist2D>& rhs); // copy constructor
 
   // Accessors
 
@@ -88,25 +88,25 @@ protected:
 
   // instance variables
 
-  Int_t _mdim;     // Number of measured  dimensions
-  Int_t _tdim;     // Number of truth     dimensions
-  Int_t _nm;       // Total number of measured  bins (not counting under/overflows)
-  Int_t _nt;       // Total number of truth     bins (not counting under/overflows)
-  Hist*  _mes;      // Measured histogram
-  Hist*  _fak;      // Fakes    histogram
-  Hist*  _tru;      // Truth    histogram
-  Hist2D*_res;      // Response histogram
+  Int_t _mdim = 0;     // Number of measured  dimensions
+  Int_t _tdim = 0;     // Number of truth     dimensions
+  Int_t _nm = 0;       // Total number of measured  bins (not counting under/overflows)
+  Int_t _nt = 0;       // Total number of truth     bins (not counting under/overflows)
+  Hist*  _mes = 0;      // Measured histogram
+  Hist*  _fak = 0;      // Fakes    histogram
+  Hist*  _tru = 0;      // Truth    histogram
+  Hist2D*_res = 0;      // Response histogram
   Int_t _overflow = 0; // Use histogram under/overflows if 1
 
 private:
-  mutable TVectorD* _vMes;   //! Cached measured vector
-  mutable TVectorD* _eMes;   //! Cached measured error
-  mutable TVectorD* _vFak;   //! Cached fakes    vector
-  mutable TVectorD* _vTru;   //! Cached truth    vector
-  mutable TVectorD* _eTru;   //! Cached truth    error
-  mutable TMatrixD* _mRes;   //! Cached response matrix
-  mutable TMatrixD* _eRes;   //! Cached response error
-  mutable Bool_t    _cached; //! We are using cached vectors/matrices
+  mutable TVectorD* _vMes= 0;   //! Cached measured vector
+  mutable TVectorD* _eMes= 0;   //! Cached measured error
+  mutable TVectorD* _vFak= 0;   //! Cached fakes    vector
+  mutable TVectorD* _vTru= 0;   //! Cached truth    vector
+  mutable TVectorD* _eTru= 0;   //! Cached truth    error
+  mutable TMatrixD* _mRes= 0;   //! Cached response matrix
+  mutable TMatrixD* _eRes= 0;   //! Cached response error
+  mutable Bool_t    _cached = false; //! We are using cached vectors/matrices
 
 public:
 
@@ -173,6 +173,28 @@ private:
   ClassDef (RooUnfoldResponse, 1) // Respose Matrix
 };
 
-typedef RooUnfoldResponseT<RooAbsReal,RooAbsReal> RooFitUnfoldResponse;
+
+#ifndef NOROOFIT
+
+class RooHistFunc;
+
+class RooFitUnfoldResponse : public RooUnfoldResponseT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist> {
+public:
+
+  RooFitUnfoldResponse(){}; // default constructor
+  virtual ~RooFitUnfoldResponse(){}; // destructor
+  RooFitUnfoldResponse(const char* name, const char* title, RooAbsReal* response, RooAbsReal* truth, RooAbsReal* reco, RooAbsReal* fakes, const RooArgSet* observables);
+  RooFitUnfoldResponse(const char* name, const char* title, RooAbsReal* response, RooAbsReal* truth, RooAbsReal* reco, RooAbsReal* fakes, RooRealVar* obs_truth, RooRealVar* obs_reco);  
+
+  RooHistFunc* makeHistFunc(RooDataHist* dhist);  
+  RooUnfolding::RooFitHist* makeHist(RooAbsReal* object);
+  RooUnfolding::RooFitHist* makeHist(RooDataHist* object);
+  RooUnfolding::RooFitHist* makeHistSum(RooAbsReal* a, RooAbsReal* b, double ca, double cb);  
+  
+  ClassDef (RooFitUnfoldResponse, 1) // Respose Matrix
+  
+};
+
+#endif
 
 #endif

@@ -24,7 +24,10 @@ END_HTML */
 #include "RooUnfoldResponse.h"
 #include "RooUnfoldHelpers.h"
 #include "RooUnfoldTH1Helpers.h"
+#ifndef NOROOFIT
 #include "RooUnfoldFitHelpers.h"
+#include "RooDataHist.h"
+#endif
 
 #include <iostream>
 #include <assert.h>
@@ -33,6 +36,7 @@ END_HTML */
 #include "TClass.h"
 #include "TNamed.h"
 #include "TBuffer.h"
+#include "TPRegexp.h"
 #include "TF1.h"
 #include "TF2.h"
 #include "TF3.h"
@@ -43,7 +47,6 @@ END_HTML */
 
 #include "TH1.h"
 #include "TH2.h"
-#include "RooAbsReal.h"
 
 
 using namespace RooUnfolding;
@@ -159,11 +162,9 @@ RooUnfoldResponseT<Hist,Hist2D>::setup()
 {
   _tru= _mes= _fak= 0;
   _res= 0;
-  _vMes= _eMes= _vFak= _vTru= _eTru= 0;
-  _mRes= _eRes= 0;
   _nm= _nt= _mdim= _tdim= 0;
+  this->ClearCache();
   SetNameTitleDefault ("response", "Response");
-  _cached= false;
 }
 
 template <class Hist, class Hist2D> void
@@ -185,13 +186,17 @@ RooUnfoldResponseT<Hist,Hist2D>::HresponseNoOverflow() const
   const Hist2D* res = Hresponse();
   TVectorD vals(h2v<Hist>(res,_overflow));
   TVectorD errs(h2ve<Hist>(res,_overflow));  
-  return createHist<Hist2D>(vals,errs,res->GetName(),res->GetTitle(),vars(res),_overflow);
+  return createHist<Hist2D>(vals,errs,name(res),title(res),vars(res),_overflow);
 }
 
 template <class Hist, class Hist2D> void
 RooUnfoldResponseT<Hist,Hist2D>::Print (Option_t* /* option */) const
 {
-  printMatrix (Mresponse(), Form("%s response matrix",GetTitle()));
+  std::cout << "RooUnfoldResponseT @ " << this << std::endl;
+  printHistogram(this->Hmeasured());
+  printHistogram(this->Hfakes());
+  printHistogram(this->Htruth());
+  printHistogram(this->Hresponse());
 }
 
 template <class Hist, class Hist2D> bool
@@ -226,7 +231,7 @@ RooUnfoldResponseT<Hist,Hist2D>::ApplyToTruth (const Hist* truth, const char* na
 
   // Turn results vector into properly binned histogram
   const Hist* t = Hmeasured();
-  Hist* result= createHist<Hist>(resultvect, t->GetName(),name, vars(t), _overflow);
+  Hist* result= createHist<Hist>(resultvect, RooUnfolding::name(t),name, vars(t), _overflow);
   return result;
 }
 
@@ -285,8 +290,8 @@ RooUnfoldResponseT<Hist,Hist2D>::RunToy() const
 {
   // Returns new RooUnfoldResponse object with smeared response matrix elements for use as a toy.
   const Hist2D* hres= this->Hresponse();
-  TMatrixD values = h2m(hres);
-  TMatrixD errors = h2me(hres);
+  TMatrixD values(h2m(hres));
+  TMatrixD errors(h2me(hres));
   for (Int_t i= 0; i<_nm; i++) {
     for (Int_t j= 0; j<_nt; j++) {
       Double_t e= errors(i,j);
@@ -298,7 +303,7 @@ RooUnfoldResponseT<Hist,Hist2D>::RunToy() const
     }
   }
 
-  Hist2D* smeared = createHist<Hist2D>(values,errors,hres->GetName(),hres->GetTitle(),var(hres,X),var(hres,Y));
+  Hist2D* smeared = createHist<Hist2D>(values,errors,RooUnfolding::name(hres),RooUnfolding::title(hres),var(hres,X),var(hres,Y));
   TString name= GetName();
   name += "_toy";
   RooUnfoldResponseT<Hist,Hist2D>* res= new RooUnfoldResponseT<Hist,Hist2D> (name.Data(),this->GetTitle());
@@ -316,13 +321,13 @@ RooUnfoldResponseT<Hist,Hist2D>::SetNameTitleDefault (const char* defname, const
   // Set object name and title
   const char* s= GetName();
   if (s[0] == '\0') {
-    if (_res) s= _res->GetName();
+    if (_res) s= name(_res);
     if (s[0] == '\0') {
       if (defname) SetName (defname);
       else if (_mes && _tru) {
-        TString n= _mes->GetName();
+        TString n= name(_mes);
         if (n.Length()) n.Append ("_");
-        n.Append (_tru->GetName());
+        n.Append (name(_tru));
         if (!n.Length()) n= "response";
         SetName (n);
       }
@@ -331,13 +336,13 @@ RooUnfoldResponseT<Hist,Hist2D>::SetNameTitleDefault (const char* defname, const
   }
   s= GetTitle();
   if (s[0] == '\0') {
-    if (_res) s= _res->GetTitle();
+    if (_res) s= title(_res);
     if (s[0] == '\0') {
       if (deftitle) SetTitle (deftitle);
       else if (_mes && _tru) {
-        TString n= _tru->GetTitle();
+        TString n= title(_tru);
         if (n.Length()) n.Append (" #rightarrow ");
-        n.Append (_mes->GetTitle());
+        n.Append (title(_mes));
         if (n.Length())
           n.Prepend ("Response ");
         else
@@ -396,6 +401,23 @@ RooUnfoldResponseT<Hist,Hist2D>::RooUnfoldResponseT(const TString& name, const T
 {
   // RooUnfoldResponseT<Hist,Hist2D> default named constructor. Use Setup() to set values.
   this->setup();
+}
+
+template<class Hist, class Hist2D>
+RooUnfoldResponseT<Hist,Hist2D>::RooUnfoldResponseT(const RooUnfoldResponseT<Hist,Hist2D>& rhs) : 
+  TNamed(rhs.GetName(),rhs.GetTitle()),
+  _mdim(rhs._mdim),     
+  _tdim(rhs._tdim),     
+  _nm(rhs._nm),       
+  _nt(rhs._nt),       
+  _mes(clone(rhs._mes)),      
+  _fak(clone(rhs._fak)),      
+  _tru(clone(rhs._tru)),      
+  _res(clone(rhs._res)),      
+  _overflow(rhs._overflow)
+{
+  // copy constructor
+  this->ClearCache();
 }
 
 template<class Hist, class Hist2D>
@@ -496,6 +518,7 @@ const TVectorD& RooUnfoldResponseT<Hist,Hist2D>::Vmeasured() const
 {
   // Measured distribution as a TVectorD
   if (!_vMes) _cached= (_vMes= new TVectorD(h2v  (_mes, _overflow)));
+  if(_vMes->GetNrows() != this->_nm) throw std::runtime_error("invalid dimensionality in measured vector!");
   return *_vMes;
 }
 
@@ -503,7 +526,12 @@ template<class Hist, class Hist2D>
 const TVectorD& RooUnfoldResponseT<Hist,Hist2D>::Vfakes() const
 {
   // Fakes distribution as a TVectorD
-  if (!_vFak) _cached= (_vFak= new TVectorD(h2v  (_fak, _overflow)));
+  if(!_fak){
+    _cached = (_vFak = new TVectorD(this->_nm) );
+  } else {
+    if (!_vFak) _cached= (_vFak= new TVectorD(h2v  (_fak, _overflow)));
+  }
+  if(_vFak->GetNrows() != this->_nm) throw std::runtime_error("invalid dimensionality in fakes vector!");
   return *_vFak;
 }
 
@@ -512,6 +540,7 @@ const TVectorD& RooUnfoldResponseT<Hist,Hist2D>::Emeasured() const
 {
   // Measured distribution errors as a TVectorD
   if (!_eMes) _cached= (_eMes= new TVectorD(h2ve (_mes, _overflow)));
+  if(_eMes->GetNrows() != this->_nm) throw std::runtime_error("invalid dimensionality in measured uncertainty vector!");
   return *_eMes;
 }
 
@@ -520,6 +549,7 @@ const TVectorD& RooUnfoldResponseT<Hist,Hist2D>::Vtruth() const
 {
   // Truth distribution as a TVectorD
   if (!_vTru) _cached= (_vTru= new TVectorD(h2v  (_tru, _overflow))); 
+  if(_vTru->GetNrows() != this->_nt) throw std::runtime_error("invalid dimensionality in truth vector!");
   return *_vTru;
 }
 
@@ -528,6 +558,7 @@ const TVectorD& RooUnfoldResponseT<Hist,Hist2D>::Etruth() const
 {
   // Truth distribution errors as a TVectorD
   if (!_eTru) _cached= (_eTru= new TVectorD(h2ve (_tru, _overflow))); 
+  if(_eTru->GetNrows() != this->_nt) throw std::runtime_error("invalid dimensionality in truth uncertainty vector!");
   return *_eTru;
 }
 
@@ -605,14 +636,6 @@ namespace {
 
   template int entries<TH1>(TH1 const*);
   template int entries<TH2>(TH2 const*);
-
-  template<class Hist> Hist* copy(const Hist* orighist){
-    Bool_t oldstat= TH1::AddDirectoryStatus();
-    TH1::AddDirectory (kFALSE);
-    Hist* hist = (Hist*)(orighist ->Clone());
-    TH1::AddDirectory (oldstat);
-    return hist;
-  }
 
   template<class Hist, class Hist2D> void projectY(Hist2D* _res, Hist* _tru, bool overflow);
   template<class Hist, class Hist2D> void projectX(Hist2D* _res, Hist* _mes, bool overflow);
@@ -730,31 +753,31 @@ Int_t RooUnfoldResponse::Fake (Double_t xr, Double_t yr, Double_t w)
 
 
 
-RooUnfoldResponse::RooUnfoldResponse (const RooUnfoldResponse& rhs)
-  : RooUnfoldResponseT (rhs.GetName(), rhs.GetTitle())
+RooUnfoldResponse::RooUnfoldResponse(const RooUnfoldResponse& rhs)
+  : RooUnfoldResponseT(rhs.GetName(), rhs.GetTitle())
 {
   // RooUnfoldResponseT<class Hist, class Hist2D> copy constructor
-  Setup (rhs);
+  Setup(rhs);
 }
 
 RooUnfoldResponse&
-RooUnfoldResponse::operator= (const RooUnfoldResponse& rhs)
+RooUnfoldResponse::operator=(const RooUnfoldResponse& rhs)
 {
   // RooUnfoldResponseT<class Hist, class Hist2D> assignment operator
   if (this == &rhs) return *this;
   Reset();
-  SetNameTitle (rhs.GetName(), rhs.GetTitle());
-  return Setup (rhs);
+  SetNameTitle(rhs.GetName(), rhs.GetTitle());
+  return Setup(rhs);
 }
 
 
 
 RooUnfoldResponse&
-RooUnfoldResponse::Setup (const RooUnfoldResponse& rhs)
+RooUnfoldResponse::Setup(const RooUnfoldResponse& rhs)
 {
   // Copy data from another RooUnfoldResponseT<class Hist, class Hist2D>
   _overflow= rhs._overflow;
-  return Setup (rhs.Hmeasured(), rhs.Htruth(), rhs.Hresponse());
+  return Setup(clone(rhs.Hmeasured()), clone(rhs.Htruth()), clone(rhs.Hresponse()));
 }
 
 
@@ -771,28 +794,27 @@ RooUnfoldResponse::Reset()
 }
 
 
-
-RooUnfoldResponse::RooUnfoldResponse (Int_t nb, Double_t xlo, Double_t xhi,
+RooUnfoldResponse::RooUnfoldResponse(Int_t nb, Double_t xlo, Double_t xhi,
                                                      const char* name, const char* title)
-  : RooUnfoldResponseT (name, title)
+  : RooUnfoldResponseT(name, title)
 {
   // RooUnfoldResponse<class TH1, class TH2> constructor - simple 1D case with same binning, measured vs truth
-  Setup (nb, xlo, xhi);
+  Setup(nb, xlo, xhi);
 }
 
 
-RooUnfoldResponse::RooUnfoldResponse (Int_t nm, Double_t mlo, Double_t mhi, Int_t nt, Double_t tlo, Double_t thi,
+RooUnfoldResponse::RooUnfoldResponse(Int_t nm, Double_t mlo, Double_t mhi, Int_t nt, Double_t tlo, Double_t thi,
                                                      const char* name, const char* title)
-  : RooUnfoldResponseT (name, title)
+  : RooUnfoldResponseT(name, title)
 {
   // RooUnfoldResponse<class TH1, class TH2> constructor - simple 1D case
-  Setup (nm, mlo, mhi, nt, tlo, thi);
+  Setup(nm, mlo, mhi, nt, tlo, thi);
 }
 
 
-RooUnfoldResponse::RooUnfoldResponse (const TH1* measured, const TH1* truth, const TH2* response,
+RooUnfoldResponse::RooUnfoldResponse(const TH1* measured, const TH1* truth, const TH2* response,
                                                      const char* name, const char* title, bool overflow)
-  : RooUnfoldResponseT (name, title)
+  : RooUnfoldResponseT(name, title)
 {
   // RooUnfoldResponse<class TH1, class TH2> constructor - create from already-filled histograms
   // "response" gives the response matrix, measured X truth.
@@ -802,25 +824,25 @@ RooUnfoldResponse::RooUnfoldResponse (const TH1* measured, const TH1* truth, con
   // "measured" and/or "truth" can be specified as 0 (1D case only) or an empty histograms (no entries) as a shortcut
   // to indicate, respectively, no fakes and/or no inefficiency.
   this->_overflow = overflow;
-  Setup (measured, truth, response);
+  Setup(measured, truth, response);
 }
 
 
-RooUnfoldResponse::RooUnfoldResponse (const TH1* measured, const TH1* truth,
+RooUnfoldResponse::RooUnfoldResponse(const TH1* measured, const TH1* truth,
                                                      const char* name, const char* title, bool overflow)
-  : RooUnfoldResponseT (name, title)
+  : RooUnfoldResponseT(name, title)
 {
   // RooUnfoldResponse<class TH1, class TH2> constructor - measured and truth only used for shape
   this->_overflow = overflow;
-  Setup (measured, truth);
+  Setup(measured, truth);
 }
 
 
-void RooUnfoldResponse::Add (const RooUnfoldResponse& rhs)
+void RooUnfoldResponse::Add(const RooUnfoldResponse& rhs)
 {
   // Add another RooUnfoldResponse<class TH1, class TH2>, accumulating contents
   if (_res == 0) {
-    Setup (rhs);
+    Setup(rhs);
     return;
   }
   assert (_mdim==rhs._mdim);
@@ -850,17 +872,17 @@ RooUnfoldResponse::Merge (TCollection* others)
 }
 
 RooUnfoldResponse&
-RooUnfoldResponse::Setup (Int_t nb, Double_t xlo, Double_t xhi)
+RooUnfoldResponse::Setup(Int_t nb, Double_t xlo, Double_t xhi)
 {
   // constructor -  simple 1D case with same binning, measured vs truth
-  return Setup (nb, xlo, xhi, nb, xlo, xhi);
+  return Setup(nb, xlo, xhi, nb, xlo, xhi);
 }
 
 
 
 
  RooUnfoldResponse&
-RooUnfoldResponse::Setup (Int_t nm, Double_t mlo, Double_t mhi, Int_t nt, Double_t tlo, Double_t thi)
+RooUnfoldResponse::Setup(Int_t nm, Double_t mlo, Double_t mhi, Int_t nt, Double_t tlo, Double_t thi)
 {
   // set up simple 1D case
   Reset();
@@ -875,7 +897,7 @@ RooUnfoldResponse::Setup (Int_t nm, Double_t mlo, Double_t mhi, Int_t nt, Double
 }
 
 RooUnfoldResponse&
-RooUnfoldResponse::Setup (const TH1* measured, const TH1* truth)
+RooUnfoldResponse::Setup(const TH1* measured, const TH1* truth)
 {
   // set up - measured and truth only used for shape
   Reset();
@@ -896,7 +918,7 @@ RooUnfoldResponse::Setup (const TH1* measured, const TH1* truth)
 }
 
 RooUnfoldResponse&
-RooUnfoldResponse::Setup (const TH1* measured, const TH1* truth, const TH2* response)
+RooUnfoldResponse::Setup(const TH1* measured, const TH1* truth, const TH2* response)
 {
   // Set up from already-filled histograms.
   // "response" gives the response matrix, measured X truth.
@@ -906,9 +928,9 @@ RooUnfoldResponse::Setup (const TH1* measured, const TH1* truth, const TH2* resp
   // "measured" and/or "truth" can be specified as 0 (1D case only) or an empty histograms (no entries) as a shortcut
   // to indicate, respectively, no fakes and/or no inefficiency.
   Reset();
-  _res= copy(response);
+  _res= clone(response);
   if (measured) {
-    _mes= copy(measured);
+    _mes= clone(measured);
     _mdim= dim(_mes);
   } else {
     _mes= createHist<TH1>("measured", "Measured", Variable<TH1>(nBins(response,RooUnfolding::X), 0.0, 1.0, "xm"));
@@ -916,7 +938,7 @@ RooUnfoldResponse::Setup (const TH1* measured, const TH1* truth, const TH2* resp
   }
   _fak= createHist<TH1>("fakes","Fakes",vars(measured));
   if (truth) {
-    _tru= copy(truth);
+    _tru= clone(truth);
     _tdim= dim(_tru);
   } else {
     _tru= createHist<TH1>("truth",    "Truth",    Variable<TH1>(nBins(response,RooUnfolding::Y), 0.0, 1.0, "xt"));
@@ -1082,6 +1104,159 @@ Long64_t RooUnfoldResponse::FakeEntries() const
 
 ClassImp (RooUnfoldResponse);
 
-template class RooUnfoldResponseT<RooAbsReal,RooAbsReal>;
+
+#ifndef NOROOFIT
+
+#include "RooRealVar.h"
+#include "RooAbsData.h"
+#include "RooAbsReal.h"
+#include "RooAddition.h"
+#include "RooConstVar.h"
+#include "RooHistFunc.h"
+
+
+
+namespace {
+  void makeList(const RooAbsCollection* c,std::vector<RooRealVar*>& vars,TPRegexp* re = 0){
+    RooFIter itr(c->fwdIterator());
+    RooRealVar* obj = NULL;
+    while((obj = (RooRealVar*)itr.next())){
+      if(!obj->InheritsFrom(RooRealVar::Class())) continue;
+      if(!re || re->Match(obj->GetName()))
+        vars.push_back(obj);
+    }
+  }
+  
+  std::vector<RooRealVar*> makeList(const RooAbsCollection* c){
+    std::vector<RooRealVar*> vars;
+    makeList(c,vars);
+    return vars;
+  }
+}
+
+template <> RooUnfolding::RooFitHist*
+RooUnfoldResponseT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>::HresponseNoOverflow() const
+{
+  return const_cast<RooUnfolding::RooFitHist*>(Hresponse());
+}
+
+
+
+template class RooUnfoldResponseT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>;
+
+RooFitUnfoldResponse::RooFitUnfoldResponse(const char* name, const char* title, RooAbsReal* response, RooAbsReal* truth, RooAbsReal* reco, RooAbsReal* fakes, RooRealVar* obs_truth, RooRealVar* obs_reco){
+  if(!truth->dependsOn(*obs_truth)) throw std::runtime_error("truth histogram does not depend on truth observable!");
+  if(!reco->dependsOn(*obs_reco)) throw std::runtime_error("reco histogram does not depend on reco observable!");
+  if(!response->dependsOn(*obs_truth)) throw std::runtime_error("response histogram does not depend on truth observable!");
+  if(!response->dependsOn(*obs_reco)) throw std::runtime_error("response histogram does not depend on reco observable!");
+  
+  this->_mdim = 1;
+  this->_tdim = 1;
+  this->_nm = obs_reco->getBins();
+  this->_nt = obs_truth->getBins();
+
+  TPRegexp gamma("gamma_stat_.*");
+
+  std::vector<RooRealVar*> allvars;
+  RooArgSet* c_reco_vars = reco->getVariables();
+  makeList(c_reco_vars,allvars,&gamma);
+  delete c_reco_vars;
+  if(fakes){
+    RooArgSet* c_fake_vars = fakes->getVariables();
+    makeList(c_fake_vars,allvars,&gamma);
+    delete c_fake_vars;
+  }
+  RooArgSet* c_truth_vars = truth->getVariables();
+  makeList(c_truth_vars,allvars,&gamma);
+  delete c_truth_vars;
+
+  this->_mes = new RooFitHist(reco,obs_reco,allvars);
+  this->_fak = fakes ? new RooFitHist(fakes,obs_reco,allvars) : 0;
+  this->_tru = new RooFitHist(truth,obs_truth,allvars);
+  this->_res = new RooFitHist(response,obs_truth,obs_reco,allvars);
+  this->_overflow = 0;
+
+}
+
+RooFitUnfoldResponse::RooFitUnfoldResponse(const char* name, const char* title, RooAbsReal* response, RooAbsReal* truth, RooAbsReal* reco, RooAbsReal* fakes, const RooArgSet* observables)
+   : RooUnfoldResponseT(name,title) {
+  // standard constructor
+
+  RooArgSet* obs = response->getObservables(observables);
+  RooArgSet* obsset_reco = reco->getObservables(observables);
+  RooArgSet* obsset_truth = truth->getObservables(observables);    
+ 
+  if(obs->getSize() != 2) throw std::runtime_error(TString::Format("unsupported dimensionality for response: %d",obs->getSize()).Data());
+  if(obsset_reco->getSize() != 1) throw std::runtime_error(TString::Format("unsupported dimensionality for reco: %d",obsset_reco->getSize()).Data());
+  if(obsset_truth->getSize() != 1) throw std::runtime_error(TString::Format("unsupported dimensionality for truth: %d",obsset_truth->getSize()).Data());
+
+  RooRealVar* obs_reco  = (RooRealVar*)obsset_reco->first();
+  RooRealVar* obs_truth = (RooRealVar*)obsset_truth->first();
+  
+  this->_mdim = 1;
+  this->_tdim = 1;
+  this->_nm = obs_reco->getBins();
+  this->_nt = obs_truth->getBins();
+  this->_mes = new RooFitHist(reco,obs_reco);
+  this->_fak = fakes ? new RooFitHist(fakes,obs_reco) : 0;
+  this->_tru = new RooFitHist(truth,obs_truth);
+  this->_res = new RooFitHist(response,::makeList(obs));
+  this->_overflow = 0;
+}
+
+
+RooUnfolding::RooFitHist* RooFitUnfoldResponse::makeHistSum(RooAbsReal* a, RooAbsReal* b, double ca, double cb){
+  TString name(TString::Format("%s_minus_%s",a->GetName(),b->GetName()));
+  RooArgList funcs;
+  funcs.add(*a);
+  funcs.add(*b);
+  RooConstVar* cA = new RooConstVar("cA","cA",ca);
+  RooConstVar* cB = new RooConstVar("cB","cB",cb);  
+  RooArgList coefs;
+  coefs.add(*cA);
+  coefs.add(*cB);
+  RooAddition* add = new RooAddition(name.Data(),name.Data(),funcs,coefs);
+  return this->makeHist(add);
+}
+
+RooHistFunc* RooFitUnfoldResponse::makeHistFunc(RooDataHist* dhist){
+  if(!dhist) return NULL;
+  std::vector<RooRealVar*> v;
+  for(size_t i=0; i<this->_mes->dim(); ++i){
+    if(dhist->get()->find(*this->_mes->obs(i))) v.push_back(this->_mes->obs(i));
+  }
+  for(size_t i=0; i<this->_tru->dim(); ++i){
+    if(dhist->get()->find(*this->_tru->obs(i))) v.push_back(this->_tru->obs(i));
+  }
+  if(v.size() == 0){
+    throw std::runtime_error(TString::Format("unable to construct histogram from object %s, does not seem to depend on any known observable!",dhist->GetName()).Data());
+  }
+  return RooUnfolding::makeHistFunc(dhist,v);
+}
+
+RooUnfolding::RooFitHist* RooFitUnfoldResponse::makeHist(RooAbsReal* object){
+  if(!object) return NULL;
+  std::vector<RooRealVar*> v;
+  for(size_t i=0; i<this->_mes->dim(); ++i){
+    if(object->dependsOn(*this->_mes->obs(i))) v.push_back(this->_mes->obs(i));
+  }
+  for(size_t i=0; i<this->_tru->dim(); ++i){
+    if(object->dependsOn(*this->_tru->obs(i))) v.push_back(this->_tru->obs(i));
+  }
+  if(v.size() == 0){
+    throw std::runtime_error(TString::Format("unable to construct histogram from object %s, does not seem to depend on any known observable!",object->GetName()).Data());
+  }
+  return new RooUnfolding::RooFitHist(object,v);
+}
+
+RooUnfolding::RooFitHist* RooFitUnfoldResponse::makeHist(RooDataHist* object){
+  if(!object) return NULL;
+  std::vector<RooRealVar*> v;
+  TPRegexp obs("obs_.*");
+  makeList(object->get(),v,&obs);
+  return new RooUnfolding::RooFitHist(object,v);
+}
+
 ClassImp (RooFitUnfoldResponse);
 
+#endif

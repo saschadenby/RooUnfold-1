@@ -161,7 +161,7 @@ RooUnfoldParms::DoMath()
     
         for (Double_t k=_minparm;k<=_maxparm;k+=_stepsizeparm)
         {   
-            RooUnfold* unf = unfold->Clone("unfold_toy");
+          RooUnfold* unf = (RooUnfold*)unfold->Clone("unfold_toy");
             unf->SetRegParm(k);
             Double_t sq_err_tot=0;
             TH1* hReco=unf->Hreco(doerror); 

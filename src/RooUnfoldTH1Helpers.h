@@ -24,7 +24,9 @@ namespace RooUnfolding {
     double _min;
     double _max;
     Variable(int nBins,double min,double max,const char* name) : _nBins(nBins),_min(min),_max(max){};
-  };    
+  };
+
+  TH1* resize (TH1* h, Int_t nx, Int_t ny=0, Int_t nz=0);
 }
 
 #endif

@@ -127,7 +127,6 @@ public:
   RooUnfoldSvdT (const RooUnfoldSvdT<Hist,Hist2D>& rhs); // copy constructor
   virtual ~RooUnfoldSvdT(); // destructor
   RooUnfoldSvdT<Hist,Hist2D>& operator= (const RooUnfoldSvdT<Hist,Hist2D>& rhs); // assignment operator
-  virtual RooUnfoldSvdT<Hist,Hist2D>* Clone (const char* newname= 0) const;
 
   // Special constructors
 
@@ -146,30 +145,33 @@ public:
 
 protected:
   void Assign (const RooUnfoldSvdT<Hist,Hist2D>& rhs); // implementation of assignment operator
-  virtual void Unfold();
-  virtual void GetCov();
-  virtual void GetWgt();
-  virtual void GetSettings();
+  virtual void Unfold() const override;
+  virtual void GetCov() const override;
+  virtual void GetWgt() const override;
+  virtual void GetSettings() const override;
 
 private:
   void Init();
   void Destroy();
   void CopyData (const RooUnfoldSvdT<Hist,Hist2D>& rhs);
-
+  void PrepareHistograms() const;
+  
 protected:
   // instance variables
-  SVDUnfold* _svd;  //! Implementation in TSVDUnfold object (no streamer)
-  Int_t _kreg;
-  Int_t _nb;
+  mutable SVDUnfold* _svd;  //! Implementation in TSVDUnfold object (no streamer)
+  mutable Int_t _kreg;
+  mutable Int_t _nb;
 
-  Hist *_meas1d, *_train1d, *_truth1d;
-  Hist2D *_reshist, *_meascov;
+  mutable const Hist *_meas1d, *_train1d, *_truth1d;
+  mutable const Hist2D *_reshist, *_meascov;
 
 public:
   ClassDefT (RooUnfoldSvdT, 0) // SVD Unfolding (interface to TSVDUnfold)
 };
 
 typedef RooUnfoldSvdT<TH1,TH2> RooUnfoldSvd;
-typedef RooUnfoldSvdT<RooAbsReal,RooAbsReal> RooFitUnfoldSvd;
+#ifndef NOROOFIT
+typedef RooUnfoldSvdT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist> RooFitUnfoldSvd;
+#endif
 
 #endif

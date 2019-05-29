@@ -104,8 +104,8 @@ namespace RooUnfolding {
     fmt.copyfmt (o);
     Int_t iwid= (dim==3) ? 8 : (dim==2) ? 7 : 5;
     const char* xwid= (dim==3) ? "===" : (dim==2) ? "==" : "";
-    o << "===============================================================================" << xwid << std::endl
-      << std::setw(iwid) << ""      << std::setw(9) << "Train" << std::setw(9) << "Train"    << std::setw(9) << "Test"  << std::setw(9) << "Test"  << std::setw(9) << "Unfolded";
+    o << "===============================================================================" << xwid << std::endl;
+    o << std::setw(iwid) << ""      << std::setw(9) << "Train" << std::setw(9) << "Train"    << std::setw(9) << "Test"  << std::setw(9) << "Test"  << std::setw(9) << "Unfolded";
     if (withError)
       o << std::setw(10)<<"Error on"<<std::setw(9) << "Diff" << std::setw(9) << "Pull" << std::endl;
     else
@@ -213,9 +213,9 @@ namespace RooUnfolding {
 
   void printTable (std::ostream& o, const TVectorD& vTrainTrue, const TVectorD& vTrain,
                    const TVectorD& vMeas, const TVectorD& vReco){
-    TVectorD vTrue(0);
-    TVectorD eTrue(0);
-    TVectorD eReco(0);        
+    TVectorD vTrue(vTrainTrue.GetNrows());
+    TVectorD eTrue(vTrainTrue.GetNrows());
+    TVectorD eReco(vReco.GetNrows());        
     printTable (o, 1, vTrainTrue.GetNrows(), 0, vTrainTrue, vTrain, vTrue, vMeas, vReco, kNoError, eTrue, eReco, -999.0,false);
   }
 }
