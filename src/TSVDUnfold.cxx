@@ -170,7 +170,7 @@ RooUnfoldSvdT<Hist,Hist2D>::SVDUnfold::SVDUnfold( const Hist *bdat, const TMatri
       msg += Form( "  Found: dim(Adet)=%i,%i\n", nBins(Adet,X), nBins(Adet,Y) );
       msg += "Please start again!";
 
-      throw std::runtime_error(msg);
+      throw std::runtime_error(msg.Data());
    }
 
   fSVHist.ResizeTo(fNdim);

@@ -170,8 +170,61 @@ public:
 
 typedef RooUnfoldT<TH1,TH2> RooUnfold;
 #ifndef NOROOFIT
+#include <RooHistFunc.h>
 #include <RooAbsPdf.h>
 #include <RooAbsReal.h>
+
+class RooUnfoldSpec : public TNamed {
+public:
+  enum Contribution {
+                     kBackground,
+                     kData,
+                     kResponse,
+                     kTruth,
+                     kMeasured
+  };
+
+protected:
+  class HistContainer {
+  public:
+    RooHistFunc* _nom = 0;
+    std::map<const std::string,std::vector<RooHistFunc*> > _shapes;
+    std::map<const std::string,std::pair<double,double> > _norms;
+    ~HistContainer();
+    void setNominal(RooHistFunc* nom);
+    void addShape(const char* name, RooHistFunc* up, RooHistFunc* dn);
+    void addNorm(const char* name, double up, double dn);
+  };
+  bool _includeUnderflowOverflow = false;
+  bool _useDensity = false;
+  double _errorThreshold = -1;
+  RooArgList _obs_truth;
+  RooArgList _obs_reco;    
+  RooArgList _obs_all;
+  RooArgList _alphas;
+
+  HistContainer _bkg;  
+  HistContainer _data;
+  HistContainer _res;
+  HistContainer _truth;
+  HistContainer _reco;    
+
+  RooUnfolding::RooFitHist* makeHistogram(const HistContainer& source, double errorThreshold);
+  
+public:
+  RooUnfoldSpec(const char* name, const char* title, const TH1* truth, const char* obs_truth, const TH1* reco, const char* obs_reco, const TH2* response, const TH1* data, bool includeUnderflowOverflow, double errorThreshold = -1, bool useDensity = false);  
+  RooUnfoldSpec(const char* name, const char* title, const TH1* truth, const char* obs_truth, const TH1* reco, const char* obs_reco, const TH2* response, const TH1* bkg, const TH1* data, bool includeUnderflowOverflow, double errorThreshold = -1, bool useDensity = false);
+  RooUnfoldSpec(const char* name, const char* title, const TH1* truth_th1, const RooArgList& obs_truth, const TH1* reco_th1, const RooArgList& obs_reco, const TH2* response_th1, const TH1* bkg_th1, const TH1* data_th1, bool includeUnderflowOverflow, double errorThreshold = -1, bool useDensity = false);
+  ~RooUnfoldSpec();
+  void registerSystematic(Contribution c, const char* name, const TH1* up, const TH1* down);
+  void registerSystematic(Contribution c, const char* name, double up, double dn);
+  RooAbsPdf* makePdf(RooUnfolding::Algorithm alg);
+  RooAbsReal* makeFunc(RooUnfolding::Algorithm alg);
+  RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>* unfold(RooUnfolding::Algorithm alg);
+protected:
+  void setup(const TH1* truth_th1, const RooArgList& obs_truth, const TH1* reco_th1, const RooArgList& obs_reco, const TH2* response_th1, const TH1* bkg_th1, const TH1* data_th1, bool includeUnderflowOverflow, double errorThreshold = -1, bool useDensity = false);
+  ClassDef(RooUnfoldSpec,1)
+};
 
 namespace RooUnfolding {
   template<class Base> class RooFitWrapper : public Base {
@@ -224,7 +277,6 @@ public:
   RooUnfoldPdf(const char* name, const char* title, const RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>* unf);    
   virtual RooAbsPdf::ExtendMode extendMode() const override;
   virtual Double_t expectedEvents(const RooArgSet* nset) const override;
-  virtual Double_t expectedEvents(const RooArgSet& nset) const override;
   virtual Bool_t selfNormalized() const override;
   virtual ~RooUnfoldPdf();    
   virtual TObject* clone(const char* newname = 0) const override;

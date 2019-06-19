@@ -12,7 +12,7 @@
 
 infname = "hist_tmp.root"
 
-def prepare(smear):
+def prepare(smear,write):
   import ROOT
 
   response= ROOT.RooUnfoldResponse (40, -10.0, 10.0);
@@ -63,16 +63,38 @@ def prepare(smear):
                 "sig_truth":response.Htruth(),
                 "bkg_reco":bkg_reco}
 
-  infile = ROOT.TFile.Open(infname,"RECREATE")
-  clones = []
-  for k in histograms.keys():
-    clone = histograms[k].Clone()
-    clone.SetName(k)
-    clone.SetDirectory(infile)
-    clones.append(clone)
-  infile.Write()
-  infile.Close()
+  if write:
+    infile = ROOT.TFile.Open(infname,"RECREATE")
+    clones = []
+    for k in histograms.keys():
+      clone = histograms[k].Clone()
+      clone.SetName(k)
+      clone.SetDirectory(infile)
+      clones.append(clone)
+    infile.Write()
+    infile.Close()
 
+  for h in histograms.values():
+    h.SetDirectory(0)
+
+  return histograms
+
+def algorithm(method):
+  import ROOT
+  alg = None
+  if method == "bayes":
+    alg= ROOT.RooUnfolding.kBayes;
+  elif method == "bbb":
+    alg= ROOT.RooUnfolding.kBinByBin;
+  elif method == "inv":
+    alg= ROOT.RooUnfolding.kInvert;
+  elif method == "svd":
+    alg= ROOT.RooUnfolding.kSVD;
+  elif method == "root":
+    alg= ROOT.RooUnfolding.kTUnfold;
+  elif method == "ids":
+    alg= ROOT.RooUnfolding.kIDS;
+  return alg
 
 def makeAuxWorkspace():
   # Create the measurement
@@ -168,41 +190,25 @@ def loadws(fname,wsname):
   f.Close()
   return ws
 
-def trySetName(obj,name):
-  if obj:
-    obj.SetName(name)
-    obj.SetTitle(name)
-
-def renameObservables(ws,observables):
+def wsimport(ws,obj):
   import ROOT
-  for obs in observables.keys():
-    name = observables[obs]
-    trySetName(ws.var(obs),name)
-    for ds in ws.allEmbeddedData():
-      trySetName(ds.get(0).find(obs),name)
-    for ds in ws.allData():
-      trySetName(ds.get(0).find(obs),name)
-    for hf in ROOT.RooUnfolding.matchingObjects(ws.allFunctions(),".*"):
-      if hf.InheritsFrom(ROOT.RooHistFunc.Class()):
-        trySetName(hf.dataHist().get(0).find(obs),name)
-        trySetName(ROOT.RooUnfolding.getObservables(hf).find(obs),name)
-      if hf.InheritsFrom(ROOT.ParamHistFunc.Class()):
-        trySetName(hf.get(0).find(obs),name)
+  getattr(ws,"import")(obj,
+                       ROOT.RooFit.RenameVariable("obs_x_response","obs_reco"),
+                       ROOT.RooFit.RenameVariable("obs_y_response","obs_truth"),
+                       ROOT.RooFit.RenameVariable("obs_x_SRtruth","obs_truth"),
+                       ROOT.RooFit.RenameVariable("obs_x_truth","obs_truth"),
+                       ROOT.RooFit.RenameVariable("obs_x_SRreco","obs_reco"))
+  
 
 def makeFinalWorkspace(method,mainws,auxws):
   import ROOT
-  observables = {"obs_x_response":"obs_reco","obs_y_response":"obs_truth","obs_x_SRtruth":"obs_truth","obs_x_truth":"obs_truth","obs_x_SRreco":"obs_reco"}
-  
   helpws = ROOT.RooWorkspace("helper","helper")
   
   allvars = ROOT.RooArgSet()
   allvars.add(auxws.obj("obs_x_SRtruth"))
   sig_truth_dataset = auxws.pdf("model_SRtruth").generate(allvars,100,True)
   sig_truth_dataset.SetName("sig_truth_dataset")
-  
-  renameObservables(auxws,observables)
-  renameObservables(mainws,observables)
-  
+
   sig_response = auxws.function("sig_response_response_nominal")
   sig_response.SetName("sig_response")
   sig_theory = auxws.function("sig_theory_alt_truth_nominal")
@@ -216,15 +222,15 @@ def makeFinalWorkspace(method,mainws,auxws):
   bkg_reco = mainws.function("L_x_bkg_reco_SRreco_overallSyst_x_Exp")
   bkg_reco.SetName("bkg_reco")
   mc = auxws.obj("ModelConfig")
-  
-  ROOT.RooUnfolding.importToWorkspace(helpws,sig_theory)
-  ROOT.RooUnfolding.importToWorkspace(helpws,sig_response)
-  ROOT.RooUnfolding.importToWorkspace(helpws,sig_truth)
-  ROOT.RooUnfolding.importToWorkspace(helpws,sig_reco)
-  ROOT.RooUnfolding.importToWorkspace(helpws,bkg_reco)
-  ROOT.RooUnfolding.importToWorkspace(helpws,sigbkg_reco_dataset)
-  ROOT.RooUnfolding.importToWorkspace(helpws,sig_truth_dataset)
-  
+
+  wsimport(helpws,sig_theory)
+  wsimport(helpws,sig_response)
+  wsimport(helpws,sig_truth)
+  wsimport(helpws,sig_reco)
+  wsimport(helpws,bkg_reco)
+  wsimport(helpws,sigbkg_reco_dataset)
+  wsimport(helpws,sig_truth_dataset)
+
   sig_response = helpws.function("sig_response")
   sig_theory = helpws.function("sig_theory")
   sigbkg_reco_dataset = helpws.data("sigbkg_reco_dataset").binnedClone()
@@ -234,8 +240,6 @@ def makeFinalWorkspace(method,mainws,auxws):
   sig_reco = helpws.function("sig_reco")
   bkg_reco = helpws.function("bkg_reco")
   
-  renameObservables(helpws,observables)
-  
   unfold_response = ROOT.RooFitUnfoldResponse("unfold_response","unfold_response",sig_response,sig_truth,sig_reco,0,helpws.var("obs_truth"),helpws.var("obs_reco"))
 
   sigbkg_reco = unfold_response.makeHistFunc(sigbkg_reco_dataset)
@@ -243,17 +247,17 @@ def makeFinalWorkspace(method,mainws,auxws):
   sig_reco_dataset = unfold_response.makeHistSum(sigbkg_reco,bkg_reco,1.,-1.)
   sig_reco_dataset.func().SetName("sig_reco_dataset")
   
-  if method == "bayes":
+  if method == ROOT.RooUnfolding.kBayes:
     unfold= ROOT.RooFitUnfoldBayes     (unfold_response, sig_reco_dataset, 4);     #  OR
-  elif method == "bbb":
+  elif method == ROOT.RooUnfolding.kBinByBin:
     unfold= ROOT.RooFitUnfoldBinByBin     (unfold_response, sig_reco_dataset);     #  OR    
-  elif method == "inv":
+  elif method  == ROOT.RooUnfolding.kInvert:
     unfold= ROOT.RooFitUnfoldInvert     (unfold_response, sig_reco_dataset);     #  OR    
-  elif method == "svd":
+  elif method == ROOT.RooUnfolding.kSVD:
     unfold= ROOT.RooFitUnfoldSvd     (unfold_response, sig_reco_dataset, 20);     #  OR
-  elif method == "root":
+  elif method == ROOT.RooUnfolding.kTUnfold:
     unfold= ROOT.RooFitUnfoldTUnfold     (unfold_response, sig_reco_dataset);     #  OR    
-  elif method == "ids":
+  elif method == ROOT.RooUnfolding.kIDs:
     unfold= ROOT.RooFitUnfoldIds     (unfold_response, sig_reco_dataset, 3);     #  OR      
   
   sig_theory_hist = unfold_response.makeHist(sig_theory)
@@ -278,7 +282,7 @@ def makeFinalWorkspace(method,mainws,auxws):
 
   return ws
 
-def makePlots(ws):
+def makePlots_HistFactory(ws):
   import ROOT
 
   unfoldpdf = ws.pdf("unfolding")
@@ -320,6 +324,45 @@ def makePlots(ws):
   canvas_reco.SaveAs("reco.pdf")
   canvas_reco.SaveAs("reco.png")
 
+def makePlots_RooUnfoldSpec(ws):
+  import ROOT
+
+  unfoldpdf = ws.pdf("unfold")
+  unfolding = unfoldpdf.unfolding()
+
+  sig_response = ws.function("response")
+  sig_theory = ws.function("sig_theory")
+  sigbkg_reco = ws.function("sigbkg_reco")
+  sig_truth = ws.function("sig_truth")
+  sig_reco = ws.function("unfold_data_minus_bkg")
+  bkg_reco = ws.function("bkg")
+
+  obs_truth = ws.var("obs_truth")
+  plot_truth = obs_truth.frame()
+  sig_theory.plotOn(plot_truth,ROOT.RooFit.LineColor(ROOT.kRed),ROOT.RooFit.Name("sig_theory_graph"))
+  unfoldpdf.plotOn(plot_truth,ROOT.RooFit.Name("unfoldedpdf_graph"))
+  canvas_truth = ROOT.TCanvas("unfolded","unfolded")
+  plot_truth.Draw()
+  leg_truth = ROOT.TLegend(0.1, 0.8, 0.3, 0.9)
+  leg_truth.AddEntry( plot_truth.findObject("sig_theory_graph"), "Theory Prediction", "l" )
+  leg_truth.AddEntry( plot_truth.findObject("unfoldedpdf_graph"), "Unfolded Signal", "l" )
+  leg_truth.Draw()
+  canvas_truth.SaveAs("unfolded.pdf")
+  canvas_truth.SaveAs("unfolded.png")
+  
+  obs_reco = ws.var("obs_reco")
+  plot_reco = obs_reco.frame()
+  sigbkg_reco.plotOn(plot_reco,ROOT.RooFit.LineColor(ROOT.kRed),ROOT.RooFit.Name("sigbkg_reco_graph"))
+  bkg_reco.plotOn(plot_reco,ROOT.RooFit.LineColor(ROOT.kBlue),ROOT.RooFit.Name("bkg_reco_graph"))
+  canvas_reco = ROOT.TCanvas("reco","reco")
+  plot_reco.Draw()
+  leg_reco = ROOT.TLegend(0.1, 0.8, 0.3, 0.9)
+  leg_reco.AddEntry( plot_reco.findObject("bkg_reco_graph"), "Background", "l" )
+  leg_reco.AddEntry( plot_reco.findObject("sigbkg_reco_graph"), "Signal + Background", "l" )
+  leg_reco.Draw()
+  canvas_reco.SaveAs("reco.pdf")
+  canvas_reco.SaveAs("reco.png")
+
 def runFit(ws):
   mu = ws.var("mu")
   
@@ -333,6 +376,22 @@ def runFit(ws):
   nps = ROOT.RooUnfolding.allVars(ws,"gamma_.*")
   unfolding.fitTo(data,ROOT.RooFit.GlobalObservables(nps))
 
+def algorithm(method):
+  import ROOT
+  alg = None
+  if method == "bayes":
+    alg= ROOT.RooUnfolding.kBayes;
+  elif method == "bbb":
+    alg= ROOT.RooUnfolding.kBinByBin;
+  elif method == "inv":
+    alg= ROOT.RooUnfolding.kInvert;
+  elif method == "svd":
+    alg= ROOT.RooUnfolding.kSVD;
+  elif method == "root":
+    alg= ROOT.RooUnfolding.kTUnfold;
+  elif method == "ids":
+    alg= ROOT.RooUnfolding.kIDS;
+  return alg
 
 def main(args):
   from os.path import exists
@@ -345,36 +404,57 @@ def main(args):
     xsmear= gRandom.Gaus(args.bias,args.smear);     #  bias and smear
     return xt+xsmear;
 
-  prepare(smear)
-  
-  if exists("ws-aux.root") and exists("ws.root"):
-    mainws = loadws("ws.root","combined")
-    auxws = loadws("ws-aux.root","combined")
-  else:
-    mainws = makeWorkspace()
-    auxws = makeAuxWorkspace()
-    mainws.writeToFile("ws.root")
-    auxws.writeToFile("ws-aux.root")
-  
   import ROOT
-  ROOT.RooUnfoldResponse
+  if args.mode == "HistFactory":
+    prepare(smear,True)
   
-  ROOT.RooUnfolding.setGammaUncertainties(mainws)
-  ROOT.RooUnfolding.setGammaUncertainties(auxws)
+    if exists("ws-aux.root") and exists("ws.root"):
+      mainws = loadws("ws.root","combined")
+      auxws = loadws("ws-aux.root","combined")
+    else:
+      mainws = makeWorkspace()
+      auxws = makeAuxWorkspace()
+      mainws.writeToFile("ws.root")
+      auxws.writeToFile("ws-aux.root")
   
-  import sys
-  ws = makeFinalWorkspace(args.method,mainws,auxws)
+    ROOT.RooUnfoldResponse
+    
+    ROOT.RooUnfolding.setGammaUncertainties(mainws)
+    ROOT.RooUnfolding.setGammaUncertainties(auxws)
+  
+    import sys
+    ws = makeFinalWorkspace(algorithm(args.method),mainws,auxws)
+  else:
+    histograms = prepare(smear,True)
+    spec = ROOT.RooUnfoldSpec("unfold","unfold",histograms["sig_theory_alt"],"obs_truth",histograms["sig_reco"],"obs_reco",histograms["sig_response"],histograms["bkg_reco"],histograms["sigbkg_reco"],False,0.0005)
+
+    pdf = spec.makePdf(algorithm(args.method))
+    theory = pdf.unfolding().response().makeHistFuncTruth(histograms["sig_theory"])
+
+    # required to avoid python garbage collector messing up the RooDataHists added to gDirectory
+    ROOT.gDirectory.Clear()
+
+    pdf.unfolding().PrintTable(ROOT.cout)
+
+    ws = ROOT.RooWorkspace("workspace","workspace")
+    getattr(ws,"import")(pdf)
+    getattr(ws,"import")(theory)
+    ws.Print("t")
 
   ws.writeToFile("unfolding.root")
-  
-  makePlots(ws)
 
-  #runFit(ws)
+  if args.mode == "HistFactory":
+    makePlots_HistFactory(ws)
+  else:
+    makePlots_RooUnfoldSpec(ws)
+  
+
   
 if __name__=="__main__":
   from argparse import ArgumentParser
   parser = ArgumentParser(description="RooUnfold testing script")
-  parser.add_argument("method",default="bayes",type=str)
+  parser.add_argument("method",default="bbb",type=str)
+  parser.add_argument("--mode",choices=["RooUnfoldSpec","HistFactory"],default="RooUnfoldSpec",type=str)
   parser.add_argument("--bias",default=-2.5,type=float)
   parser.add_argument("--smear",default=.2,type=float)
   main(parser.parse_args())

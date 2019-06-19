@@ -9,6 +9,7 @@
 #include "RooAbsData.h"
 
 class RooHistFunc;
+class RooHistPdf;
 
 namespace RooUnfolding {
   class RooFitHist { 
@@ -21,9 +22,16 @@ namespace RooUnfolding {
     RooFitHist(RooAbsReal* f, const std::vector<RooRealVar*>& obs, const std::vector<RooRealVar*>& nps);
     RooFitHist(RooAbsReal* f, RooRealVar* obs, const std::vector<RooRealVar*>& nps);
     RooFitHist(RooAbsReal* f, RooRealVar* obs1, RooRealVar* obs2, const std::vector<RooRealVar*>& nps);
+    RooFitHist(RooHistFunc* f, const std::vector<RooRealVar*>& obs);
+    RooFitHist(RooHistFunc* f, RooRealVar* obs);
+    RooFitHist(RooHistFunc* f, RooRealVar* obs1, RooRealVar* obs2);
+    RooFitHist(RooHistFunc* hist, const RooArgList& obslist, double uncThreshold = -1);        
     RooFitHist(RooDataHist* f, const std::vector<RooRealVar*>& obs);
     RooFitHist(RooDataHist* f, RooRealVar* obs);
     RooFitHist(RooDataHist* f, RooRealVar* obs1, RooRealVar* obs2);
+    RooFitHist(RooDataHist* hist, const RooArgList& obslist, double uncThreshold = -1);    
+    RooFitHist(const TH1* hist, const std::vector<RooRealVar*>& obs, bool includeUnderflowOverflow, double errorThreshold, bool correctDensity=false);
+    RooFitHist(const TH1* hist, const RooArgList& obs, bool includeUnderflowOverflow, double errorThreshold, bool correctDensity=false);
     
     virtual const char* name() const;
     virtual const char* title() const;
@@ -40,7 +48,12 @@ namespace RooUnfolding {
     virtual RooAbsReal* func() const;
     virtual bool checkValidity() const;
     virtual void replace(const RooAbsCollection& newlist);
+
+    virtual void saveSnapshot(std::map<std::string,double>& snsh) const;
+    virtual void loadSnapshot(const std::map<std::string,double>& snsh);    
+    
   protected:
+    RooAbsReal* setupErrors(const RooHistFunc* hf, const RooDataHist* dh, double uncThreshold);    
     RooAbsReal* _func;
     std::vector<RooRealVar*> _obs;
     std::vector<RooRealVar*> _gamma;
@@ -52,15 +65,26 @@ namespace RooUnfolding {
     Variable(int nBins,double min,double max,const char* name);
     Variable(RooRealVar* var);
   };
-  
+
+  RooDataHist* convertTH1(const TH1* histo, const std::vector<RooRealVar*>& vars, bool includeUnderflowOverflow, bool correctDensity=false);
+  RooDataHist* convertTH1(const TH1* histo, const RooArgList& obs, bool includeUnderflowOverflow, bool correctDensity=false);
+  std::vector<RooRealVar*> createGammas(const TH1* histo, bool includeUnderflowOverflow, double uncThreshold);
+  std::vector<RooRealVar*> createGammas(const RooDataHist* dh, const RooArgList& obs, double uncThreshold);
+  RooAbsReal* makeParamHistFunc(const char* name, const char* title, const RooArgList& obslist, const std::vector<RooRealVar*>& gamma);  
   const RooArgSet* getObservables(const RooHistFunc* f);
   void setGammaUncertainties(RooWorkspace* ws);
+  RooHistFunc* makeHistFunc(const TH1* histo, const RooArgList& obs, bool includeUnderflowOverflow, bool correctDensity=false);    
+  RooHistFunc* makeHistFunc(const char* name, const TH1* histo, const RooArgList& obs, bool includeUnderflowOverflow, bool correctDensity=false);  
   RooHistFunc* makeHistFunc(RooDataHist* dhist, const std::vector<RooRealVar*>& obs);  
+  RooHistPdf* makeHistPdf(const TH1* histo, const RooArgList& obs, bool includeUnderflowOverflow, bool correctDensity=false);    
+  RooHistPdf* makeHistPdf(const char* name, const TH1* histo, const RooArgList& obs, bool includeUnderflowOverflow, bool correctDensity=false);  
+  RooHistPdf* makeHistPdf(RooDataHist* dhist, const std::vector<RooRealVar*>& obs);  
   RooRealVar* findLeafServer(RooAbsArg* rr, const char* name);
   void importToWorkspace(RooWorkspace* ws, RooAbsReal* object);
   void importToWorkspace(RooWorkspace* ws, RooAbsData* object);
   RooArgSet allVars(RooWorkspace* ws, const char* pattern);
-  std::vector<RooAbsArg*> matchingObjects(const RooAbsCollection* c, const char* pattern);
+  template<class ObjT,class ListT>std::vector<ObjT*> matchingObjects(const ListT* c, const char* pattern);
+  std::vector<RooAbsReal*> matchingObjects(const RooAbsCollection* c, const char* pattern);
   void printClients(const RooAbsArg* obj);
   void printServers(const RooAbsArg* obj);
 }

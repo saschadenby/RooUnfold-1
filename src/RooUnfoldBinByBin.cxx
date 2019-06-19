@@ -65,8 +65,8 @@ RooUnfoldBinByBinT<Hist,Hist2D>::Unfold() const
   const TVectorD& vmeas(this->Vmeasured());
   const TVectorD& vtrain(this->_res->Vmeasured());
   const TVectorD& vtruth(this->_res->Vtruth());
+  const TVectorD& fakes(this->_res->Vfakes());
 
-  TVectorD fakes(this->_res->Vfakes());
   Double_t fac= 0.0;
   if (this->_res->HasFakes()) { 
     fac= vtrain.Sum();
