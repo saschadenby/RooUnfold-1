@@ -2,11 +2,14 @@
 #define ROOUNFOLDHELPERS_TH1_HH
 
 #include "RooUnfoldHelpers.h"
+class TAxis;
 #include "TH1.h"
 #include "TH2.h"
 #include "TH3.h"
 
 namespace RooUnfolding {
+  const TAxis* getAxis(const TH1* h, RooUnfolding::Dimension d);
+
   template<> struct Variable<TH1> {
     int _nBins;
     double _min;

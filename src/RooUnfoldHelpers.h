@@ -49,11 +49,13 @@ namespace RooUnfolding {
   template<class Hist> void binXYZ(const Hist* tru, int i, int& jx, int& jy, int& jz);
   template<class Hist> double binError(const Hist* h, int i, bool overflow);
   template<class Hist> double binContent (const Hist* h, int i, bool overflow);
+  template<class Hist> double binVolume (const Hist* h, int i, bool overflow);
   template<class Hist> double binContent (const Hist* h, int i, int j, Bool_t overflow);  
-  template<class Hist> TVectorD h2v  (const Hist* h,bool overflow = false);
-  template<class Hist> TVectorD h2ve  (const Hist* h,bool overflow = false);
-  template<class Hist> void h2v  (const Hist* h, TVectorD& v,bool overflow = false);
-  template<class Hist> void h2ve  (const Hist* h, TVectorD& v,bool overflow = false);
+  template<class Hist> double binVolume (const Hist* h, int i, int j, Bool_t overflow);  
+  template<class Hist> TVectorD h2v  (const Hist* h,bool overflow = false, bool correctDensity=false);
+  template<class Hist> TVectorD h2ve  (const Hist* h,bool overflow = false, bool correctDensity=false);
+  template<class Hist> void h2v  (const Hist* h, TVectorD& v,bool overflow = false, bool correctDensity=false);
+  template<class Hist> void h2ve  (const Hist* h, TVectorD& v,bool overflow = false, bool correctDensity=false);
   template<class Hist> const char* varname(const Hist* h, Dimension d);
   template<class Hist> void printHistogram(const Hist* h);
   template<class Hist> void printTable (std::ostream& o, const Hist* hTrainTrue, const Hist* hTrain, const Hist* hTrue, const Hist* hMeas, const Hist* hReco, Bool_t _overflow=kFALSE, RooUnfolding::ErrorTreatment withError=RooUnfolding::kDefault, Double_t chi_squ=-999.0);
@@ -64,15 +66,15 @@ namespace RooUnfolding {
   template<class Hist2D> int findBin(const Hist2D* h, Double_t x, Double_t y);
   template<class Hist3D> int findBin(const Hist3D* h, Double_t x, Double_t y, double_t z);
 
-  template<class Hist, class Hist2D> void h2mNorm  (const Hist2D* h, TMatrixD& m, const Hist* norm, bool overflow = false);
-  template<class Hist, class Hist2D> void h2meNorm  (const Hist2D* h, TMatrixD& m, const Hist* norm, bool overflow = false);  
-  template<class Hist, class Hist2D> TMatrixD h2mNorm  (const Hist2D* h, const Hist* norm, bool overflow = false);  
-  template<class Hist, class Hist2D> TMatrixD h2meNorm  (const Hist2D* h, const Hist* norm, bool overflow = false);  
+  template<class Hist, class Hist2D> void h2mNorm  (const Hist2D* h, TMatrixD& m, const Hist* norm, bool overflow = false, bool correctDensity=false);
+  template<class Hist, class Hist2D> void h2meNorm  (const Hist2D* h, TMatrixD& m, const Hist* norm, bool overflow = false, bool correctDensity=false);  
+  template<class Hist, class Hist2D> TMatrixD h2mNorm  (const Hist2D* h, const Hist* norm, bool overflow = false, bool correctDensity=false);  
+  template<class Hist, class Hist2D> TMatrixD h2meNorm  (const Hist2D* h, const Hist* norm, bool overflow = false, bool correctDensity=false);  
 
-  template<class Hist2D> void h2m  (const Hist2D* h, TMatrixD& m, bool overflow = false);
-  template<class Hist2D> void h2me  (const Hist2D* h, TMatrixD& m, bool overflow = false);
-  template<class Hist2D> TMatrixD h2m  (const Hist2D* h, bool overflow = false);  
-  template<class Hist2D> TMatrixD h2me  (const Hist2D* h, bool overflow = false);  
+  template<class Hist2D> void h2m  (const Hist2D* h, TMatrixD& m, bool overflow = false, bool correctDensity=false);
+  template<class Hist2D> void h2me  (const Hist2D* h, TMatrixD& m, bool overflow = false, bool correctDensity=false);
+  template<class Hist2D> TMatrixD h2m  (const Hist2D* h, bool overflow = false, bool correctDensity=false);  
+  template<class Hist2D> TMatrixD h2me  (const Hist2D* h, bool overflow = false, bool correctDensity=false);  
 
   template<class Hist2D> Hist2D* createHist(const char* name, const char* title, const Variable<Hist2D>& x, const Variable<Hist2D>& y);
   template<class Hist2D> Hist2D* createHist(const TMatrixD& m, const char* name, const char* title, const Variable<Hist2D>& x, const Variable<Hist2D>& y);

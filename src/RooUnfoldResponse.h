@@ -39,7 +39,7 @@ public:
   RooUnfoldResponseT(const char* name, const char* title); // named constructor
   RooUnfoldResponseT(const TString& name, const TString& title); // named constructor
   RooUnfoldResponseT(const RooUnfoldResponseT<Hist,Hist2D>& rhs); // copy constructor
-
+  RooUnfoldResponseT(const char* name, const char* title, Hist2D* response, Hist* truth, Hist* reco, bool overflow, bool density);
   // Accessors
 
   Int_t        GetDimensionMeasured() const;   // Dimensionality of the measured distribution
@@ -69,6 +69,7 @@ public:
 
   void   UseOverflow (Bool_t set= kTRUE);      // Specify to use overflow bins
   Bool_t UseOverflowStatus() const;            // Get UseOverflow setting
+  Bool_t UseDensityStatus() const;            // Get UseDensity setting
   bool HasFakes() const;                // Return number of bins with fakes
   virtual void Print (Option_t* option="") const;
 
@@ -76,11 +77,11 @@ public:
   TF1* MakeFoldingFunction (TF1* func, Double_t eps=1e-12, Bool_t verbose=false) const;
 
   RooUnfoldResponseT* RunToy() const;
+  virtual void ClearCache();
 
 protected:
 
   virtual void setup();
-  virtual void ClearCache();
   virtual bool Cached() const;
   virtual void SetNameTitleDefault (const char* defname= 0, const char* deftitle= 0);
 
@@ -97,6 +98,7 @@ protected:
   Hist*  _tru = 0;      // Truth    histogram
   Hist2D*_res = 0;      // Response histogram
   Int_t _overflow = 0; // Use histogram under/overflows if 1
+  bool  _density = false;
 
 private:
   mutable TVectorD* _vMes= 0;   //! Cached measured vector
@@ -177,16 +179,25 @@ private:
 #ifndef NOROOFIT
 
 class RooHistFunc;
+class RooHistPdf;
 
 class RooFitUnfoldResponse : public RooUnfoldResponseT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist> {
 public:
 
   RooFitUnfoldResponse(){}; // default constructor
   virtual ~RooFitUnfoldResponse(){}; // destructor
-  RooFitUnfoldResponse(const char* name, const char* title, RooAbsReal* response, RooAbsReal* truth, RooAbsReal* reco, RooAbsReal* fakes, const RooArgSet* observables);
-  RooFitUnfoldResponse(const char* name, const char* title, RooAbsReal* response, RooAbsReal* truth, RooAbsReal* reco, RooAbsReal* fakes, RooRealVar* obs_truth, RooRealVar* obs_reco);  
+  RooFitUnfoldResponse(const char* name, const char* title, RooAbsReal* response, RooAbsReal* truth, RooAbsReal* reco, RooAbsReal* fakes, const RooAbsCollection* observables, bool density = false);
+  RooFitUnfoldResponse(const char* name, const char* title, RooAbsReal* response, RooAbsReal* truth, RooAbsReal* reco, RooAbsReal* fakes, RooRealVar* obs_truth, RooRealVar* obs_reco, bool density = false);  
+  RooFitUnfoldResponse(const char* name, const char* title, RooUnfolding::RooFitHist* response, RooUnfolding::RooFitHist* truth, RooUnfolding::RooFitHist* reco, bool density = false);
 
   RooHistFunc* makeHistFunc(RooDataHist* dhist);  
+  RooHistFunc* makeHistFuncTruth(const TH1* hist);
+  RooHistFunc* makeHistFuncMeasured(const TH1* hist);
+  RooHistPdf* makeHistPdf(RooDataHist* dhist);  
+  RooHistPdf* makeHistPdfTruth(const TH1* hist);
+  RooHistPdf* makeHistPdfMeasured(const TH1* hist);
+  RooUnfolding::RooFitHist* makeHistMeasured(const TH1* hist);
+  RooUnfolding::RooFitHist* makeHistTruth(const TH1* hist);
   RooUnfolding::RooFitHist* makeHist(RooAbsReal* object);
   RooUnfolding::RooFitHist* makeHist(RooDataHist* object);
   RooUnfolding::RooFitHist* makeHistSum(RooAbsReal* a, RooAbsReal* b, double ca, double cb);  

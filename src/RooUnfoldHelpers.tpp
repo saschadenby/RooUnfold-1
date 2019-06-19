@@ -13,10 +13,9 @@ namespace RooUnfolding {
   }
 
 
-  template<class Hist> Hist* histNoOverflow(Hist* hist, bool overflow){
-    return createHist<Hist>(h2v<Hist>(hist,overflow),h2ve<Hist>(hist,overflow),name(hist),title(hist),vars(hist),overflow);
+  template<class Hist> Hist* histNoOverflow(const Hist* hist, bool overflow){
+    return createHist<Hist>(h2v<Hist>(hist,overflow),h2ve<Hist>(hist,overflow),name(hist),title(hist),vars(hist),false);
   }
-
   
   template<class Hist> void printTable (std::ostream& o, const Hist* hTrainTrue, const Hist* hTrain,
                    const Hist* hTrue, const Hist* hMeas, const Hist* hReco,
