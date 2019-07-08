@@ -540,6 +540,7 @@ RooUnfoldT<Hist,Hist2D>::GetErrMat() const
   _cache._have_err_mat=true;
 }
 
+// This method initializes the unfolding.
 template<class Hist,class Hist2D> Bool_t
 RooUnfoldT<Hist,Hist2D>::UnfoldWithErrors (ErrorTreatment withError, bool getWeights) const
 {
@@ -558,6 +559,7 @@ RooUnfoldT<Hist,Hist2D>::UnfoldWithErrors (ErrorTreatment withError, bool getWei
       if (dim(rmeas)>=3) cerr << "x" << nBins(rmeas,Z);
       cerr << "-bin measured histogram from RooUnfoldResponse" << endl;
     }
+
     this->Unfold();
     if (!_cache._unfolded) {
       _cache._fail= true;
@@ -1257,6 +1259,7 @@ template<class Base>RooUnfolding::RooFitWrapper<Base>::RooFitWrapper(const char*
     }
   }
   const RooFitHist* hmeasured = this->_unfolding->Hmeasured();
+
   if(hmeasured){
     this->addServer(*(hmeasured->func()));    
     for(size_t i=0; i<dim(hmeasured); ++i){
@@ -1518,6 +1521,7 @@ RooUnfoldSpec::RooUnfoldSpec(const char* name, const char* title, const TH1* tru
     obs->setConstant(true);
     reco_vars.add(*obs);
   }
+
   this->setup(truth,truth_vars,reco,reco_vars,response,bkg,data,includeUnderflowOverflow,errorThreshold,useDensity);
 }
 
