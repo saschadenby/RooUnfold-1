@@ -53,6 +53,9 @@ for i in range(10000):
   if x!=None: hMeas.Fill(x);
 
 
+print("Dimensions rmatrix: " + str(response.GetNbinsTruth()) + "x" + str(response.GetNbinsMeasured()))
+
+
 if method == "bayes":
   unfold= ROOT.RooUnfoldBayes     (response, hMeas, 4);    #  OR
 elif method == "svd":
