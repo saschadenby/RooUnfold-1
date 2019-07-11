@@ -11,7 +11,7 @@
 # ==============================================================================
 
 import sys
-method = "bayes"
+method = "ids"
 if len(sys.argv) > 1: method = sys.argv[1]
 
 from ROOT import gRandom, TH1, TH1D, TCanvas, cout
@@ -53,9 +53,6 @@ for i in range(10000):
   if x!=None: hMeas.Fill(x);
 
 
-print("Dimensions rmatrix: " + str(response.GetNbinsTruth()) + "x" + str(response.GetNbinsMeasured()))
-
-
 if method == "bayes":
   unfold= ROOT.RooUnfoldBayes     (response, hMeas, 4);    #  OR
 elif method == "svd":
@@ -65,9 +62,9 @@ elif method == "bbb":
 elif method == "inv":
   unfold= ROOT.RooUnfoldInvert     (response, hMeas);     #  OR  
 elif method == "root":
-  unfold= RooUnfoldTUnfold (response, hMeas);         #  OR
+  unfold= ROOT.RooUnfoldTUnfold (response, hMeas);         #  OR
 elif method == "ids":
-  unfold= RooUnfoldIds     (response, hMeas, 3);      #  OR
+  unfold= ROOT.RooUnfoldIds     (response, hMeas, 3);      #  OR
 
 hReco= unfold.Hreco();
 

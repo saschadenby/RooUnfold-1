@@ -426,9 +426,11 @@ def main(args):
     ws = makeFinalWorkspace(algorithm(args.method),mainws,auxws)
   else:
     histograms = prepare(smear,True)
-    spec = ROOT.RooUnfoldSpec("unfold","unfold",histograms["sig_theory_alt"],"obs_truth",histograms["sig_reco"],"obs_reco",histograms["sig_response"],histograms["bkg_reco"],histograms["sigbkg_reco"],False,0.0005)
 
-    pdf = spec.makePdf(algorithm(args.method))
+    spec = ROOT.RooUnfoldSpec("unfold","unfold",histograms["sig_theory_alt"],"obs_truth",histograms["sig_reco"],"obs_reco",histograms["sig_response"],histograms["bkg_reco"],histograms["sigbkg_reco"],False,0.0005)
+    
+    # This line instantiates one of the subclasses specific to the unfolding algorithm.
+    pdf = spec.makePdf(algorithm(args.method),4)
     theory = pdf.unfolding().response().makeHistFuncTruth(histograms["sig_theory"])
 
     # required to avoid python garbage collector messing up the RooDataHists added to gDirectory
