@@ -45,7 +45,7 @@ public:
   Int_t GetSmoothing()  const;
   const TMatrixD& UnfoldingMatrix() const;
 
-  virtual void  SetRegParm (double parm);
+  virtual void  SetRegParm (Double_t parm);
   virtual double GetRegParm() const;
   virtual void Reset();
   virtual void Print (Option_t* option= "") const;
