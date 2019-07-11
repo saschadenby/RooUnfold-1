@@ -152,6 +152,7 @@ template<class Hist,class Hist2D> RooUnfoldT<Hist,Hist2D>*
 RooUnfoldT<Hist,Hist2D>::New (RooUnfolding::Algorithm alg, const RooUnfoldResponseT<Hist,Hist2D>* res, const Hist* meas,Double_t regparm,
                            const char* name, const char* title)
 {
+
     /*Unfolds according to the value of the alg enum:
     0 = kNone:     dummy unfolding
     1 = kBayes:    Unfold via iterative application of Bayes theorem
@@ -162,40 +163,52 @@ RooUnfoldT<Hist,Hist2D>::New (RooUnfolding::Algorithm alg, const RooUnfoldRespon
     7 = kIDS:      Unfold using iterative dynamically stabilized (IDS) method
     */
   RooUnfoldT<Hist,Hist2D>* unfold(NULL);
-  switch (alg) {
-    case kNone:
-      unfold= new RooUnfoldT<Hist,Hist2D>         (res, meas);
-      break;
-    case kBayes:
-      unfold= new RooUnfoldBayesT<Hist,Hist2D>    (res, meas);
-      break;
-    case kSVD:
-      unfold= new RooUnfoldSvdT<Hist,Hist2D>      (res, meas);
-      break;
-    case kBinByBin:
-      unfold= new RooUnfoldBinByBinT<Hist,Hist2D> (res, meas);
-      break;
-//    case kTUnfold:
-//#ifndef NOTUNFOLD
-//      unfold= new RooUnfoldTUnfold  (res,meas);
-//      break;
-//#else
-//      cerr << "TUnfold library is not available" << endl;
-//      return 0;
-//#endif
-    case kInvert:
-      unfold = new RooUnfoldInvertT<Hist,Hist2D>  (res,meas);
-      break;
-    case kDagostini:
-      cerr << "RooUnfoldDagostini is not available" << endl;
-      return 0;
-//    case kIDS:
-//      unfold= new RooUnfoldIds      (res, meas);
-//      break;
-  default:
-      cerr << "Unknown RooUnfold method " << Int_t(alg) << endl;
-      return 0;
+
+  switch(alg) {
+
+  case kNone:
+    unfold= new RooUnfoldT<Hist,Hist2D>         (res, meas);
+    break;
+
+  case kBayes:
+    unfold= new RooUnfoldBayesT<Hist,Hist2D>    (res, meas);
+    break;
+
+  case kSVD:
+    unfold= new RooUnfoldSvdT<Hist,Hist2D>      (res, meas);
+    break;
+
+  case kBinByBin:
+    unfold= new RooUnfoldBinByBinT<Hist,Hist2D> (res, meas);
+    break;
+
+    //    case kTUnfold:
+    //#ifndef NOTUNFOLD
+    //      unfold= new RooUnfoldTUnfold  (res,meas);
+    //      break;
+    //#else
+    //      cerr << "TUnfold library is not available" << endl;
+    //      return 0;
+    //#endif
+
+  case kInvert:
+    unfold = new RooUnfoldInvertT<Hist,Hist2D>  (res,meas);
+    break;
+
+  case kDagostini:
+    cerr << "RooUnfoldDagostini is not available" << endl;
+    return 0;
+  
+    //    case kIDS:
+    //      unfold= new RooUnfoldIds      (res, meas);
+    //      break;
+
+  default: 
+    cerr << "Unknown RooUnfold method " << Int_t(alg) << endl;
+    return 0;
   }
+
+
   if (name)  unfold->SetName  (name);
   if (title) unfold->SetTitle (title);
   if (regparm != -1e30){
@@ -265,6 +278,9 @@ RooUnfoldT<TH1,TH2>::New (RooUnfolding::Algorithm alg, const RooUnfoldResponseT<
   }
   return unfold;
 }
+
+
+
 
 template<class Hist,class Hist2D> void
 RooUnfoldT<Hist,Hist2D>::Destroy()
@@ -1181,7 +1197,7 @@ void  RooUnfoldT<Hist,Hist2D>::SetNToys (Int_t toys)
 }
 
 template<class Hist,class Hist2D> 
-void  RooUnfoldT<Hist,Hist2D>::SetRegParm (Double_t)
+void  RooUnfoldT<Hist,Hist2D>::SetRegParm (Double_t regparm)
 {
   // Set Regularisation parameter
 }
@@ -1210,6 +1226,12 @@ Int_t RooUnfoldT<Hist,Hist2D>::SystematicsIncluded() const
   // return setting for whether to include systematic errors from response matrix
   return _dosys;
 }
+/*
+template<class Hist,class Hist2D>
+RooUnfoldT<Hist,Hist2D>* RooUnfoldT<Hist,Hist2D>::clone(const RooUnfoldT<Hist,Hist2D>& rhs){
+  return new RooUnfold<Hist,Hist2D>(rhs);
+}
+*/
 
 template class RooUnfoldT<TH1,TH2>;
 ClassImp (RooUnfold);
@@ -1226,6 +1248,13 @@ ClassImp (RooUnfoldT_RooFitHist);
 
 
 template<class Base>RooUnfolding::RooFitWrapper<Base>::RooFitWrapper(const char* name, const char* title, const RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>* unf) : Base(name,title), _unfolding((RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>*)(unf->Clone())) {
+
+  // The clone that is made in the initialization list does
+  // not copy all settings of the passed RooUnfold instance.
+  // The reg parameter needs to be manually set. CHECK if 
+  // other members need to be copied!
+  this->_unfolding->SetRegParm(unf->GetRegParm());
+
   this->_unfolding->SetVerbose(0);
   const RooUnfoldResponseT<RooFitHist,RooFitHist>* res = this->_unfolding->response();
   if(res){
@@ -1621,12 +1650,13 @@ RooUnfolding::RooFitHist* RooUnfoldSpec::makeHistogram(const HistContainer& sour
   return new RooUnfolding::RooFitHist(func,obs,gammas);
 }
 
-RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>* RooUnfoldSpec::unfold(Algorithm alg){
+RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>* RooUnfoldSpec::unfold(Algorithm alg, Double_t regparam){
   RooUnfolding::RooFitHist* res = this->makeHistogram(this->_res,this->_errorThreshold);
   RooUnfolding::RooFitHist* truth = this->makeHistogram(this->_truth,this->_errorThreshold);
   RooUnfolding::RooFitHist* reco = this->makeHistogram(this->_reco,this->_errorThreshold);
 
   RooFitUnfoldResponse* response = new RooFitUnfoldResponse(this->GetName(),this->GetTitle(),res,truth,reco,this->_useDensity);
+
   RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>* unfolding = 0;
   RooUnfolding::RooFitHist* data_minus_bkg = 0;  
   if(this->_bkg._nom){
@@ -1637,7 +1667,9 @@ RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>* RooUnfoldSpec::un
   TString name(TString::Format("%s_data_minus_bkg",this->GetName()));
   data_minus_bkg->func()->SetName(name);
   data_minus_bkg->func()->SetTitle(name);
-  unfolding = RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>::New(alg,response,data_minus_bkg);
+
+  unfolding = RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>::New(alg,response,data_minus_bkg,regparam);
+
   return unfolding;
 }
 
@@ -1712,12 +1744,12 @@ void RooUnfoldSpec::registerSystematic(Contribution c, const char* name, double 
 
 
 
-RooAbsPdf* RooUnfoldSpec::makePdf(Algorithm alg){
-  RooUnfoldPdf* pdf = new RooUnfoldPdf(this->GetName(),this->GetTitle(),this->unfold(alg));
+RooAbsPdf* RooUnfoldSpec::makePdf(Algorithm alg, Double_t regparam){
+  RooUnfoldPdf* pdf = new RooUnfoldPdf(this->GetName(),this->GetTitle(),this->unfold(alg, regparam));
   return pdf;
 }
-RooAbsReal* RooUnfoldSpec::makeFunc(Algorithm alg){
-  RooUnfoldFunc* func = new RooUnfoldFunc(this->GetName(),this->GetTitle(),this->unfold(alg));
+RooAbsReal* RooUnfoldSpec::makeFunc(Algorithm alg, Double_t regparam){
+  RooUnfoldFunc* func = new RooUnfoldFunc(this->GetName(),this->GetTitle(),this->unfold(alg, regparam));
   return func;
 }
 
