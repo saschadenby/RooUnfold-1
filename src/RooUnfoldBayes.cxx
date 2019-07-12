@@ -69,7 +69,7 @@ RooUnfoldBayesT<Hist,Hist2D>::RooUnfoldBayesT (const RooUnfoldResponseT<Hist,His
                                 const char* name, const char* title)
   : _niter(niter), _smoothit(smoothit), RooUnfoldT<Hist,Hist2D> (res, meas, name, title)
 {
-  std::cout << "Normal constructor bayes" << std::endl;
+
   // Constructor with response matrix object and measured unfolding input histogram.
   // The regularisation parameter is niter (number of iterations).
   Init();
@@ -486,7 +486,7 @@ template<class Hist,class Hist2D>
 RooUnfoldBayesT<Hist,Hist2D>::RooUnfoldBayesT()
   : RooUnfoldT<Hist,Hist2D>()
 {
-  std::cout << "Default constructor" << std::endl;
+
   // Default constructor. Use Setup() to prepare for unfolding.]
   Init();
 }
@@ -554,7 +554,6 @@ const TMatrixD& RooUnfoldBayesT<Hist,Hist2D>::UnfoldingMatrix() const
 template<class Hist,class Hist2D>
 void  RooUnfoldBayesT<Hist,Hist2D>::SetRegParm (Double_t parm)
 {
-  std::cout << "Set reg parm: " << int(parm+0.5) << std::endl;
   // Set regularisation parameter (number of iterations)
   SetIterations(int(parm+0.5));
 }
