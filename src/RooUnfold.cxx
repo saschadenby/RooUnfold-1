@@ -1253,7 +1253,10 @@ template<class Base>RooUnfolding::RooFitWrapper<Base>::RooFitWrapper(const char*
   // not copy all settings of the passed RooUnfold instance.
   // The reg parameter needs to be manually set. CHECK if 
   // other members need to be copied!
-  this->_unfolding->SetRegParm(unf->GetRegParm());
+  
+  std::cout << "Reg parm new unfolding object: " << this->_unfolding->GetRegParm() << std::endl;
+
+  //this->_unfolding->SetRegParm(unf->GetRegParm());
 
   this->_unfolding->SetVerbose(0);
   const RooUnfoldResponseT<RooFitHist,RooFitHist>* res = this->_unfolding->response();

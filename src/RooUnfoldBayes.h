@@ -94,7 +94,7 @@ protected:
   mutable TMatrixD _dnCidPjk;     // response error propagation matrix (stack j,k into each column)
 
 public:
-  ClassDefT (RooUnfoldBayesT, 0) // Bayesian Unfolding
+  ClassDefT (RooUnfoldBayesT, 1) // Bayesian Unfolding
 };
 
 
