@@ -45,7 +45,7 @@ protected:
   mutable Cache _specialcache;  
 
 public:
-  ClassDefT (RooUnfoldBinByBinT, 0)  // Bin-by-bin unfolding
+  ClassDefT (RooUnfoldBinByBinT, 1)  // Bin-by-bin unfolding
 };
 
 typedef RooUnfoldBinByBinT<TH1,TH2> RooUnfoldBinByBin;
