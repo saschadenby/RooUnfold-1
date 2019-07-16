@@ -431,17 +431,26 @@ def main(args):
     
     # This line instantiates one of the subclasses specific to the unfolding algorithm.
     pdf = spec.makePdf(algorithm(args.method),4)
+
     theory = pdf.unfolding().response().makeHistFuncTruth(histograms["sig_theory"])
 
     # required to avoid python garbage collector messing up the RooDataHists added to gDirectory
     ROOT.gDirectory.Clear()
-
+    
     pdf.unfolding().PrintTable(ROOT.cout)
 
     ws = ROOT.RooWorkspace("workspace","workspace")
+
     getattr(ws,"import")(pdf)
+
     getattr(ws,"import")(theory)
+
     ws.Print("t")
+
+    # Explicitly free the memory that was allocated. PyROOT does not do this
+    # for you.
+    pdf.Delete()
+    theory.Delete()
 
   ws.writeToFile("unfolding.root")
 
@@ -449,7 +458,7 @@ def main(args):
     makePlots_HistFactory(ws)
   else:
     makePlots_RooUnfoldSpec(ws)
-  
+
 
   
 if __name__=="__main__":
