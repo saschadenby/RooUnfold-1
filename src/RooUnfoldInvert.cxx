@@ -97,9 +97,7 @@ RooUnfoldInvertT<Hist,Hist2D>::Unfold() const
   } else
     _svd= new TDecompSVD (res);
   double c = _svd->Condition();
-  if (c<0){
-    throw std::runtime_error(TString::Format("response matrix bad condition %g",c).Data());
-  }
+  if (c<0) cout << "WARNING: Response matrix is ill-conditioned. TDecompSVD condition number = " << c << endl;
 
   this->_cache._rec.ResizeTo(this->_nm);
   this->_cache._rec= this->Vmeasured();
