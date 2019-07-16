@@ -209,7 +209,6 @@ RooUnfoldT<Hist,Hist2D>::New (RooUnfolding::Algorithm alg, const RooUnfoldRespon
     return 0;
   }
 
-
   if (name)  unfold->SetName  (name);
   if (title) unfold->SetTitle (title);
   if (regparm != -1e30){
@@ -561,8 +560,11 @@ RooUnfoldT<Hist,Hist2D>::GetErrMat() const
 template<class Hist,class Hist2D> Bool_t
 RooUnfoldT<Hist,Hist2D>::UnfoldWithErrors (ErrorTreatment withError, bool getWeights) const
 {
+
   if (!_cache._unfolded) {
+
     if (_cache._fail) return false;
+
     const Hist* rmeas= _res->Hmeasured();
     if (dim(_meas) != dim(rmeas) ||
         nBins(_meas,X)    != nBins(rmeas,X)    ||
@@ -578,11 +580,13 @@ RooUnfoldT<Hist,Hist2D>::UnfoldWithErrors (ErrorTreatment withError, bool getWei
     }
 
     this->Unfold();
+
     if (!_cache._unfolded) {
       _cache._fail= true;
       return false;
     }
   }
+
   Bool_t ok;
   _cache._withError= withError;
   if (getWeights && (withError==kErrors || withError==kCovariance)) {
@@ -606,6 +610,7 @@ RooUnfoldT<Hist,Hist2D>::UnfoldWithErrors (ErrorTreatment withError, bool getWei
       ok= true;
     }
   }
+
   if (!ok) _cache._fail= true;
   
   return ok;
@@ -650,6 +655,7 @@ RooUnfoldT<Hist,Hist2D>::Chi2(const Hist* hTrue,ErrorTreatment DoChi2) const {
 template<class Hist,class Hist2D> void
 RooUnfoldT<Hist,Hist2D>::PrintTable (std::ostream& o, const Hist* hTrue, ErrorTreatment withError) const
 {
+
   // Prints entries from truth, measured, and reconstructed data for each bin.
   if (withError==kDefault) withError= _cache._withError;
   if (withError==kDefault) withError= kErrors;
@@ -662,7 +668,7 @@ RooUnfoldT<Hist,Hist2D>::PrintTable (std::ostream& o, const Hist* hTrue, ErrorTr
 
   int ntxb= nBins(_res->Htruth(),X)+2*this->_overflow;
   int ntyb= nBins(_res->Htruth(),Y)+2*this->_overflow;
-  
+
   int d = dim(_res->Htruth());
   if (!_cache._unfolded) return;
   Double_t chi_squ= -999.0;
@@ -1329,7 +1335,9 @@ template<class Base> Bool_t RooUnfolding::RooFitWrapper<Base>::redirectServersHo
 
 
 
-template<class Base>const RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>* RooUnfolding::RooFitWrapper<Base>::unfolding() const { return this->_unfolding; }
+template<class Base>const RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>* RooUnfolding::RooFitWrapper<Base>::unfolding() const { 
+  return this->_unfolding; 
+}
 
 template <class Base>
 std::list<Double_t>* RooUnfolding::RooFitWrapper<Base>::binBoundaries(RooAbsRealLValue& obs, Double_t xlo, Double_t xhi) const {
