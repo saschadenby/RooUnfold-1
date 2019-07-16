@@ -141,6 +141,7 @@ template<class Hist,class Hist2D>
 RooUnfoldT<Hist,Hist2D>::RooUnfoldT (const RooUnfoldResponseT<Hist,Hist2D>* res, const Hist* meas, const char* name, const char* title)
   : TNamed (name, title)
 {
+
   // Constructor with response matrix object and measured unfolding input histogram.
   // Should not normally be used directly - instead, create an instance of one of RooUnfold's subclasses,
   // or use the New() static constructor.
@@ -1248,16 +1249,7 @@ ClassImp (RooUnfoldT_RooFitHist);
 
 
 template<class Base>RooUnfolding::RooFitWrapper<Base>::RooFitWrapper(const char* name, const char* title, const RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>* unf) : Base(name,title), _unfolding((RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>*)(unf->Clone())) {
-
-  // The clone that is made in the initialization list does
-  // not copy all settings of the passed RooUnfold instance.
-  // The reg parameter needs to be manually set. CHECK if 
-  // other members need to be copied!
   
-  std::cout << "Reg parm new unfolding object: " << this->_unfolding->GetRegParm() << std::endl;
-
-  //this->_unfolding->SetRegParm(unf->GetRegParm());
-
   this->_unfolding->SetVerbose(0);
   const RooUnfoldResponseT<RooFitHist,RooFitHist>* res = this->_unfolding->response();
   if(res){
@@ -1303,6 +1295,7 @@ RooUnfoldFunc::RooUnfoldFunc(const char* name, const char* title, const RooUnfol
 RooUnfoldPdf::RooUnfoldPdf(const char* name, const char* title, const RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>* unf) : RooFitWrapper(name,title,unf) {}
 template<class Base>RooUnfolding::RooFitWrapper<Base>::RooFitWrapper() : _unfolding(NULL) {};
 template<class Base>RooUnfolding::RooFitWrapper<Base>::~RooFitWrapper(){
+  
   delete _unfolding;
 }
 template<class Base> Bool_t RooUnfolding::RooFitWrapper<Base>::redirectServersHook(const RooAbsCollection& newServerList, Bool_t mustReplaceAll, Bool_t nameChange, Bool_t isRecursive){
@@ -1441,10 +1434,11 @@ TObject* RooUnfoldFunc::clone(const char* newname) const {
 ClassImp (RooUnfoldFunc);
 RooUnfoldPdf::RooUnfoldPdf() : RooFitWrapper() {
 }
-RooUnfoldPdf::~RooUnfoldPdf() {
-}
+RooUnfoldPdf::~RooUnfoldPdf( ) {}
 TObject* RooUnfoldPdf::clone(const char* newname) const {
+
   RooUnfoldPdf* retval = new RooUnfoldPdf(newname ? newname : this->GetName(),this->GetTitle(),this->_unfolding);
+  
   return retval;
 }
 ClassImp (RooUnfoldPdf);
@@ -1748,11 +1742,20 @@ void RooUnfoldSpec::registerSystematic(Contribution c, const char* name, double 
 
 
 RooAbsPdf* RooUnfoldSpec::makePdf(Algorithm alg, Double_t regparam){
-  RooUnfoldPdf* pdf = new RooUnfoldPdf(this->GetName(),this->GetTitle(),this->unfold(alg, regparam));
+
+  RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>* unfold = this->unfold(alg, regparam);
+
+  RooUnfoldPdf* pdf = new RooUnfoldPdf(this->GetName(),this->GetTitle(),unfold);
+
+  delete unfold;
   return pdf;
 }
 RooAbsReal* RooUnfoldSpec::makeFunc(Algorithm alg, Double_t regparam){
+  RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>* unfold = this->unfold(alg, regparam);
+
   RooUnfoldFunc* func = new RooUnfoldFunc(this->GetName(),this->GetTitle(),this->unfold(alg, regparam));
+
+  delete unfold;
   return func;
 }
 
