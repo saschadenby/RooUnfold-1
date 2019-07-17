@@ -1519,6 +1519,7 @@ RooUnfoldSpec::RooUnfoldSpec(const char* name, const char* title, const TH1* tru
   if(d!=dim(reco)){
     throw std::runtime_error("inconsistent dimensionality between truth and reco histograms!");
   }
+
   TString obs_truth_s(obs_truth);
   TString obs_reco_s(obs_reco);
   std::vector<TString> obs_truth_v;
@@ -1582,6 +1583,17 @@ void RooUnfoldSpec::setup(const TH1* truth_th1, const RooArgList& obs_truth, con
 
 RooUnfoldSpec::~RooUnfoldSpec(){
 }
+
+RooUnfolding::RooFitHist* RooUnfoldSpec::makeHistogram(const TH1* hist){
+  
+  //RooHistFunc* hf = RooUnfolding::makeHistFunc(hist, this->_obs_truth, this->_includeUnderflowOverflow, this->_useDensity);
+
+  //std::vector<RooRealVar*> gammas = RooUnfolding::createGammas(&(hf->dataHist()),this->_obs_truth,this->_errorThreshold);
+  
+  return new RooUnfolding::RooFitHist(hist, this->_obs_truth, this->_includeUnderflowOverflow, this->_errorThreshold, this->_useDensity);
+  //return RooUnfolding::RooFitHist(hf, this->_obs_truth, this->_errorThreshold);
+}
+
 
 RooUnfolding::RooFitHist* RooUnfoldSpec::makeHistogram(const HistContainer& source, double errorThreshold){
   RooHistFunc* hf = source._nom;
