@@ -13,6 +13,7 @@
 infname = "hist_tmp.root"
 
 def prepare(smear,write):
+
   import ROOT
 
   response= ROOT.RooUnfoldResponse (40, -10.0, 10.0);
@@ -38,6 +39,7 @@ def prepare(smear,write):
     xt2= ROOT.gRandom.BreitWigner (0.3, 2.5);
     x2 = smear(xt2)
     sig_theory.Fill(xt2)
+
     if x2!=None: sigbkg_reco.Fill(x2)
       
   #  Test with a Gaussian, mean 0 and width 2.
@@ -261,8 +263,9 @@ def makeFinalWorkspace(method,mainws,auxws,regparm):
     unfold= ROOT.RooFitUnfoldIds     (unfold_response, sig_reco_dataset, regparm);     #  OR      
   
   sig_theory_hist = unfold_response.makeHist(sig_theory)
+
   unfold.PrintTable(ROOT.cout,sig_theory_hist)
-  
+
   unfoldpdf = ROOT.RooUnfoldPdf("unfolding","unfolding",unfold)
   components = ROOT.RooArgList()
   components.add(unfoldpdf)
@@ -427,7 +430,7 @@ def main(args):
   else:
     histograms = prepare(smear,True)
 
-    spec = ROOT.RooUnfoldSpec("unfold","unfold",histograms["sig_theory_alt"],"obs_truth",histograms["sig_reco"],"obs_reco",histograms["sig_response"],histograms["bkg_reco"],histograms["sigbkg_reco"],False,0.0005)
+    spec = ROOT.RooUnfoldSpec("unfold","unfold",histograms["sig_theory"],"obs_truth",histograms["sig_reco"],"obs_reco",histograms["sig_response"],histograms["bkg_reco"],histograms["sigbkg_reco"],False,0.0005)
     
     # This line instantiates one of the subclasses specific to the unfolding algorithm.
     pdf = spec.makePdf(algorithm(args.method),args.regparm)
@@ -436,8 +439,10 @@ def main(args):
 
     # required to avoid python garbage collector messing up the RooDataHists added to gDirectory
     ROOT.gDirectory.Clear()
-    
-    pdf.unfolding().PrintTable(ROOT.cout)
+
+    test_truth = spec.makeHistogram(histograms["sig_theory"])
+
+    pdf.unfolding().PrintTable(ROOT.cout, test_truth)
 
     ws = ROOT.RooWorkspace("workspace","workspace")
 
