@@ -1566,7 +1566,7 @@ RooUnfoldSpec::RooUnfoldSpec(const char* name, const char* title, const TH1* tru
   this->setup(truth_th1,obs_truth,reco_th1,obs_reco,response_th1,bkg,data,includeUnderflowOverflow,errorThreshold,useDensity);
 }
 
-void RooUnfoldSpec::setup(const TH1* truth_th1, const RooArgList& obs_truth, const TH1* reco_th1, const RooArgList& obs_reco, const TH2* response_th1, const TH1* bkg_th1, const TH1* data_th1, bool includeUnderflowOverflow, double errorThreshold, bool useDensity){
+void RooUnfoldSpec::setup(const TH1* truth_th1, const RooArgList& obs_truth, const TH1* reco_th1, const RooArgList& obs_reco, const TH2* response_th1,  const TH1* bkg_th1, const TH1* data_th1, bool includeUnderflowOverflow, double errorThreshold, bool useDensity){
   this->_includeUnderflowOverflow = includeUnderflowOverflow;
   this->_useDensity = useDensity;
   this->_errorThreshold = errorThreshold;

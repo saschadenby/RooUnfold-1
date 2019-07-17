@@ -19,11 +19,16 @@ def prepare(smear,write):
   response= ROOT.RooUnfoldResponse (40, -10.0, 10.0);
 
   nevents = 100000
-
+  
+  # The histograms that are used to validate the unfolding result.
   sig_theory= ROOT.TH1D ("sig_theory", "Test Truth",    40, -10.0, 10.0);
   sig_theory_alt= ROOT.TH1D ("sig_theory_alt", "Test Truth",    40, -10.0, 10.0);
+
+  # The histograms that will be unfolded.
   sigbkg_reco= ROOT.TH1D ("sigbkg_reco", "Test Measured", 40, -10.0, 10.0);
   sigbkg_reco_alt= ROOT.TH1D ("sigbkg_reco_alt", "Test Measured", 40, -10.0, 10.0);
+  
+  # The histogram containing the background that is needed for the unfolding.
   bkg_reco= ROOT.TH1D ("bkg", "Test Bkg",    40, -10.0, 10.0);
 
 
@@ -430,7 +435,7 @@ def main(args):
   else:
     histograms = prepare(smear,True)
 
-    spec = ROOT.RooUnfoldSpec("unfold","unfold",histograms["sig_theory"],"obs_truth",histograms["sig_reco"],"obs_reco",histograms["sig_response"],histograms["bkg_reco"],histograms["sigbkg_reco"],False,0.0005)
+    spec = ROOT.RooUnfoldSpec("unfold","unfold",histograms["sig_truth"],"obs_truth",histograms["sig_reco"],"obs_reco",histograms["sig_response"],histograms["bkg_reco"],histograms["sigbkg_reco"],False,0.0005,False)
     
     # This line instantiates one of the subclasses specific to the unfolding algorithm.
     pdf = spec.makePdf(algorithm(args.method),args.regparm)
