@@ -481,8 +481,10 @@ RooUnfoldT<Hist,Hist2D>::SetResponse (const RooUnfoldResponseT<Hist,Hist2D>* res
 template<class Hist,class Hist2D> void
 RooUnfoldT<Hist,Hist2D>::Unfold() const
 {
+
   // Dummy unfolding - just copies input
   cout << "********************** " << ClassName() << ": dummy unfolding - just copy input **********************" << endl;
+
   _cache._rec.ResizeTo (_nt);
   Int_t nb= _nm < _nt ? _nm : _nt;
   TVectorD vmeas(Vmeasured());
@@ -1585,13 +1587,8 @@ RooUnfoldSpec::~RooUnfoldSpec(){
 }
 
 RooUnfolding::RooFitHist* RooUnfoldSpec::makeHistogram(const TH1* hist){
-  
-  //RooHistFunc* hf = RooUnfolding::makeHistFunc(hist, this->_obs_truth, this->_includeUnderflowOverflow, this->_useDensity);
-
-  //std::vector<RooRealVar*> gammas = RooUnfolding::createGammas(&(hf->dataHist()),this->_obs_truth,this->_errorThreshold);
-  
+    
   return new RooUnfolding::RooFitHist(hist, this->_obs_truth, this->_includeUnderflowOverflow, this->_errorThreshold, this->_useDensity);
-  //return RooUnfolding::RooFitHist(hf, this->_obs_truth, this->_errorThreshold);
 }
 
 
@@ -1668,6 +1665,7 @@ RooUnfolding::RooFitHist* RooUnfoldSpec::makeHistogram(const HistContainer& sour
 }
 
 RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>* RooUnfoldSpec::unfold(Algorithm alg, Double_t regparam){
+
   RooUnfolding::RooFitHist* res = this->makeHistogram(this->_res,this->_errorThreshold);
   RooUnfolding::RooFitHist* truth = this->makeHistogram(this->_truth,this->_errorThreshold);
   RooUnfolding::RooFitHist* reco = this->makeHistogram(this->_reco,this->_errorThreshold);
