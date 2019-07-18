@@ -223,7 +223,6 @@ public:
   RooAbsReal* makeFunc(RooUnfolding::Algorithm alg, Double_t regparam);
   RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>* unfold(RooUnfolding::Algorithm alg, Double_t regparam);
   RooUnfolding::RooFitHist* makeHistogram(const TH1* hist);
-  
 protected:
   void setup(const TH1* truth_th1, const RooArgList& obs_truth, const TH1* reco_th1, const RooArgList& obs_reco, const TH2* response_th1, const TH1* bkg_th1, const TH1* data_th1, bool includeUnderflowOverflow, double errorThreshold = -1, bool useDensity = false);
   ClassDef(RooUnfoldSpec,1)
