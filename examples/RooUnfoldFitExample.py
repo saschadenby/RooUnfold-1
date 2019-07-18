@@ -290,11 +290,89 @@ def makeFinalWorkspace(method,mainws,auxws,regparm):
 
   return ws
 
+    
+def makePlots(outdir,ws,obsname,hist_truth,hist_reco,label):
+  import ROOT
+
+  unfoldpdf = ws.pdf("unfold")
+  unfolding = unfoldpdf.unfolding()
+
+  sig_truth = ws.function("sig_theory")
+  sig_reco = ws.function("sig_reco")
+  data_minus_bkg_reco = ws.function("unfold_data_minus_bkg")
+  bkg_reco = ws.function("bkg_reco")
+  asm_reco = ws.function("asm_reco")
+
+  allVars = ROOT.RooArgList(ws.allVars())
+  sysVars = ROOT.RooArgList()
+
+  obs_var = ws.var("obs_truth")
+  
+
+  for v in allVars:
+
+    if "alpha_" in v.GetName():
+      sysVars.add(v)
+
+  prefit_all = ROOT.RooFitResult.prefitResult(allVars)
+  prefit_sys = ROOT.RooFitResult.prefitResult(sysVars)
+  obs_truth = ws.var(obsname+"_truth")
+  plot_truth = obs_truth.frame(ROOT.RooFit.Title(obs_truth.GetTitle() +", "+label))
+  plot_truth.SetYTitle("Number of Events")
+  plot_truth.SetMinimum(0)
+  copyBinning(hist_truth,plot_truth)  
+  nexp = unfoldpdf.expectedEvents(0)
+  unfoldpdf.plotOn(plot_truth,ROOT.RooFit.Invisible(),ROOT.RooFit.DrawOption("P"))
+  unfoldpdf.plotOn(plot_truth,ROOT.RooFit.LineColor(0),ROOT.RooFit.FillColor(ROOT.kGray),ROOT.RooFit.FillStyle(1001),ROOT.RooFit.Name("unfold_graph_sys"),ROOT.RooFit.VisualizeError(prefit_sys),
+                   ROOT.RooFit.Normalization(nexp,ROOT.RooAbsReal.NumEvent),ROOT.RooFit.NormRange("full"))
+  unfoldpdf.plotOn(plot_truth,ROOT.RooFit.LineColor(ROOT.kBlack),ROOT.RooFit.Name("unfold_graph"),ROOT.RooFit.MarkerColor(ROOT.kBlack),ROOT.RooFit.MarkerSize(1),ROOT.RooFit.MarkerStyle(20),ROOT.RooFit.DrawOption("P"),ROOT.RooFit.VisualizeError(prefit_all),
+                   ROOT.RooFit.Normalization(nexp,ROOT.RooAbsReal.NumEvent),ROOT.RooFit.NormRange("full"))
+  sig_truth.plotOn(plot_truth,ROOT.RooFit.LineColor(ROOT.kRed),ROOT.RooFit.FillColor(ROOT.kRed),ROOT.RooFit.FillStyle(3345),ROOT.RooFit.Name("sig_truth_graph"),
+                   ROOT.RooFit.Normalization(nexp,ROOT.RooAbsReal.NumEvent),ROOT.RooFit.NormRange("full"))
+  canvas_truth = ROOT.TCanvas("unfolded","unfolded")
+  plot_truth.Draw()
+  leg_truth = ROOT.TLegend(0.7, 0.7, 0.9, 0.9)
+  leg_truth.SetLineWidth(0)
+  leg_truth.SetFillStyle(0)
+  leg_truth.AddEntry( plot_truth.findObject("sig_truth_graph"), "Theory Prediction", "l" )
+  leg_truth.AddEntry( plot_truth.findObject("unfold_graph"), "Unfolded Signal", "pe" )
+  leg_truth.AddEntry( plot_truth.findObject("unfold_graph_sys"), "Unfolded Signal, Sys. Uncertainty", "f" )  
+  leg_truth.Draw()
+  canvas_truth.SaveAs(pjoin(outdir,"unfolded.pdf"))
+  canvas_truth.SaveAs(pjoin(outdir,"unfolded.root"))
+  canvas_truth.SaveAs(pjoin(outdir,"unfolded.C"))
+  canvas_truth.SaveAs(pjoin(outdir,"unfolded.png"))
+  
+  obs_reco = ws.var(obsname+"_reco")
+  plot_reco = obs_reco.frame(ROOT.RooFit.Title(obs_reco.GetTitle() +", "+label))
+  plot_reco.SetYTitle("Number of Events")
+  plot_reco.SetMinimum(0)
+  copyBinning(hist_reco,plot_reco)
+  data_minus_bkg_reco.plotOn(plot_reco,ROOT.RooFit.Name("data_minus_bkg_reco_graph"),
+                             ROOT.RooFit.MarkerColor(1),ROOT.RooFit.MarkerSize(1),ROOT.RooFit.MarkerStyle(20),ROOT.RooFit.DrawOption("P"),ROOT.RooFit.VisualizeError(prefit_all))
+  sig_reco.plotOn           (plot_reco,ROOT.RooFit.LineColor(ROOT.kRed),ROOT.RooFit.Name("sig_reco_graph"),ROOT.RooFit.Normalization(hist_reco.Integral(),ROOT.RooAbsReal.NumEvent),ROOT.RooFit.NormRange("full"))
+  canvas_reco = ROOT.TCanvas("reco","reco")
+  plot_reco.Draw()
+  leg_reco = ROOT.TLegend(0.7, 0.8, 0.9, 0.9)
+  leg_reco.SetLineWidth(0)
+  leg_reco.SetFillStyle(0)
+  leg_reco.AddEntry( plot_reco.findObject("data_minus_bkg_reco_graph"), "Background Subtracted Data", "pe" )
+  leg_reco.AddEntry( plot_reco.findObject("sig_reco_graph"), "Signal Reco Monte Carlo", "l" )
+  leg_reco.Draw()
+  canvas_reco.SaveAs(pjoin(outdir,"reco.pdf"))
+  canvas_reco.SaveAs(pjoin(outdir,"reco.C"))    
+  canvas_reco.SaveAs(pjoin(outdir,"reco.root"))  
+  canvas_reco.SaveAs(pjoin(outdir,"reco.png"))
+
+
+
 def makePlots_HistFactory(ws):
   import ROOT
 
   unfoldpdf = ws.pdf("unfolding")
+  
   unfolding = unfoldpdf.unfolding()
+
 
   sig_response = ws.function("sig_response")
   sig_theory = ws.function("sig_theory")
@@ -336,8 +414,9 @@ def makePlots_RooUnfoldSpec(ws):
   import ROOT
 
   unfoldpdf = ws.pdf("unfold")
+  
   unfolding = unfoldpdf.unfolding()
-
+  
   sig_response = ws.function("response")
   sig_theory = ws.function("sig_theory")
   sigbkg_reco = ws.function("sigbkg_reco")
@@ -347,13 +426,16 @@ def makePlots_RooUnfoldSpec(ws):
 
   obs_truth = ws.var("obs_truth")
   plot_truth = obs_truth.frame()
+  nexp = unfoldpdf.expectedEvents(0)
+
   sig_theory.plotOn(plot_truth,ROOT.RooFit.LineColor(ROOT.kRed),ROOT.RooFit.Name("sig_theory_graph"))
-  unfoldpdf.plotOn(plot_truth,ROOT.RooFit.Name("unfoldedpdf_graph"))
+  unfoldpdf.plotOn(plot_truth,ROOT.RooFit.LineColor(ROOT.kBlue),ROOT.RooFit.Name("unfolded_data_graph"))
+  #unfoldpdf.plotOn(plot_truth,ROOT.RooFit.Name("unfoldedpdf_graph"),ROOT.RooFit.Normalization(nexp,ROOT.RooAbsReal.NumEvent),ROOT.RooFit.NormRange("full"))
   canvas_truth = ROOT.TCanvas("unfolded","unfolded")
   plot_truth.Draw()
   leg_truth = ROOT.TLegend(0.1, 0.8, 0.3, 0.9)
   leg_truth.AddEntry( plot_truth.findObject("sig_theory_graph"), "Theory Prediction", "l" )
-  leg_truth.AddEntry( plot_truth.findObject("unfoldedpdf_graph"), "Unfolded Signal", "l" )
+  leg_truth.AddEntry( plot_truth.findObject("unfolded_data_graph"), "Unfolded Signal", "l" )
   leg_truth.Draw()
   canvas_truth.SaveAs("unfolded.pdf")
   canvas_truth.SaveAs("unfolded.png")
@@ -463,12 +545,12 @@ def main(args):
     theory.Delete()
 
   ws.writeToFile("unfolding.root")
-
+  
   if args.mode == "HistFactory":
     makePlots_HistFactory(ws)
   else:
     makePlots_RooUnfoldSpec(ws)
-
+  
 
   
 if __name__=="__main__":
