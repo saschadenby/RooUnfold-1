@@ -5,11 +5,11 @@
 // For support, contact: chris.meyer@cern.ch
 
 #include "RooUnfoldIds.h"
-#include "RooUnfoldResponse.h"
-
-#include "RooUnfoldHelpers.h"
 #include "RooUnfoldTH1Helpers.h"
-using namespace RooUnfolding;
+#ifndef NOROOFIT
+#include "RooUnfoldFitHelpers.h"
+#endif
+
 
 #include <iostream>
 
@@ -19,11 +19,17 @@ using namespace RooUnfolding;
 #include "TMath.h"
 #include "TH2D.h"
 
+#include "RooUnfoldHelpers.h"
+#include "RooUnfoldResponse.h"
+
+using namespace RooUnfolding;
+
 ClassImp(RooUnfoldIds)
 
 //______________________________________________________________________________
-RooUnfoldIds::RooUnfoldIds(const RooUnfoldIds &rhs)
-: RooUnfold(rhs)
+template<class Hist,class Hist2D>
+RooUnfoldIdsT<Hist,Hist2D>::RooUnfoldIdsT(const RooUnfoldIdsT &rhs)
+: RooUnfoldT<Hist,Hist2D>(rhs)
 {
    // Copy constructor
    Init();
@@ -31,8 +37,9 @@ RooUnfoldIds::RooUnfoldIds(const RooUnfoldIds &rhs)
 }
 
 //______________________________________________________________________________
-RooUnfoldIds::RooUnfoldIds(const RooUnfoldResponseT<TH1,TH2> *res, const TH1 *meas, Int_t niter)
-: RooUnfold(res, meas)
+template<class Hist,class Hist2D>
+RooUnfoldIdsT<Hist,Hist2D>::RooUnfoldIdsT(const RooUnfoldResponseT<Hist,Hist2D> *res, const Hist *meas, Int_t niter, const char* name, const char* title)
+: RooUnfoldT<Hist,Hist2D>(res, meas)
 , _niter(niter)
 , _lambdaL(0.)
 , _lambdaUmin(0.5)
@@ -43,27 +50,28 @@ RooUnfoldIds::RooUnfoldIds(const RooUnfoldResponseT<TH1,TH2> *res, const TH1 *me
    Init();
 }
 
-//______________________________________________________________________________
-RooUnfoldIds*
-RooUnfoldIds::Clone(const char *newname) const
-{
-   RooUnfoldIds *unfold = new RooUnfoldIds(*this);
-   if (newname && strlen(newname)) unfold->SetName(newname);
-   return unfold;
-}
+// //______________________________________________________________________________
+// RooUnfoldIds*
+// RooUnfoldIdsT<Hist,Hist2D>::Clone(const char *newname) const
+// {
+//    RooUnfoldIds *unfold = new RooUnfoldIdsT(*this);
+//    if (newname && strlen(newname)) unfold->SetName(newname);
+//    return unfold;
+// }
 
-//______________________________________________________________________________
-void
-RooUnfoldIds::Reset()
+// //______________________________________________________________________________
+
+template<class Hist,class Hist2D> void
+RooUnfoldIdsT<Hist,Hist2D>::Reset()
 {
    Destroy();
    Init();
-   RooUnfold::Reset();
+   RooUnfoldT<Hist,Hist2D>::Reset();
 }
 
 //______________________________________________________________________________
-void
-RooUnfoldIds::Destroy()
+template<class Hist,class Hist2D> void
+RooUnfoldIdsT<Hist,Hist2D>::Destroy()
 {
    delete _meas1d;
    delete _train1d;
@@ -72,25 +80,25 @@ RooUnfoldIds::Destroy()
 }
 
 //______________________________________________________________________________
-void
-RooUnfoldIds::Init()
+template<class Hist,class Hist2D> void
+RooUnfoldIdsT<Hist,Hist2D>::Init()
 {
    _meas1d = _train1d = _truth1d = 0;
    _reshist = 0;
-   GetSettings();
+   this->GetSettings();
 }
 
 //______________________________________________________________________________
-void
-RooUnfoldIds::Assign(const RooUnfoldIds &rhs)
+template<class Hist,class Hist2D> void
+RooUnfoldIdsT<Hist,Hist2D>::Assign(const RooUnfoldIdsT &rhs)
 {
-   RooUnfold::Assign(rhs);
-   CopyData(rhs);
+  RooUnfoldT<Hist,Hist2D>::Assign(rhs);
+  CopyData(rhs);
 }
 
 //______________________________________________________________________________
-void
-RooUnfoldIds::CopyData(const RooUnfoldIds &rhs)
+template<class Hist,class Hist2D>void
+RooUnfoldIdsT<Hist,Hist2D>::CopyData(const RooUnfoldIdsT&rhs)
 {
    _niter = rhs._niter;
    _lambdaL = rhs._lambdaL;
@@ -101,29 +109,30 @@ RooUnfoldIds::CopyData(const RooUnfoldIds &rhs)
 
 namespace{
   TH1* histNoOverflow(const TH1* hist, bool overflow){
-    return createHist<TH1>(h2v<TH1>(hist,overflow),h2ve<TH1>(hist,overflow),hist->GetName(),hist->GetTitle(),vars(hist),overflow);
+    return createHist<TH1>(h2v(hist,overflow),h2ve(hist,overflow),hist->GetName(),hist->GetTitle(),vars(hist),overflow);
   }
 }
   
 //______________________________________________________________________________
-void
-RooUnfoldIds::Unfold() const
+
+template<>void
+RooUnfoldIdsT<TH1,TH2>::Unfold() const
 {
    // Data and MC reco/truth must have the same number of bins
-   if (_res->HasFakes()) {
-      _nb = _nt+1;
-      if (_nm>_nb) _nb = _nm;
+   if (this->_res->HasFakes()) {
+      _nb = this->_nt+1;
+      if (this->_nm>_nb) _nb = this->_nm;
    } else {
-      _nb = _nm > _nt ? _nm : _nt;
+      _nb = this->_nm > this->_nt ? this->_nm : this->_nt;
    }
 
    Bool_t oldstat= TH1::AddDirectoryStatus();
    TH1::AddDirectory (kFALSE);
 
-   _meas1d  = ::histNoOverflow(_meas            , _overflow); // data
-   _train1d = ::histNoOverflow(_res->Hmeasured(), _overflow); // reco
-   _truth1d = ::histNoOverflow(_res->Htruth()   , _overflow); // true
-   _reshist = _res->HresponseNoOverflow();
+   TH1* _meas1d  = ::histNoOverflow(this->_meas            , this->_overflow); // data
+   TH1* _train1d = ::histNoOverflow(this->_res->Hmeasured(), this->_overflow); // reco
+   TH1* _truth1d = ::histNoOverflow(this->_res->Htruth()   , this->_overflow); // true
+   TH2* _reshist = this->_res->HresponseNoOverflow();
 
    RooUnfolding::resize(_meas1d,  _nb);
    RooUnfolding::resize(_train1d, _nb);
@@ -131,34 +140,34 @@ RooUnfoldIds::Unfold() const
    RooUnfolding::resize(_reshist, _nb, _nb);
 
    // Something about fakes here?
-   if (_res->HasFakes()) {
-      TVectorD fakes = _res->Vfakes();
+   if (this->_res->HasFakes()) {
+      TVectorD fakes = this->_res->Vfakes();
       Double_t nfakes = fakes.Sum();
-      if (_verbose >= 1) std::cout << "Add truth bin for " << nfakes << " fakes" << std::endl;
-      for (Int_t i = 0; i < _nm; ++i) _reshist->SetBinContent(i+1, _nt+1, fakes[i]);
-      _truth1d->SetBinContent(_nt+1, nfakes);
+      if (this->_verbose >= 1) std::cout << "Add truth bin for " << nfakes << " fakes" << std::endl;
+      for (Int_t i = 0; i < this->_nm; ++i) _reshist->SetBinContent(i+1, this->_nt+1, fakes[i]);
+      _truth1d->SetBinContent(this->_nt+1, nfakes);
    }
 
-   if (_verbose >= 1) std::cout << "IDS init " << _reshist->GetNbinsX() << " x " << _reshist->GetNbinsY() << std::endl;
+   if (this->_verbose >= 1) std::cout << "IDS init " << _reshist->GetNbinsX() << " x " << _reshist->GetNbinsY() << std::endl;
 
    // Perform IDS unfolding
    TH1 *rechist = dynamic_cast<TH1*>(GetIDSUnfoldedSpectrum(_train1d, _truth1d, _reshist, _meas1d, _niter));
 
-   _cache._rec.ResizeTo(_nt);
-   for (Int_t i = 0; i < _nt; ++i) {
-     _cache._rec[i] = rechist->GetBinContent(i+1);
+   this->_cache._rec.ResizeTo(this->_nt);
+   for (Int_t i = 0; i < this->_nt; ++i) {
+     this->_cache._rec[i] = rechist->GetBinContent(i+1);
    }
 
    delete rechist;
    TH1::AddDirectory(oldstat);
 
-   _cache._unfolded = kTRUE;
-   _cache._haveCov = kFALSE;
+   this->_cache._unfolded = kTRUE;
+   this->_cache._haveCov = kFALSE;
 }
 
 //______________________________________________________________________________
-void
-RooUnfoldIds::GetCov() const
+template<class Hist,class Hist2D>void
+RooUnfoldIdsT<Hist,Hist2D>::GetCov() const
 {
    if (!_meas1d) return;
 
@@ -166,20 +175,20 @@ RooUnfoldIds::GetCov() const
    TH1::AddDirectory(kFALSE);
 
    TH2 *meascov = new TH2D("meascov", "meascov", _nb, 0.0, 1.0, _nb, 0.0, 1.0);
-   const TMatrixD& cov = GetMeasuredCov();
-   for (Int_t i = 0; i < _nm; ++i)
-     for (Int_t j = 0; j < _nm; ++j)
+   const TMatrixD& cov = this->GetMeasuredCov();
+   for (Int_t i = 0; i < this->_nm; ++i)
+     for (Int_t j = 0; j < this->_nm; ++j)
        meascov->SetBinContent(i+1, j+1, cov(i,j));
 
    // Need to fill _cov with unfolded result
-   TH2 *unfoldedCov = GetUnfoldCovMatrix(meascov, _NToys);
-   TH2 *adetCov     = GetAdetCovMatrix(_NToys);
+   TH2 *unfoldedCov = GetUnfoldCovMatrix(meascov, this->_NToys);
+   TH2 *adetCov     = GetAdetCovMatrix(this->_NToys);
 
 
-   _cache._cov.ResizeTo(_nt, _nt);
-   for (Int_t i = 0; i < _nt; i++) {
-      for (Int_t j = 0; j < _nt; ++j) {
-         _cache._cov(i,j) = unfoldedCov->GetBinContent(i+1, j+1) + adetCov->GetBinContent(i+1, j+1);
+   this->_cache._cov.ResizeTo(this->_nt, this->_nt);
+   for (Int_t i = 0; i < this->_nt; i++) {
+      for (Int_t j = 0; j < this->_nt; ++j) {
+         this->_cache._cov(i,j) = unfoldedCov->GetBinContent(i+1, j+1) + adetCov->GetBinContent(i+1, j+1);
       }
    }
 
@@ -188,12 +197,12 @@ RooUnfoldIds::GetCov() const
    delete meascov;
    TH1::AddDirectory(oldstat);
 
-   _cache._haveCov = kTRUE;
+   this->_cache._haveCov = kTRUE;
 }
 
 //______________________________________________________________________________
-TH2*
-RooUnfoldIds::GetUnfoldCovMatrix(const TH2 *cov, Int_t ntoys, Int_t seed) const
+template<>TH2*
+RooUnfoldIdsT<TH1,TH2>::GetUnfoldCovMatrix(const TH2 *cov, Int_t ntoys, Int_t seed) const
 {
    // Determine for given input error matrix covariance matrix of unfolded
    // spectrum from toy simulation given the passed covariance matrix on measured spectrum
@@ -202,10 +211,10 @@ RooUnfoldIds::GetUnfoldCovMatrix(const TH2 *cov, Int_t ntoys, Int_t seed) const
    // "seed"   - seed for pseudo experiments
    // Note that this covariance matrix will contain effects of forced normalisation if spectrum is normalised to unit area.
 
-   _meas1d  = ::histNoOverflow(_meas            , _overflow); // data
-   _train1d = ::histNoOverflow(_res->Hmeasured(), _overflow); // reco
-   _truth1d = ::histNoOverflow(_res->Htruth()   , _overflow); // true
-   _reshist = _res->HresponseNoOverflow();
+   TH1* _meas1d  = ::histNoOverflow(this->_meas            , this->_overflow); // data
+   TH1* _train1d = ::histNoOverflow(this->_res->Hmeasured(), this->_overflow); // reco
+   TH1* _truth1d = ::histNoOverflow(this->_res->Htruth()   , this->_overflow); // true
+   TH2* _reshist = this->_res->HresponseNoOverflow();
 
    TH1* unfres = 0;
    TH2* unfcov = (TH2*)_reshist->Clone("unfcovmat");
@@ -293,18 +302,18 @@ RooUnfoldIds::GetUnfoldCovMatrix(const TH2 *cov, Int_t ntoys, Int_t seed) const
 }
 
 //______________________________________________________________________________
-TH2*
-RooUnfoldIds::GetAdetCovMatrix(Int_t ntoys, Int_t seed) const
+template<>TH2*
+RooUnfoldIdsT<TH1,TH2>::GetAdetCovMatrix(Int_t ntoys, Int_t seed) const
 {
    // Determine covariance matrix of unfolded spectrum from finite statistics in
    // response matrix using pseudo experiments
    // "ntoys"  - number of pseudo experiments used for the propagation
    // "seed"   - seed for pseudo experiments
 
-   _meas1d  = ::histNoOverflow(_meas            , _overflow); // data
-   _train1d = ::histNoOverflow(_res->Hmeasured(), _overflow); // reco
-   _truth1d = ::histNoOverflow(_res->Htruth()   , _overflow); // true
-   _reshist = _res->HresponseNoOverflow();
+   TH1* _meas1d  = ::histNoOverflow(this->_meas            , this->_overflow); // data
+   TH1 *_train1d = ::histNoOverflow(this->_res->Hmeasured(), this->_overflow); // reco
+   TH1* _truth1d = ::histNoOverflow(this->_res->Htruth()   , this->_overflow); // true
+   TH2* _reshist = this->_res->HresponseNoOverflow();
 
    TH1 *unfres = 0;
    TH2 *unfcov = (TH2*)_reshist->Clone("unfcovmat");
@@ -368,12 +377,18 @@ RooUnfoldIds::GetAdetCovMatrix(Int_t ntoys, Int_t seed) const
 }
 
 //______________________________________________________________________________
-TH1*
-RooUnfoldIds::GetIDSUnfoldedSpectrum(const TH1 *h_RecoMC, const TH1 *h_TruthMC, const TH2 *h_2DSmear, const TH1 *h_RecoData, Int_t iter) const
+template<class Hist,class Hist2D>Hist*
+RooUnfoldIdsT<Hist,Hist2D>::GetIDSUnfoldedSpectrum(const Hist *hist_RecoMC, const Hist *hist_TruthMC, const Hist2D *hist_2DSmear, const Hist *hist_RecoData, Int_t iter) const
 {
-   Int_t nbinsx = h_RecoData->GetNbinsX();
-   Int_t nbinsy = h_RecoData->GetNbinsY();
-   Int_t nbins  = nbinsx*nbinsy;
+
+  const TH1* h_RecoMC = (TH1*)(hist_RecoData);
+  const TH1* h_TruthMC = (TH1*)(hist_TruthMC);
+  const TH1* h_RecoData = (TH1*)(hist_RecoData);
+  const TH2* h_2DSmear = (TH2*)(hist_2DSmear);
+
+  Int_t nbinsx = h_RecoData->GetNbinsX();
+  Int_t nbinsy = h_RecoData->GetNbinsY();
+  Int_t nbins  = nbinsx*nbinsy;
 
    // Sanity checks
    if (h_TruthMC->GetNbinsX() != nbinsx || h_TruthMC->GetNbinsY() != nbinsy ||
@@ -459,12 +474,12 @@ RooUnfoldIds::GetIDSUnfoldedSpectrum(const TH1 *h_RecoMC, const TH1 *h_TruthMC, 
    }
 
    // Return result
-   return h_DataUnfolded;
+   return (Hist*)h_DataUnfolded;
 }
 
 //______________________________________________________________________________
-Double_t
-RooUnfoldIds::Probability( Double_t deviation, Double_t sigma, Double_t lambda ) const
+template<class Hist,class Hist2D>Double_t
+RooUnfoldIdsT<Hist,Hist2D>::Probability( Double_t deviation, Double_t sigma, Double_t lambda ) const
 {
    if( lambda < 0.00001 ){ return 1.;}
    if( lambda > 1000. ){ return 0.;}
@@ -472,8 +487,8 @@ RooUnfoldIds::Probability( Double_t deviation, Double_t sigma, Double_t lambda )
 }
 
 //______________________________________________________________________________
-Double_t
-RooUnfoldIds::MCnormalizationCoeff(const TVectorD *vd, const TVectorD *errvd, const TVectorD *vRecmc, const Int_t dim, const Double_t estNknownd, const Double_t Nmc, const Double_t lambda, const TVectorD *soustr_ ) const
+template<class Hist,class Hist2D>Double_t
+RooUnfoldIdsT<Hist,Hist2D>::MCnormalizationCoeff(const TVectorD *vd, const TVectorD *errvd, const TVectorD *vRecmc, const Int_t dim, const Double_t estNknownd, const Double_t Nmc, const Double_t lambda, const TVectorD *soustr_ ) const
 {
    Double_t Nknownd = estNknownd;
    for(Int_t i=0; i<dim; i++){
@@ -488,8 +503,8 @@ RooUnfoldIds::MCnormalizationCoeff(const TVectorD *vd, const TVectorD *errvd, co
 }
 
 //______________________________________________________________________________
-Double_t
-RooUnfoldIds::MCnormalizationCoeffIter(const TVectorD *vd, const TVectorD *errvd, const TVectorD *vRecmc, const Int_t dim, const Double_t estNknownd, const Double_t Nmc, const TVectorD *soustr_, Double_t lambdaN, Int_t NiterMax, Int_t messAct) const
+template<class Hist,class Hist2D>Double_t
+RooUnfoldIdsT<Hist,Hist2D>::MCnormalizationCoeffIter(const TVectorD *vd, const TVectorD *errvd, const TVectorD *vRecmc, const Int_t dim, const Double_t estNknownd, const Double_t Nmc, const TVectorD *soustr_, Double_t lambdaN, Int_t NiterMax, Int_t messAct) const
 {
    Double_t Nkd = 0., estNknownd_ = estNknownd;
    for(Int_t i=0; i<NiterMax; i++ ){
@@ -504,8 +519,8 @@ RooUnfoldIds::MCnormalizationCoeffIter(const TVectorD *vd, const TVectorD *errvd
 }
 
 //______________________________________________________________________________
-void
-RooUnfoldIds::IdsUnfold( const TVectorD &b, const TVectorD &errb, const TMatrixD &A, const Int_t dim, const Double_t lambda, TVectorD *soustr_, TVectorD *unf) const
+template<class Hist,class Hist2D>void
+RooUnfoldIdsT<Hist,Hist2D>::IdsUnfold( const TVectorD &b, const TVectorD &errb, const TMatrixD &A, const Int_t dim, const Double_t lambda, TVectorD *soustr_, TVectorD *unf) const
 {
    // compute the mc true and reco spectra and normalize them
    TVectorD reco_mcN(dim), true_mcN(dim);
@@ -560,8 +575,8 @@ RooUnfoldIds::IdsUnfold( const TVectorD &b, const TVectorD &errb, const TMatrixD
 }
 
 //______________________________________________________________________________
-void
-RooUnfoldIds::ComputeSoustrTrue( const TMatrixD *A, const TVectorD *unfres, const TVectorD *unfresErr, Int_t N, TVectorD *soustr_, Double_t lambdaS ) const
+template<class Hist,class Hist2D>void
+RooUnfoldIdsT<Hist,Hist2D>::ComputeSoustrTrue( const TMatrixD *A, const TVectorD *unfres, const TVectorD *unfresErr, Int_t N, TVectorD *soustr_, Double_t lambdaS ) const
 {
 
    TVectorD *true_mcT = new TVectorD(N), *active = new TVectorD(N);
@@ -605,8 +620,8 @@ RooUnfoldIds::ComputeSoustrTrue( const TMatrixD *A, const TVectorD *unfres, cons
 }
 
 //______________________________________________________________________________
-void
-RooUnfoldIds::ModifyMatrix( TMatrixD *Am, const TMatrixD *A, const TVectorD *unfres, const TVectorD *unfresErr, Int_t N, const Double_t lambdaM_, TVectorD *soustr_, const Double_t lambdaS_ ) const
+template<class Hist,class Hist2D>void
+RooUnfoldIdsT<Hist,Hist2D>::ModifyMatrix( TMatrixD *Am, const TMatrixD *A, const TVectorD *unfres, const TVectorD *unfresErr, Int_t N, const Double_t lambdaM_, TVectorD *soustr_, const Double_t lambdaS_ ) const
 {
    ComputeSoustrTrue( A, unfres, unfresErr, N, soustr_, lambdaS_ );
 
@@ -644,8 +659,8 @@ RooUnfoldIds::ModifyMatrix( TMatrixD *Am, const TMatrixD *A, const TVectorD *unf
 }
 
 //______________________________________________________________________________
-void
-RooUnfoldIds::PerformIterations(const TVectorD &data, const TVectorD &dataErr, const TMatrixD &A_, const Int_t &N_, const Double_t lambdaL_, const Int_t NstepsOptMin_, const Double_t lambdaU_, const Double_t lambdaM_, const Double_t lambdaS_, TVectorD* unfres1IDS_, TVectorD* unfres2IDS_) const
+template<class Hist,class Hist2D>void
+RooUnfoldIdsT<Hist,Hist2D>::PerformIterations(const TVectorD &data, const TVectorD &dataErr, const TMatrixD &A_, const Int_t &N_, const Double_t lambdaL_, const Int_t NstepsOptMin_, const Double_t lambdaU_, const Double_t lambdaM_, const Double_t lambdaS_, TVectorD* unfres1IDS_, TVectorD* unfres2IDS_) const
 {
    TVectorD soustr(N_);
    for (Int_t i = 0; i < N_; i++) soustr[i] = 0.;
@@ -664,8 +679,8 @@ RooUnfoldIds::PerformIterations(const TVectorD &data, const TVectorD &dataErr, c
 }
 
 //______________________________________________________________________________
-TMatrixD*
-RooUnfoldIds::GetSqrtMatrix( const TMatrixD& covMat )
+template<class Hist,class Hist2D>TMatrixD*
+RooUnfoldIdsT<Hist,Hist2D>::GetSqrtMatrix( const TMatrixD& covMat )
 {
    // production of square-root matrix (required for correlated random number generation)
    Double_t sum = 0;
@@ -696,8 +711,8 @@ RooUnfoldIds::GetSqrtMatrix( const TMatrixD& covMat )
 }
 
 //______________________________________________________________________________
-void
-RooUnfoldIds::GenGaussRnd( TArrayD& v, const TMatrixD& sqrtMat, TRandom3& R ) const
+template<class Hist,class Hist2D>void
+RooUnfoldIdsT<Hist,Hist2D>::GenGaussRnd( TArrayD& v, const TMatrixD& sqrtMat, TRandom3& R ) const
 {
    // generate vector of correlated Gaussian-distributed random numbers
    // sanity check
@@ -726,8 +741,8 @@ RooUnfoldIds::GenGaussRnd( TArrayD& v, const TMatrixD& sqrtMat, TRandom3& R ) co
 }
 
 //______________________________________________________________________________
-void
-RooUnfoldIds::Streamer(TBuffer &R__b)
+template<class Hist,class Hist2D>void
+RooUnfoldIdsT<Hist,Hist2D>::Streamer(TBuffer &R__b)
 {
    // Stream an object of class RooUnfoldIds.
    if (R__b.IsReading()) {
@@ -735,9 +750,142 @@ RooUnfoldIds::Streamer(TBuffer &R__b)
       // We own them and we don't want them to disappear when the file is closed.
       Bool_t oldstat = TH1::AddDirectoryStatus();
       TH1::AddDirectory(kFALSE);
-      RooUnfoldIds::Class()->ReadBuffer  (R__b, this);
+      RooUnfoldIdsT<Hist,Hist2D>::Class()->ReadBuffer  (R__b, this);
       TH1::AddDirectory(oldstat);
    } else {
-      RooUnfoldIds::Class()->WriteBuffer (R__b, this);
+      RooUnfoldIdsT<Hist,Hist2D>::Class()->WriteBuffer (R__b, this);
    }
 }
+
+
+
+template<class Hist,class Hist2D>
+RooUnfoldIdsT<Hist,Hist2D>::RooUnfoldIdsT()
+: RooUnfoldT<Hist,Hist2D>()
+{
+   // Default constructor. Use Setup() to prepare for unfolding.
+   Init();
+}
+
+template<class Hist,class Hist2D>
+RooUnfoldIdsT<Hist,Hist2D>::RooUnfoldIdsT(const char *name, const char *title)
+: RooUnfoldT<Hist,Hist2D>(name, title)
+{
+   // Basic named constructor. Use Setup() to prepare for unfolding.
+   Init();
+}
+
+template<class Hist,class Hist2D>
+RooUnfoldIdsT<Hist,Hist2D>::RooUnfoldIdsT(const TString &name, const TString &title)
+: RooUnfoldT<Hist,Hist2D>(name, title)
+{
+   // Basic named constructor. Use Setup() to prepare for unfolding.
+   Init();
+}
+
+template<class Hist,class Hist2D>
+RooUnfoldIdsT<Hist,Hist2D>& RooUnfoldIdsT<Hist,Hist2D>::operator=(const RooUnfoldIdsT<Hist,Hist2D>& rhs)
+{
+   // Assignment operator for copying RooUnfoldIdsTsettings.
+   Assign(rhs);
+   return *this;
+}
+
+template<class Hist,class Hist2D>
+RooUnfoldIdsT<Hist,Hist2D>::~RooUnfoldIdsT()
+{
+   Destroy();
+}
+
+template<class Hist,class Hist2D>
+void  RooUnfoldIdsT<Hist,Hist2D>::SetRegParm (Double_t parm)
+{
+  // Set regularisation parameter (number of iterations)
+  SetNIter(Int_t(parm+0.5));
+}
+
+template<class Hist,class Hist2D>
+Double_t RooUnfoldIdsT<Hist,Hist2D>::GetRegParm() const
+{
+  // Return regularisation parameter (number of iterations)
+  return GetNIter();
+}
+
+template<class Hist,class Hist2D>
+void RooUnfoldIdsT<Hist,Hist2D>::SetNIter(Int_t niter)
+{
+   // Set number of iterations
+   _niter = niter;
+}
+
+template<class Hist,class Hist2D>
+Int_t RooUnfoldIdsT<Hist,Hist2D>::GetNIter() const
+{
+   // Return number of iterations
+   return _niter;
+}
+
+template<class Hist,class Hist2D>
+void RooUnfoldIdsT<Hist,Hist2D>::SetLambdaM(Double_t lambdaM)
+{
+   // Set number of iterations
+   _lambdaMmin = lambdaM;
+}
+
+template<class Hist,class Hist2D>
+Double_t RooUnfoldIdsT<Hist,Hist2D>::GetLambdaM() const
+{
+   // Return number of iterations
+   return _lambdaMmin;
+}
+
+template<class Hist,class Hist2D>
+void RooUnfoldIdsT<Hist,Hist2D>::SetLambdaU(Double_t lambdaU)
+{
+   // Set number of iterations
+   _lambdaUmin = lambdaU;
+}
+
+template<class Hist,class Hist2D>
+Double_t RooUnfoldIdsT<Hist,Hist2D>::GetLambdaU() const
+{
+   // Return number of iterations
+   return _lambdaUmin;
+}
+
+template<class Hist,class Hist2D>
+void RooUnfoldIdsT<Hist,Hist2D>::SetLambdaL(Double_t lambdaL)
+{
+   // Set number of iterations
+   _lambdaL = lambdaL;
+}
+
+template<class Hist,class Hist2D>
+Double_t RooUnfoldIdsT<Hist,Hist2D>::GetLambdaL() const
+{
+   // Return number of iterations
+  return _lambdaL;
+}
+
+template<class Hist,class Hist2D>
+void RooUnfoldIdsT<Hist,Hist2D>::SetLambdaS(Double_t lambdaS)
+{
+   // Set number of iterations
+   _lambdaS = lambdaS;
+}
+
+template<class Hist,class Hist2D>
+Double_t RooUnfoldIdsT<Hist,Hist2D>::GetLambdaS() const
+{
+   // Return number of iterations
+   return _lambdaS;
+}
+
+
+template class RooUnfoldIdsT<TH1,TH2>;
+ClassImp (RooUnfoldIds);
+
+#ifndef NOROOFIT
+template class RooUnfoldIdsT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>;
+ClassImp (RooFitUnfoldIds);
+#endif
