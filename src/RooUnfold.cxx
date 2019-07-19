@@ -200,9 +200,9 @@ RooUnfoldT<Hist,Hist2D>::New (RooUnfolding::Algorithm alg, const RooUnfoldRespon
     cerr << "RooUnfoldDagostini is not available" << endl;
     return 0;
   
-    //    case kIDS:
-    //      unfold= new RooUnfoldIds      (res, meas);
-    //      break;
+  case kIDS:
+    unfold= new RooUnfoldIdsT<Hist,Hist2D>      (res, meas,4);
+    break;
 
   default: 
     cerr << "Unknown RooUnfold method " << Int_t(alg) << endl;
