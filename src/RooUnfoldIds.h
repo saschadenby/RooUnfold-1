@@ -57,8 +57,8 @@ template<class Hist, class Hist2D>
   
   virtual void Reset();
 
-  TH2* GetUnfoldCovMatrix(const TH2 *cov, Int_t ntoys, Int_t seed = 1) const;
-  TH2* GetAdetCovMatrix(Int_t ntoys, Int_t seed = 1) const;
+  Hist2D* GetUnfoldCovMatrix(const Hist2D *cov, Int_t ntoys, Int_t seed = 1) const;
+  Hist2D* GetAdetCovMatrix(Int_t ntoys, Int_t seed = 1) const;
 
  protected:
   void Assign(const RooUnfoldIdsT &rhs); // implementation of assignment operator
@@ -70,7 +70,7 @@ template<class Hist, class Hist2D>
   void Destroy();
   void CopyData(const RooUnfoldIdsT &rhs);
 
-  Hist* GetIDSUnfoldedSpectrum(const Hist *hist_RecoMC, const Hist *hist_TruthMC, const Hist2D *hist_2DSmear, const Hist *hist_RecoData, Int_t iter) const;
+  Hist* GetIDSUnfoldedSpectrum(const Hist *h_RecoMC, const Hist *h_TruthMC, const Hist2D *h_2DSmear, const Hist *h_RecoData, Int_t iter) const;
   Double_t Probability(Double_t deviation, Double_t sigma, Double_t lambda) const;
   Double_t MCnormalizationCoeff(const TVectorD *vd, const TVectorD *errvd, const TVectorD *vRecmc, const Int_t dim, const Double_t estNknownd, const Double_t Nmc, const Double_t lambda, const TVectorD *soustr_ ) const;
   Double_t MCnormalizationCoeffIter(const TVectorD *vd, const TVectorD *errvd, const TVectorD *vRecmc, const Int_t dim, const Double_t estNknownd, const Double_t Nmc, const TVectorD *soustr_, Double_t lambdaN = 0., Int_t NiterMax = 5, Int_t messAct = 1) const;
