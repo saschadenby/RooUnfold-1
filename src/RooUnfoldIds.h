@@ -57,8 +57,8 @@ template<class Hist, class Hist2D>
   
   virtual void Reset();
 
-  Hist2D* GetUnfoldCovMatrix(const Hist2D *cov, Int_t ntoys, Int_t seed = 1) const;
-  Hist2D* GetAdetCovMatrix(Int_t ntoys, Int_t seed = 1) const;
+  TH2* GetUnfoldCovMatrix(const TH2 *cov, Int_t ntoys, Int_t seed = 1) const;
+  TH2* GetAdetCovMatrix(Int_t ntoys, Int_t seed = 1) const;
 
  protected:
   void Assign(const RooUnfoldIdsT &rhs); // implementation of assignment operator
@@ -69,6 +69,7 @@ template<class Hist, class Hist2D>
   void Init();
   void Destroy();
   void CopyData(const RooUnfoldIdsT &rhs);
+  Hist* histNoOverflow(const Hist* hist, bool overflow);
 
   Hist* GetIDSUnfoldedSpectrum(const Hist *h_RecoMC, const Hist *h_TruthMC, const Hist2D *h_2DSmear, const Hist *h_RecoData, Int_t iter) const;
   Double_t Probability(Double_t deviation, Double_t sigma, Double_t lambda) const;
