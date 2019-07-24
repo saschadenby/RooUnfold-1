@@ -50,6 +50,7 @@ namespace RooUnfolding {
   template<class Hist> double binError(const Hist* h, int i, bool overflow);
   template<class Hist> double binContent (const Hist* h, int i, bool overflow);
   template<class Hist> double binVolume (const Hist* h, int i, bool overflow);
+  template<class Hist> double binError(const Hist* h, int i, int j, Bool_t overflow);
   template<class Hist> double binContent (const Hist* h, int i, int j, Bool_t overflow);  
   template<class Hist> double binVolume (const Hist* h, int i, int j, Bool_t overflow);  
   template<class Hist> TVectorD h2v  (const Hist* h,bool overflow = false, bool correctDensity=false);
