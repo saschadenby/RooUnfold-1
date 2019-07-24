@@ -116,8 +116,8 @@ namespace{
   
 //______________________________________________________________________________
 
-template<class Hist,class Hist2D> void
-RooUnfoldIdsT<Hist,Hist2D>::Unfold() const
+template<> void
+RooUnfoldIdsT<TH1,TH2>::Unfold() const
 {
    // Data and MC reco/truth must have the same number of bins
    if (this->_res->HasFakes()) {
@@ -382,14 +382,14 @@ template<class Hist,class Hist2D>Hist*
 RooUnfoldIdsT<Hist,Hist2D>::GetIDSUnfoldedSpectrum(const Hist *h_RecoMC, const Hist *h_TruthMC, const Hist2D *h_2DSmear, const Hist *h_RecoData, Int_t iter) const
 {
 
-  Int_t nbinsx = h_RecoData->GetNbinsX();
-  Int_t nbinsy = h_RecoData->GetNbinsY();
+  Int_t nbinsx = nBins(h_RecoData,X,this->_overflow);
+  Int_t nbinsy = nBins(h_RecoData,Y,this->_overflow);
   Int_t nbins  = nbinsx*nbinsy;
 
    // Sanity checks
-   if (h_TruthMC->GetNbinsX() != nbinsx || h_TruthMC->GetNbinsY() != nbinsy ||
-       h_RecoMC->GetNbinsX()  != nbinsx || h_RecoMC->GetNbinsY()  != nbinsy ||
-       h_2DSmear->GetNbinsX() != nbins) {
+  if (nBins(h_TruthMC,X,this->_overflow) != nbinsx || nBins(h_TruthMC,Y,this->_overflow) != nbinsy ||
+      nBins(h_RecoMC,X,this->_overflow)  != nbinsx || nBins(h_RecoMC,Y,this->_overflow)  != nbinsy ||
+      nBins(h_2DSmear,X,this->_overflow) != nbins) {
       std::cout << "Bins of input histograms don't all match, exiting IDS unfolding and returning NULL." << std::endl;
       return NULL;
    }
@@ -400,11 +400,11 @@ RooUnfoldIdsT<Hist,Hist2D>::GetIDSUnfoldedSpectrum(const Hist *h_RecoMC, const H
    Int_t i = 0;
    for (Int_t by = 1; by <= nbinsy; ++by) { // loop over pt
       for (Int_t bx = 1; bx <= nbinsx; ++bx) { // loop over gap_size, for each pt value
-         reco[i]  = h_RecoMC->GetBinContent(bx, by);
-         truth[i] = h_TruthMC->GetBinContent(bx, by);
-         data[i]  = h_RecoData->GetBinContent(bx, by);
+	reco[i]  = binContent(h_RecoMC, bx, by, this->_overflow);
+	truth[i] = binContent(h_TruthMC, bx, by, this->_overflow);
+	data[i]  = binContent(h_RecoData, bx, by, this->_overflow);
          if (data[i] > 0.0) {
-            dataerror[i] = h_RecoData->GetBinError(bx, by);
+	   dataerror[i] = binError(h_RecoData, bx, by, this->_overflow);
          } else {
             dataerror[i] = 1.0;
          }
@@ -420,9 +420,9 @@ RooUnfoldIdsT<Hist,Hist2D>::GetIDSUnfoldedSpectrum(const Hist *h_RecoMC, const H
       recomatch[i] = 0.0;
       truthmatch[i] = 0.0;
       for (Int_t j = 0; j < nbins; ++j) {
-         recomatch[i]   += h_2DSmear->GetBinContent(i+1, j+1);
-         truthmatch[i]  += h_2DSmear->GetBinContent(j+1, i+1);
-         migmatrix[i][j] = h_2DSmear->GetBinContent(i+1, j+1);
+	recomatch[i]   += binContent(h_2DSmear, i+1, j+1, this->_overflow);
+	truthmatch[i]  += binContent(h_2DSmear, j+1, i+1, this->_overflow);
+	migmatrix[i][j] = binContent(h_2DSmear, i+1, j+1, this->_overflow);
       }
    }
 
@@ -458,7 +458,7 @@ RooUnfoldIdsT<Hist,Hist2D>::GetIDSUnfoldedSpectrum(const Hist *h_RecoMC, const H
    }
 
    // Make 1-D or 2-D histogram
-   TH1 *h_DataUnfolded = (TH1*)h_RecoData->Clone("unfolded");
+   TH1 *h_DataUnfolded = (TH1*)clone(h_RecoData);
    h_DataUnfolded->SetTitle("unfolded");
    h_DataUnfolded->Reset();
 

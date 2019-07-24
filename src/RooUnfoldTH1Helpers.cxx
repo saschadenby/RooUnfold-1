@@ -150,6 +150,12 @@ namespace RooUnfolding {
     if(dim(h) == 3) v*= h->GetZaxis()->GetBinWidth(z);
     return v;
   }
+  template<> double binError<TH1>(const TH1* h, Int_t i, Int_t j, Bool_t overflow)
+  {
+    // Bin error by vector index
+    return h->GetBinError( bin (h, i, j, overflow));
+  }
+
   template<> double binContent<TH1> (const TH1* h, int i, int j, Bool_t overflow)
   {
     // Bin content by vector index
