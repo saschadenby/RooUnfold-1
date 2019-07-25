@@ -135,10 +135,10 @@ RooUnfoldIdsT<Hist,Hist2D>::Unfold() const
    TH1::AddDirectory (kFALSE);
 
    // Get the histograms without overflow?
-   Hist* _meas1d  = this->_meas; // data
-   Hist* _train1d = this->_res->Hmeasured(); // reco
-   Hist* _truth1d = this->_res->Htruth(); // true
-   Hist2D* _reshist = this->_res->HresponseNoOverflow();
+   TVectorD vmeas = this->Vmeasured();
+   TVectorD vtrain = this->_res->Vmeasured();
+   TVectorD vtruth = this->_res->Vtruth();
+   TMatrixD mres = this->_res->Mresponse();
    
    // Resize the histograms.
    // RooUnfolding::resize(_meas1d, _nb);
@@ -147,26 +147,25 @@ RooUnfoldIdsT<Hist,Hist2D>::Unfold() const
    // RooUnfolding::resize(_reshist, _nb, _nb);
 
    // Something about fakes here?
-   // if (this->_res->HasFakes()) {
-   //    TVectorD fakes = this->_res->Vfakes();
-   //    Double_t nfakes = fakes.Sum();
-   //    if (this->_verbose >= 1) std::cout << "Add truth bin for " << nfakes << " fakes" << std::endl;
-   //    for (Int_t i = 0; i < this->_nm; ++i) _reshist->SetBinContent(i+1, this->_nt+1, fakes[i]);
-   //    _truth1d->SetBinContent(this->_nt+1, nfakes);
-   // }
-
-   // Print the number of bins in case of verbosity.
-   if (this->_verbose >= 1) std::cout << "IDS init " << nBins(_reshist, X, this->_overflow) << " x " << nBins(_reshist, Y, this->_overflow) << std::endl;
-
-   // // Perform IDS unfolding
-   Hist *rechist = GetIDSUnfoldedSpectrum(_train1d, _truth1d, _reshist, _meas1d, _niter);
-
-   this->_cache._rec.ResizeTo(this->_nt);
-   for (Int_t i = 0; i < this->_nt; ++i) {
-     this->_cache._rec[i] = binContent(rechist,i+1, this->_overflow);
+   if (this->_res->HasFakes()) {
+      TVectorD fakes = this->_res->Vfakes();
+      Double_t nfakes = fakes.Sum();
+      if (this->_verbose >= 1) std::cout << "Add truth bin for " << nfakes << " fakes" << std::endl;
+      for (Int_t i = 0; i < this->_nm; ++i){
+	mres(i+1,this->_nt + 1) = fakes[i];
+      }
+      vtruth(this->_nt+1) = nfakes;
    }
 
-   delete rechist;
+   // // // Perform IDS unfolding
+   // Hist *rechist = GetIDSUnfoldedSpectrum(_train1d, _truth1d, _reshist, _meas1d, _niter);
+
+   // this->_cache._rec.ResizeTo(this->_nt);
+   // for (Int_t i = 0; i < this->_nt; ++i) {
+   //   this->_cache._rec[i] = binContent(rechist,i+1, this->_overflow);
+   // }
+
+   //delete rechist;
    TH1::AddDirectory(oldstat);
 
    this->_cache._unfolded = kTRUE;
@@ -386,9 +385,10 @@ RooUnfoldIdsT<TH1,TH2>::GetAdetCovMatrix(Int_t ntoys, Int_t seed) const
 
 //______________________________________________________________________________
 template<class Hist,class Hist2D>Hist*
-RooUnfoldIdsT<Hist,Hist2D>::GetIDSUnfoldedSpectrum(const Hist *h_RecoMC, const Hist *h_TruthMC, const Hist2D *h_2DSmear, const Hist *h_RecoData, Int_t iter) const
+RooUnfoldIdsT<Hist,Hist2D>::GetIDSUnfoldedSpectrum(const TVectorD *h_RecoMC, const TVectorD *h_TruthMC, const TVector *h_2DSmear, const TVectorD *h_RecoData, Int_t iter) const
 {
 
+  
   Int_t nbinsx = nBins(h_RecoData,X,this->_overflow);
   Int_t nbinsy = nBins(h_RecoData,Y,this->_overflow);
   Int_t nbins  = nbinsx*nbinsy;
