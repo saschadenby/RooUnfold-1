@@ -9,6 +9,7 @@
 #pragma link C++ class RooUnfoldSvd-;
 #pragma link C++ class RooUnfoldSvd::SVDUnfold-;
 #pragma link C++ class RooUnfoldBinByBin+;
+#pragma link C++ class RooUnfoldIds+;
 #pragma link C++ class RooUnfoldResponseT<TH1,TH2>-;
 #pragma link C++ class RooUnfoldResponse+;
 #ifndef NOROOFIT
@@ -25,6 +26,7 @@
 #pragma link C++ class RooUnfoldSvdT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>-;
 #pragma link C++ class RooUnfoldSvdT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>::SVDUnfold-;
 #pragma link C++ class RooUnfoldBinByBinT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>+;
+#pragma link C++ class RooUnfoldIdsT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>+;
 #pragma link C++ class RooFitUnfoldResponse+;
 #endif
 #pragma link C++ class RooUnfoldErrors+;
@@ -36,6 +38,6 @@
 #ifdef HAVE_DAGOSTINI
 #pragma link C++ class RooUnfoldDagostini+;
 #endif
-#pragma link C++ class RooUnfoldIds-;
+//#pragma link C++ class RooUnfoldIds-;
 
 #endif
