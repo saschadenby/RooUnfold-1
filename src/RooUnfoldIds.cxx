@@ -107,19 +107,23 @@ RooUnfoldIdsT<Hist,Hist2D>::CopyData(const RooUnfoldIdsT&rhs)
    _lambdaS = rhs._lambdaS;
 }
 
-namespace{
-  TH1* histNoOverflow(const TH1* hist, bool overflow){
-    return createHist<TH1>(h2v(hist,overflow),h2ve(hist,overflow),name(hist),title(hist),vars(hist),overflow);
-  }
+// namespace{
+//   TH1* histNoOverflow(const TH1* hist, bool overflow){
+//     return createHist<TH1>(h2v(hist,overflow),h2ve(hist,overflow),name(hist),title(hist),vars(hist),overflow);
+//   }
+// }
+template<class Hist, class Hist2D> Hist*
+RooUnfoldIdsT<Hist,Hist2D>::histNoOverflow(const Hist* hist, bool overflow){
+  return createHist<Hist>(h2v(hist,overflow),h2ve(hist,overflow),name(hist),title(hist),vars(hist),overflow);
 }
 
-  
+
 //______________________________________________________________________________
 
-template<> void
-RooUnfoldIdsT<TH1,TH2>::Unfold() const
+template<class Hist, class Hist2D> void
+RooUnfoldIdsT<Hist,Hist2D>::Unfold() const
 {
-   // Data and MC reco/truth must have the same number of bins
+  // Data and MC reco/truth must have the same number of bins
    if (this->_res->HasFakes()) {
       _nb = this->_nt+1;
       if (this->_nm>_nb) _nb = this->_nm;
@@ -130,33 +134,36 @@ RooUnfoldIdsT<TH1,TH2>::Unfold() const
    Bool_t oldstat= TH1::AddDirectoryStatus();
    TH1::AddDirectory (kFALSE);
 
-   TH1* _meas1d  = ::histNoOverflow(this->_meas            , this->_overflow); // data
-   TH1* _train1d = ::histNoOverflow(this->_res->Hmeasured(), this->_overflow); // reco
-   TH1* _truth1d = ::histNoOverflow(this->_res->Htruth()   , this->_overflow); // true
-   TH2* _reshist = this->_res->HresponseNoOverflow();
-
-   RooUnfolding::resize(_meas1d,  _nb);
-   RooUnfolding::resize(_train1d, _nb);
-   RooUnfolding::resize(_truth1d, _nb);
-   RooUnfolding::resize(_reshist, _nb, _nb);
+   // Get the histograms without overflow?
+   Hist* _meas1d  = this->_meas; // data
+   Hist* _train1d = this->_res->Hmeasured(); // reco
+   Hist* _truth1d = this->_res->Htruth(); // true
+   Hist2D* _reshist = this->_res->HresponseNoOverflow();
+   
+   // Resize the histograms.
+   // RooUnfolding::resize(_meas1d, _nb);
+   // RooUnfolding::resize(_train1d, _nb);
+   // RooUnfolding::resize(_truth1d, _nb);
+   // RooUnfolding::resize(_reshist, _nb, _nb);
 
    // Something about fakes here?
-   if (this->_res->HasFakes()) {
-      TVectorD fakes = this->_res->Vfakes();
-      Double_t nfakes = fakes.Sum();
-      if (this->_verbose >= 1) std::cout << "Add truth bin for " << nfakes << " fakes" << std::endl;
-      for (Int_t i = 0; i < this->_nm; ++i) _reshist->SetBinContent(i+1, this->_nt+1, fakes[i]);
-      _truth1d->SetBinContent(this->_nt+1, nfakes);
-   }
+   // if (this->_res->HasFakes()) {
+   //    TVectorD fakes = this->_res->Vfakes();
+   //    Double_t nfakes = fakes.Sum();
+   //    if (this->_verbose >= 1) std::cout << "Add truth bin for " << nfakes << " fakes" << std::endl;
+   //    for (Int_t i = 0; i < this->_nm; ++i) _reshist->SetBinContent(i+1, this->_nt+1, fakes[i]);
+   //    _truth1d->SetBinContent(this->_nt+1, nfakes);
+   // }
 
-   if (this->_verbose >= 1) std::cout << "IDS init " << _reshist->GetNbinsX() << " x " << _reshist->GetNbinsY() << std::endl;
+   // Print the number of bins in case of verbosity.
+   if (this->_verbose >= 1) std::cout << "IDS init " << nBins(_reshist, X, this->_overflow) << " x " << nBins(_reshist, Y, this->_overflow) << std::endl;
 
-   // Perform IDS unfolding
-   TH1 *rechist = dynamic_cast<TH1*>(GetIDSUnfoldedSpectrum(_train1d, _truth1d, _reshist, _meas1d, _niter));
+   // // Perform IDS unfolding
+   Hist *rechist = GetIDSUnfoldedSpectrum(_train1d, _truth1d, _reshist, _meas1d, _niter);
 
    this->_cache._rec.ResizeTo(this->_nt);
    for (Int_t i = 0; i < this->_nt; ++i) {
-     this->_cache._rec[i] = rechist->GetBinContent(i+1);
+     this->_cache._rec[i] = binContent(rechist,i+1, this->_overflow);
    }
 
    delete rechist;
@@ -212,9 +219,9 @@ RooUnfoldIdsT<TH1,TH2>::GetUnfoldCovMatrix(const TH2 *cov, Int_t ntoys, Int_t se
    // "seed"   - seed for pseudo experiments
    // Note that this covariance matrix will contain effects of forced normalisation if spectrum is normalised to unit area.
 
-   TH1* _meas1d  = ::histNoOverflow(this->_meas            , this->_overflow); // data
-   TH1* _train1d = ::histNoOverflow(this->_res->Hmeasured(), this->_overflow); // reco
-   TH1* _truth1d = ::histNoOverflow(this->_res->Htruth()   , this->_overflow); // true
+   TH1* _meas1d  = histNoOverflow(this->_meas            , this->_overflow); // data
+   TH1* _train1d = histNoOverflow(this->_res->Hmeasured(), this->_overflow); // reco
+   TH1* _truth1d = histNoOverflow(this->_res->Htruth()   , this->_overflow); // true
    TH2* _reshist = this->_res->HresponseNoOverflow();
 
    TH1* unfres = 0;
@@ -311,9 +318,9 @@ RooUnfoldIdsT<TH1,TH2>::GetAdetCovMatrix(Int_t ntoys, Int_t seed) const
    // "ntoys"  - number of pseudo experiments used for the propagation
    // "seed"   - seed for pseudo experiments
 
-   TH1* _meas1d  = ::histNoOverflow(this->_meas            , this->_overflow); // data
-   TH1* _train1d = ::histNoOverflow(this->_res->Hmeasured(), this->_overflow); // reco
-   TH1* _truth1d = ::histNoOverflow(this->_res->Htruth()   , this->_overflow); // true
+   TH1* _meas1d  = histNoOverflow(this->_meas            , this->_overflow); // data
+   TH1* _train1d = histNoOverflow(this->_res->Hmeasured(), this->_overflow); // reco
+   TH1* _truth1d = histNoOverflow(this->_res->Htruth()   , this->_overflow); // true
    TH2* _reshist = this->_res->HresponseNoOverflow();
 
    TH1 *unfres = 0;
@@ -737,21 +744,21 @@ RooUnfoldIdsT<Hist,Hist2D>::GenGaussRnd( TArrayD& v, const TMatrixD& sqrtMat, TR
 }
 
 //______________________________________________________________________________
-// template<class Hist,class Hist2D>void
-// RooUnfoldIdsT<Hist,Hist2D>::Streamer(TBuffer &R__b)
-// {
-//    // Stream an object of class RooUnfoldIds.
-//    if (R__b.IsReading()) {
-//       // Don't add our histograms to the currect directory.
-//       // We own them and we don't want them to disappear when the file is closed.
-//       Bool_t oldstat = TH1::AddDirectoryStatus();
-//       TH1::AddDirectory(kFALSE);
-//       RooUnfoldIdsT<Hist,Hist2D>::Class()->ReadBuffer  (R__b, this);
-//       TH1::AddDirectory(oldstat);
-//    } else {
-//       RooUnfoldIdsT<Hist,Hist2D>::Class()->WriteBuffer (R__b, this);
-//    }
-// }
+template<class Hist,class Hist2D>void
+RooUnfoldIdsT<Hist,Hist2D>::Streamer(TBuffer &R__b)
+{
+   // Stream an object of class RooUnfoldIds.
+   if (R__b.IsReading()) {
+      // Don't add our histograms to the currect directory.
+      // We own them and we don't want them to disappear when the file is closed.
+      Bool_t oldstat = TH1::AddDirectoryStatus();
+      TH1::AddDirectory(kFALSE);
+      RooUnfoldIdsT<Hist,Hist2D>::Class()->ReadBuffer  (R__b, this);
+      TH1::AddDirectory(oldstat);
+   } else {
+      RooUnfoldIdsT<Hist,Hist2D>::Class()->WriteBuffer (R__b, this);
+   }
+}
 
 
 
@@ -882,6 +889,7 @@ template class RooUnfoldIdsT<TH1,TH2>;
 ClassImp (RooUnfoldIds);
 
 #ifndef NOROOFIT
+typedef RooUnfoldIdsT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist> RooFitUnfoldIds;
 template class RooUnfoldIdsT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>;
 ClassImp (RooFitUnfoldIds);
 #endif
