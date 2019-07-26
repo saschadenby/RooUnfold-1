@@ -136,17 +136,22 @@ RooUnfoldIdsT<Hist,Hist2D>::Unfold() const
 
    // Get the histograms without overflow?
    TVectorD vmeas = this->Vmeasured();
+   TVectorD verror = this->Emeasured();
    TVectorD vtrain = this->_res->Vmeasured();
    TVectorD vtruth = this->_res->Vtruth();
    TMatrixD mres = this->_res->Mresponse();
    
+   
    // Resize the histograms.
+   // TODO: check the effect of resizing on histograms
+   // and how that should be translated to vectors.
    // RooUnfolding::resize(_meas1d, _nb);
    // RooUnfolding::resize(_train1d, _nb);
    // RooUnfolding::resize(_truth1d, _nb);
    // RooUnfolding::resize(_reshist, _nb, _nb);
 
-   // Something about fakes here?
+   // TODO: Check if the usage of fakes here has the same
+   // effect on vectors as they would on histograms.
    if (this->_res->HasFakes()) {
       TVectorD fakes = this->_res->Vfakes();
       Double_t nfakes = fakes.Sum();
@@ -157,13 +162,13 @@ RooUnfoldIdsT<Hist,Hist2D>::Unfold() const
       vtruth(this->_nt+1) = nfakes;
    }
 
-   // // // Perform IDS unfolding
-   // Hist *rechist = GetIDSUnfoldedSpectrum(_train1d, _truth1d, _reshist, _meas1d, _niter);
+   // Perform IDS unfolding.
+   TVectorD rechist = GetIDSUnfoldedSpectrum(_train1d, _truth1d, _reshist, _meas1d, verror, _niter);
 
-   // this->_cache._rec.ResizeTo(this->_nt);
-   // for (Int_t i = 0; i < this->_nt; ++i) {
-   //   this->_cache._rec[i] = binContent(rechist,i+1, this->_overflow);
-   // }
+   this->_cache._rec.ResizeTo(this->_nt);
+   for (Int_t i = 0; i < this->_nt; ++i) {
+     this->_cache._rec[i] = rechist[i+1];
+   }
 
    //delete rechist;
    TH1::AddDirectory(oldstat);
@@ -218,11 +223,17 @@ RooUnfoldIdsT<TH1,TH2>::GetUnfoldCovMatrix(const TH2 *cov, Int_t ntoys, Int_t se
    // "seed"   - seed for pseudo experiments
    // Note that this covariance matrix will contain effects of forced normalisation if spectrum is normalised to unit area.
 
-   TH1* _meas1d  = histNoOverflow(this->_meas            , this->_overflow); // data
+  TVectorD vmeas = this->Vmeasured();
+  TVectorD verror = this->Emeasured();
+  TVectorD vtrain = this->_res->Vmeasured();
+  TVectorD vtruth = this->_res->Vtruth();
+  TMatrixD mres = this->_res->Mresponse();
+ TH1* _meas1d  = histNoOverflow(this->_meas            , this->_overflow); // data
    TH1* _train1d = histNoOverflow(this->_res->Hmeasured(), this->_overflow); // reco
    TH1* _truth1d = histNoOverflow(this->_res->Htruth()   , this->_overflow); // true
    TH2* _reshist = this->_res->HresponseNoOverflow();
 
+  
    TH1* unfres = 0;
    TH2* unfcov = (TH2*)_reshist->Clone("unfcovmat");
    unfcov->SetTitle("Toy covariance matrix");
@@ -384,40 +395,27 @@ RooUnfoldIdsT<TH1,TH2>::GetAdetCovMatrix(Int_t ntoys, Int_t seed) const
 }
 
 //______________________________________________________________________________
-template<class Hist,class Hist2D>Hist*
-RooUnfoldIdsT<Hist,Hist2D>::GetIDSUnfoldedSpectrum(const TVectorD *h_RecoMC, const TVectorD *h_TruthMC, const TVector *h_2DSmear, const TVectorD *h_RecoData, Int_t iter) const
+template<class Hist,class Hist2D>TVectorD
+RooUnfoldIdsT<Hist,Hist2D>::GetIDSUnfoldedSpectrum(TVectorD h_RecoMC, TVectorD h_TruthMC, TVector h_2DSmear, TVectorD h_RecoData, TVectorD h_RecoDataError, Int_t iter) const
 {
 
+  Int_t bins_reco_data = h_RecoData.GetNrows();
+  Int_t bins_reco_mc = h_RecoMC.GetNrows();
+  Int_t bins_truth_mc = h_TruthMC.GetNrows();
+  Int_t tot_bins = h_2DSmear.GetNrows() * h_2DSmear.GetNcols();
   
-  Int_t nbinsx = nBins(h_RecoData,X,this->_overflow);
-  Int_t nbinsy = nBins(h_RecoData,Y,this->_overflow);
-  Int_t nbins  = nbinsx*nbinsy;
+  // Sanity checks
+  if (bins_reco_data != bins_reco_mc || 
+      bins_truth_mc * bins_reco_mc != tot_bins) {
+    std::cout << "Bins of input histograms don't all match, exiting IDS unfolding and returning NULL." << std::endl;
+    return NULL;
+  }
 
-   // Sanity checks
-  if (nBins(h_TruthMC,X,this->_overflow) != nbinsx || nBins(h_TruthMC,Y,this->_overflow) != nbinsy ||
-      nBins(h_RecoMC,X,this->_overflow)  != nbinsx || nBins(h_RecoMC,Y,this->_overflow)  != nbinsy ||
-      nBins(h_2DSmear,X,this->_overflow) != nbins) {
-      std::cout << "Bins of input histograms don't all match, exiting IDS unfolding and returning NULL." << std::endl;
-      return NULL;
-   }
-
-   // Put inputs into vectors, and if necessary turn 2-D inputs into 1-D inputs
-   TVectorD reco(nbins), truth(nbins);
-   TVectorD data(nbins), dataerror(nbins);
-   Int_t i = 0;
-   for (Int_t by = 1; by <= nbinsy; ++by) { // loop over pt
-      for (Int_t bx = 1; bx <= nbinsx; ++bx) { // loop over gap_size, for each pt value
-	reco[i]  = binContent(h_RecoMC, bx, by, this->_overflow);
-	truth[i] = binContent(h_TruthMC, bx, by, this->_overflow);
-	data[i]  = binContent(h_RecoData, bx, by, this->_overflow);
-         if (data[i] > 0.0) {
-	   dataerror[i] = binError(h_RecoData, bx, by, this->_overflow);
-         } else {
-            dataerror[i] = 1.0;
-         }
-         i++;
-      }
-   }
+  for (Int_t i = 0; i < verror->GetNrows(); i++){
+    if (verror[i] <= 0.0){
+      verror[i] = 1.0;
+    }
+  }
 
    // Make transfer matrix and project matched MC spectra
    TMatrixD migmatrix(nbins, nbins);
@@ -427,20 +425,20 @@ RooUnfoldIdsT<Hist,Hist2D>::GetIDSUnfoldedSpectrum(const TVectorD *h_RecoMC, con
       recomatch[i] = 0.0;
       truthmatch[i] = 0.0;
       for (Int_t j = 0; j < nbins; ++j) {
-	recomatch[i]   += binContent(h_2DSmear, i+1, j+1, this->_overflow);
-	truthmatch[i]  += binContent(h_2DSmear, j+1, i+1, this->_overflow);
-	migmatrix[i][j] = binContent(h_2DSmear, i+1, j+1, this->_overflow);
+	recomatch[i]   += h_2DSmear[i+1][j+1];
+	truthmatch[i]  += h_2DSmear[j+1][i+1];
+	migmatrix[i][j] = h_2DSmear[i+1][j+1];
       }
    }
 
    // Apply matching inefficiency from reco MC to data
-   for (Int_t i = 0; i < nbins; ++i) {
+   for (Int_t i = 0; i < bins_reco_data; ++i) {
       if (reco[i] > 0.0) {
-         data[i] *= recomatch[i]/reco[i];
-         dataerror[i] *= recomatch[i]/reco[i];
+	h_RecoData[i] *= recomatch[i]/reco[i];
+	h_RecoDataError[i] *= recomatch[i]/reco[i];
       } else {
-         data[i] = 0.0;
-         dataerror[i] = 0.0;
+	h_recoData[i] = 0.0
+	h_recoDataError[i] = 0.0
       }
    }
 
@@ -450,34 +448,23 @@ RooUnfoldIdsT<Hist,Hist2D>::GetIDSUnfoldedSpectrum(const TVectorD *h_RecoMC, con
    // Double_t lambdaMmin = 0.0;
    // Double_t lambdaS = 0.;
 
-   TVectorD result0(nbins), result(nbins);
-   PerformIterations(data, dataerror, migmatrix, nbins,
+   TVectorD result0(bins_truth_mc), result(bins_truth_mc);
+   PerformIterations(h_RecoData, h_RecoDataError, migmatrix, tot_bins,
                      _lambdaL, iter, _lambdaUmin, _lambdaMmin, _lambdaS,
                      &result0, &result);
 
    // Apply matching efficiency from truth MC to unfolded matched data
    for (Int_t i = 0; i < nbins; ++i) {
       if (truthmatch[i] > 0.0) {
-         result[i] *= truth[i]/truthmatch[i];
+         result[i] *= h_TruthMC[i]/truthmatch[i];
       } else {
          result[i] = 0.0;
       }
    }
 
-   // Make 1-D or 2-D histogram
-   TH1 *h_DataUnfolded = (TH1*)clone(h_RecoData);
-   h_DataUnfolded->SetTitle("unfolded");
-   h_DataUnfolded->Reset();
-
-   i = 0;
-   for (Int_t by = 1; by <= nbinsy; ++by) {
-      for (Int_t bx = 1; bx <= nbinsx; ++bx) {
-         h_DataUnfolded->SetBinContent(bx, by, result[i++]);
-      }
-   }
 
    // Return result
-   return (Hist*)h_DataUnfolded;
+   return result;
 }
 
 //______________________________________________________________________________
