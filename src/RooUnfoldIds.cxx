@@ -183,13 +183,14 @@ RooUnfoldIdsT<Hist,Hist2D>::Unfold() const
 
    this->_cache._unfolded = kTRUE;
    this->_cache._haveCov = kFALSE;
+
+   GetCov();
 }
 
 //______________________________________________________________________________
 template<class Hist,class Hist2D>void
 RooUnfoldIdsT<Hist,Hist2D>::GetCov() const
 {
-   if (!_meas1d) return;
 
    Bool_t oldstat = TH1::AddDirectoryStatus();
    TH1::AddDirectory(kFALSE);
@@ -200,9 +201,9 @@ RooUnfoldIdsT<Hist,Hist2D>::GetCov() const
    for (Int_t i = 0; i < this->_nm; ++i)
      for (Int_t j = 0; j < this->_nm; ++j)
        (*meascov)[i][j] = cov(i,j);
-
    // Need to fill _cov with unfolded result
    TMatrixD *unfoldedCov = GetUnfoldCovMatrix(meascov, this->_NToys);
+
    TMatrixD *adetCov     = GetAdetCovMatrix(this->_NToys);
 
 
@@ -240,8 +241,8 @@ RooUnfoldIdsT<Hist,Hist2D>::GetUnfoldCovMatrix(const TMatrixD *cov, Int_t ntoys,
   
  
   TMatrixD* unfcov = (TMatrixD*)mres.Clone("unfcovmat");
-  for (Int_t i = 1; i <= _nb; ++i)
-    for(Int_t j = 1; j <= _nb; ++j)
+  for (Int_t i = 0; i < _nb; ++i)
+    for(Int_t j = 0; j < _nb; ++j)
       (*unfcov)[i][j] = 0.;
 
   // Code for generation of toys (taken from TSVDUnfold [took from RooResult] and modified)
@@ -293,22 +294,24 @@ RooUnfoldIdsT<Hist,Hist2D>::GetUnfoldCovMatrix(const TMatrixD *cov, Int_t ntoys,
     g *= (*Lt);
 
     // Add the mean value offsets and store the results
-    for (Int_t j = 0; j <= _nb; ++j) {
+    for (Int_t j = 0; j < _nb; ++j) {
       (*toyhist)[j] = vmeas[j];
       (*toyerror)[j] = verror[j];
     }
-   
+
     // Perform IDS unfolding
     TVectorD* unfres = GetIDSUnfoldedSpectrum(vtrain, vtruth, mres, (*toyhist), (*toyerror), _niter);
-      
+
     for (Int_t j = 0; j < _nb; ++j) {
       toys[i][j] = (*unfres)[j];
       avgtoy[j] += (*unfres)[j]/ntoys;
     }
-      
+
+    
     delete unfres;
       
   }
+
   delete toyhist;
   delete toyerror;
   delete Lt;
@@ -340,8 +343,8 @@ RooUnfoldIdsT<Hist,Hist2D>::GetAdetCovMatrix(Int_t ntoys, Int_t seed) const
   TMatrixD mres = this->_res->Mresponse();
 
   TMatrixD* unfcov = (TMatrixD*)mres.Clone("unfcovmat");
-  for (Int_t i = 1; i <= _nb; ++i)
-    for(Int_t j = 1; j <= _nb; ++j)
+  for (Int_t i = 0; i < _nb; ++i)
+    for(Int_t j = 0; j < _nb; ++j)
       (*unfcov)[i][j] = 0.;
 
    //Now the toys for the detector response matrix
@@ -360,8 +363,8 @@ RooUnfoldIdsT<Hist,Hist2D>::GetAdetCovMatrix(Int_t ntoys, Int_t seed) const
    TMatrixD *toymat = (TMatrixD*)mres.Clone("toymat");
    Double_t fluc = -1.0;
    for (Int_t i = 0; i < ntoys; ++i) {
-      for (Int_t k = 0; k <= _nb; ++k) {
-         for (Int_t m = 0; m <= _nb; ++m) {
+      for (Int_t k = 0; k < _nb; ++k) {
+         for (Int_t m = 0; m < _nb; ++m) {
             if (mres[k][m]) {
                // fToymat->SetBinContent(k, m, random.Poisson(fAdet->GetBinContent(k,m)));
                fluc = -1.0;
