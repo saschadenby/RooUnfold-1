@@ -193,7 +193,7 @@ RooUnfoldBayesT<Hist,Hist2D>::unfold() const
   // Calculate the unfolding matrix.
   // _niter = number of iterations to perform (3 by default).
   // _smoothit = smooth the matrix in between iterations (default false).
-  
+
   if (this->_niter < 0){
     std::cerr << "RooUnfoldBayes invalid number of iterations: " << this->_niter << std::endl;
     this->_niter = 4;
