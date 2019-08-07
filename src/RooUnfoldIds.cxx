@@ -162,7 +162,7 @@ RooUnfoldIdsT<Hist,Hist2D>::Unfold() const
       Double_t nfakes = fakes.Sum();
       if (this->_verbose >= 1) std::cout << "Add truth bin for " << nfakes << " fakes" << std::endl;
       for (Int_t i = 0; i < this->_nm; ++i){
-	mres(i+1,this->_nt + 1) = fakes[i];
+	mres(i,this->_nt + 1) = fakes[i];
       }
       vtruth(this->_nt+1) = nfakes;
    }
@@ -191,21 +191,22 @@ RooUnfoldIdsT<Hist,Hist2D>::GetCov() const
    Bool_t oldstat = TH1::AddDirectoryStatus();
    TH1::AddDirectory(kFALSE);
 
-   TH2 *meascov = new TH2D("meascov", "meascov", _nb, 0.0, 1.0, _nb, 0.0, 1.0);
+   //TH2 *meascov = new TH2D("meascov", "meascov", _nb, 0.0, 1.0, _nb, 0.0, 1.0);
+   TMatrixD *meascov = new TMatrixD(_nb, _nb);
    const TMatrixD& cov = this->GetMeasuredCov();
    for (Int_t i = 0; i < this->_nm; ++i)
      for (Int_t j = 0; j < this->_nm; ++j)
-       meascov->SetBinContent(i+1, j+1, cov(i,j));
+       (*meascov)[i][j] = cov(i,j);
 
    // Need to fill _cov with unfolded result
-   TH2 *unfoldedCov = GetUnfoldCovMatrix(meascov, this->_NToys);
-   TH2 *adetCov     = GetAdetCovMatrix(this->_NToys);
+   TMatrixD *unfoldedCov = GetUnfoldCovMatrix(meascov, this->_NToys);
+   TMatrixD *adetCov     = GetAdetCovMatrix(this->_NToys);
 
 
    this->_cache._cov.ResizeTo(this->_nt, this->_nt);
    for (Int_t i = 0; i < this->_nt; i++) {
       for (Int_t j = 0; j < this->_nt; ++j) {
-         this->_cache._cov(i,j) = unfoldedCov->GetBinContent(i+1, j+1) + adetCov->GetBinContent(i+1, j+1);
+	this->_cache._cov(i,j) = (*unfoldedCov)[i][j] + (*adetCov)[i][j];
       }
    }
 
@@ -218,8 +219,8 @@ RooUnfoldIdsT<Hist,Hist2D>::GetCov() const
 }
 
 //______________________________________________________________________________
-template<>TH2*
-RooUnfoldIdsT<TH1,TH2>::GetUnfoldCovMatrix(const TH2 *cov, Int_t ntoys, Int_t seed) const
+template<class Hist,class Hist2D>TMatrixD*
+RooUnfoldIdsT<Hist,Hist2D>::GetUnfoldCovMatrix(const TMatrixD *cov, Int_t ntoys, Int_t seed) const
 {
    // Determine for given input error matrix covariance matrix of unfolded
    // spectrum from toy simulation given the passed covariance matrix on measured spectrum
@@ -234,117 +235,111 @@ RooUnfoldIdsT<TH1,TH2>::GetUnfoldCovMatrix(const TH2 *cov, Int_t ntoys, Int_t se
   TVectorD vtruth = this->_res->Vtruth();
   TMatrixD mres = this->_res->Mresponse();
   
-  TH1* _meas1d  = histNoOverflow(this->_meas            , this->_overflow); // data
-   TH1* _train1d = histNoOverflow(this->_res->Hmeasured(), this->_overflow); // reco
-   TH1* _truth1d = histNoOverflow(this->_res->Htruth()   , this->_overflow); // true
-   TH2* _reshist = this->_res->HresponseNoOverflow();
+ 
+  TMatrixD* unfcov = (TMatrixD*)mres.Clone("unfcovmat");
+  for (Int_t i = 1; i <= _nb; ++i)
+    for(Int_t j = 1; j <= _nb; ++j)
+      (*unfcov)[i][j] = 0.;
 
-  
-   TH1* unfres = 0;
-   TH2* unfcov = (TH2*)_reshist->Clone("unfcovmat");
-   unfcov->SetTitle("Toy covariance matrix");
-   for (Int_t i = 1; i <= _nb; ++i)
-      for(Int_t j = 1; j <= _nb; ++j)
-         unfcov->SetBinContent(i, j, 0.);
+  // Code for generation of toys (taken from TSVDUnfold [took from RooResult] and modified)
+  // Calculate the elements of the upper-triangular matrix L that
+  // gives Lt*L = C, where Lt is the transpose of L (the "square-root method")
+  TMatrixD L(_nb, _nb); L *= 0;
 
-   // Code for generation of toys (taken from TSVDUnfold [took from RooResult] and modified)
-   // Calculate the elements of the upper-triangular matrix L that
-   // gives Lt*L = C, where Lt is the transpose of L (the "square-root method")
-   TMatrixD L(_nb, _nb); L *= 0;
+  for (Int_t iPar = 0; iPar < _nb; ++iPar) {
 
-   for (Int_t iPar = 0; iPar < _nb; ++iPar) {
+    // Calculate the diagonal term first
+    L(iPar, iPar) = (*cov)[iPar][iPar];
+    for (Int_t k = 0; k < iPar; ++k) L(iPar, iPar) -= TMath::Power(L(k, iPar), 2);
+    if (L(iPar, iPar) > 0.0) L(iPar, iPar) = TMath::Sqrt(L(iPar,iPar));
+    else                     L(iPar, iPar) = 0.0;
 
-      // Calculate the diagonal term first
-      L(iPar, iPar) = cov->GetBinContent(iPar+1, iPar+1);
-      for (Int_t k = 0; k < iPar; ++k) L(iPar, iPar) -= TMath::Power(L(k, iPar), 2);
-      if (L(iPar, iPar) > 0.0) L(iPar, iPar) = TMath::Sqrt(L(iPar,iPar));
-      else                     L(iPar, iPar) = 0.0;
+    // ...then the off-diagonal terms
+    for (Int_t jPar = iPar; jPar < _nb; ++jPar) {
+      L(iPar, jPar) = (*cov)[iPar][jPar];
+      for (Int_t k = 0; k < iPar; k++) L(iPar, jPar) -= L(k, iPar)*L(k, jPar);
+      if (L(iPar,iPar) != 0.) L(iPar, jPar) /= L(iPar, iPar);
+      else                    L(iPar, jPar) = 0;
+    }
+  }
 
-      // ...then the off-diagonal terms
-      for (Int_t jPar = iPar+1; jPar < _nb; ++jPar) {
-         L(iPar, jPar) = cov->GetBinContent(iPar+1, jPar+1);
-         for (Int_t k = 0; k < iPar; k++) L(iPar, jPar) -= L(k, iPar)*L(k, jPar);
-         if (L(iPar,iPar) != 0.) L(iPar, jPar) /= L(iPar, iPar);
-         else                    L(iPar, jPar) = 0;
+  // Remember it
+  TMatrixD *Lt = new TMatrixD(TMatrixD::kTransposed, L);
+  TRandom3 random(seed);
+
+  // Needed to build covariance matrix
+  TVectorD avgtoy(_nb);
+  TMatrixD toys(ntoys, _nb);
+  for (Int_t j = 0; j < _nb; ++j) {
+    avgtoy[j] = 0.0;
+    for (Int_t i = 0; i < ntoys; ++i) {
+      toys[i][j] = 0.0;
+    }
+  }
+
+  // Get the mean of the toys first
+  TVectorD *toyhist = (TVectorD*)vmeas.Clone("toyhisto");
+  TVectorD *toyerror = (TVectorD*)verror.Clone("toyerror");
+  for (Int_t i = 0; i < ntoys; i++) {
+
+    // create a vector of unit Gaussian variables
+    TVectorD g(_nb);
+    for (Int_t k = 0; k < _nb; ++k) g(k) = random.Gaus(0.,1.);
+
+    // Multiply this vector by Lt to introduce the appropriate correlations
+    g *= (*Lt);
+
+    // Add the mean value offsets and store the results
+    for (Int_t j = 0; j <= _nb; ++j) {
+      (*toyhist)[j] = vmeas[j];
+      (*toyerror)[j] = verror[j];
+    }
+   
+    // Perform IDS unfolding
+    TVectorD* unfres = GetIDSUnfoldedSpectrum(vtrain, vtruth, mres, (*toyhist), (*toyerror), _niter);
+      
+    for (Int_t j = 0; j < _nb; ++j) {
+      toys[i][j] = (*unfres)[j];
+      avgtoy[j] += (*unfres)[j]/ntoys;
+    }
+      
+    delete unfres;
+      
+  }
+  delete toyhist;
+  delete toyerror;
+  delete Lt;
+
+  for (Int_t i = 0; i < ntoys; ++i) {
+    for (Int_t j = 0; j < _nb; ++j) {
+      for (Int_t k = 0; k < _nb; ++k) {
+	(*unfcov)[j][k] = ((*unfcov)[j][k] + (toys[i][j] - avgtoy[j])*(toys[i][k] - avgtoy[k])/ntoys);
       }
-   }
+    }
+  }
 
-   // Remember it
-   TMatrixD *Lt = new TMatrixD(TMatrixD::kTransposed, L);
-   TRandom3 random(seed);
-
-   // Needed to build covariance matrix
-   TVectorD avgtoy(_nb);
-   TMatrixD toys(ntoys, _nb);
-   for (Int_t j = 0; j < _nb; ++j) {
-      avgtoy[j] = 0.0;
-      for (Int_t i = 0; i < ntoys; ++i) {
-         toys[i][j] = 0.0;
-      }
-   }
-
-   // Get the mean of the toys first
-   TH1 *toyhist = (TH1*)_meas1d->Clone("toyhisto");
-   for (Int_t i = 0; i < ntoys; i++) {
-
-      // create a vector of unit Gaussian variables
-      TVectorD g(_nb);
-      for (Int_t k = 0; k < _nb; ++k) g(k) = random.Gaus(0.,1.);
-
-      // Multiply this vector by Lt to introduce the appropriate correlations
-      g *= (*Lt);
-
-      // Add the mean value offsets and store the results
-      for (Int_t j = 1; j <= _nb; ++j) {
-         toyhist->SetBinContent(j, _meas1d->GetBinContent(j) + g(j-1));
-         toyhist->SetBinError(j, _meas1d->GetBinError(j));
-      }
-
-      // Perform IDS unfolding
-      unfres = dynamic_cast<TH1*>(GetIDSUnfoldedSpectrum(_train1d, _truth1d, _reshist, toyhist, _niter));
-
-      for (Int_t j = 0; j < _nb; ++j) {
-         toys[i][j] = unfres->GetBinContent(j+1);
-         avgtoy[j] += unfres->GetBinContent(j+1)/ntoys;
-      }
-
-      delete unfres;
-
-   }
-   delete toyhist;
-   delete Lt;
-
-   for (Int_t i = 0; i < ntoys; ++i) {
-      for (Int_t j = 0; j < _nb; ++j) {
-         for (Int_t k = 0; k < _nb; ++k) {
-            unfcov->SetBinContent(j+1, k+1, unfcov->GetBinContent(j+1, k+1) + (toys[i][j] - avgtoy[j])*(toys[i][k] - avgtoy[k])/ntoys);
-         }
-      }
-   }
-
-   return unfcov;
+  return unfcov;
 }
 
 //______________________________________________________________________________
-template<>TH2*
-RooUnfoldIdsT<TH1,TH2>::GetAdetCovMatrix(Int_t ntoys, Int_t seed) const
+template<class Hist,class Hist2D>TMatrixD*
+RooUnfoldIdsT<Hist,Hist2D>::GetAdetCovMatrix(Int_t ntoys, Int_t seed) const
 {
    // Determine covariance matrix of unfolded spectrum from finite statistics in
    // response matrix using pseudo experiments
    // "ntoys"  - number of pseudo experiments used for the propagation
    // "seed"   - seed for pseudo experiments
 
-   TH1* _meas1d  = histNoOverflow(this->_meas            , this->_overflow); // data
-   TH1* _train1d = histNoOverflow(this->_res->Hmeasured(), this->_overflow); // reco
-   TH1* _truth1d = histNoOverflow(this->_res->Htruth()   , this->_overflow); // true
-   TH2* _reshist = this->_res->HresponseNoOverflow();
+  TVectorD vmeas = this->Vmeasured();
+  TVectorD verror = this->Emeasured();
+  TVectorD vtrain = this->_res->Vmeasured();
+  TVectorD vtruth = this->_res->Vtruth();
+  TMatrixD mres = this->_res->Mresponse();
 
-   TH1 *unfres = 0;
-   TH2 *unfcov = (TH2*)_reshist->Clone("unfcovmat");
-   unfcov->SetTitle("Toy covariance matrix");
-   for(Int_t i = 1; i <= _nb; ++i)
-      for(Int_t j = 1; j <= _nb; ++j)
-         unfcov->SetBinContent(i, j, 0.0);
+  TMatrixD* unfcov = (TMatrixD*)mres.Clone("unfcovmat");
+  for (Int_t i = 1; i <= _nb; ++i)
+    for(Int_t j = 1; j <= _nb; ++j)
+      (*unfcov)[i][j] = 0.;
 
    //Now the toys for the detector response matrix
    TRandom3 random(seed);
@@ -359,29 +354,28 @@ RooUnfoldIdsT<TH1,TH2>::GetAdetCovMatrix(Int_t ntoys, Int_t seed) const
       }
    }
 
-   TH2 *toymat = (TH2*)_reshist->Clone("toymat");
+   TMatrixD *toymat = (TMatrixD*)mres.Clone("toymat");
    Double_t fluc = -1.0;
    for (Int_t i = 0; i < ntoys; ++i) {
-      for (Int_t k = 1; k <= _nb; ++k) {
-         for (Int_t m = 1; m <= _nb; ++m) {
-            if (_reshist->GetBinContent(k, m)) {
+      for (Int_t k = 0; k <= _nb; ++k) {
+         for (Int_t m = 0; m <= _nb; ++m) {
+            if (mres[k][m]) {
                // fToymat->SetBinContent(k, m, random.Poisson(fAdet->GetBinContent(k,m)));
                fluc = -1.0;
                while (fluc < 0.0) {
-                  fluc = random.Gaus(_reshist->GetBinContent(k, m), _reshist->GetBinError(k, m));
+		 fluc = random.Gaus(mres[k][m], mres[k][m]);
                }
-               
-               toymat->SetBinContent(k, m, fluc);
+               (*toymat)[k][m] = fluc;
             }
          }
       }
 
       // Perform IDS unfolding
-      unfres = dynamic_cast<TH1*>(GetIDSUnfoldedSpectrum(_train1d, _truth1d, toymat, _meas1d, _niter));
+      TVectorD *unfres = GetIDSUnfoldedSpectrum(vtrain, vtruth, (*toymat), vmeas, verror, _niter);
 
       for (Int_t j = 0; j < _nb; ++j) {
-         toys[i][j] = unfres->GetBinContent(j+1);
-         avgtoy[j] += unfres->GetBinContent(j+1)/ntoys;
+	toys[i][j] = (*unfres)[j];
+	avgtoy[j] += (*unfres)[j]/ntoys;
       }
 
       delete unfres;
@@ -392,7 +386,7 @@ RooUnfoldIdsT<TH1,TH2>::GetAdetCovMatrix(Int_t ntoys, Int_t seed) const
    for (Int_t i = 0; i < ntoys; ++i) {
       for (Int_t j = 0; j < _nb; ++j) {
          for (Int_t k = 0; k < _nb; ++k) {
-            unfcov->SetBinContent(j+1, k+1, unfcov->GetBinContent(j+1, k+1) + (toys[i][j] - avgtoy[j])*(toys[i][k] - avgtoy[k])/ntoys);
+	   (*unfcov)[j][k] = ((*unfcov)[j][k] + (toys[i][j] - avgtoy[j])*(toys[i][k] - avgtoy[k])/ntoys);
          }
       }
    }
@@ -438,12 +432,12 @@ RooUnfoldIdsT<Hist,Hist2D>::GetIDSUnfoldedSpectrum(TVectorD h_RecoMC, TVectorD h
 
    // Apply matching inefficiency from reco MC to data
    for (Int_t i = 0; i < bins_reco; ++i) {
-      if (reco[i] > 0.0) {
-	h_RecoData[i] *= recomatch[i]/reco[i];
-	h_RecoDataError[i] *= recomatch[i]/reco[i];
+      if (h_RecoMC[i] > 0.0) {
+	h_RecoData[i] *= recomatch[i]/h_RecoMC[i];
+	h_RecoDataError[i] *= recomatch[i]/h_RecoMC[i];
       } else {
-	h_RecoData[i] = 0.0
-	h_RecoDataError[i] = 0.0
+	h_RecoData[i] = 0.0;
+	h_RecoDataError[i] = 0.0;
       }
    }
 
