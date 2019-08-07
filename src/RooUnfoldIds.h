@@ -71,7 +71,7 @@ template<class Hist, class Hist2D>
   void CopyData(const RooUnfoldIdsT &rhs);
   Hist* histNoOverflow(const Hist* hist, bool overflow);
 
-  TVectorD GetIDSUnfoldedSpectrum(TVectorD h_RecoMC, TVectorD h_TruthMC, TMatrixD h_2DSmear, TVectorD h_RecoData, TVectorD h_RecoDataError, Int_t iter) const;
+  TVectorD* GetIDSUnfoldedSpectrum(TVectorD h_RecoMC, TVectorD h_TruthMC, TMatrixD h_2DSmear, TVectorD h_RecoData, TVectorD h_RecoDataError, Int_t iter) const;
   Double_t Probability(Double_t deviation, Double_t sigma, Double_t lambda) const;
   Double_t MCnormalizationCoeff(const TVectorD *vd, const TVectorD *errvd, const TVectorD *vRecmc, const Int_t dim, const Double_t estNknownd, const Double_t Nmc, const Double_t lambda, const TVectorD *soustr_ ) const;
   Double_t MCnormalizationCoeffIter(const TVectorD *vd, const TVectorD *errvd, const TVectorD *vRecmc, const Int_t dim, const Double_t estNknownd, const Double_t Nmc, const TVectorD *soustr_, Double_t lambdaN = 0., Int_t NiterMax = 5, Int_t messAct = 1) const;
