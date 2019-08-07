@@ -526,9 +526,10 @@ def main(args):
 
     # required to avoid python garbage collector messing up the RooDataHists added to gDirectory
     ROOT.gDirectory.Clear()
-
+    
     test_truth = spec.makeHistogram(histograms["sig_theory"])
 
+    # Here the first unfolding is performed.
     pdf.unfolding().PrintTable(ROOT.cout, test_truth)
 
     ws = ROOT.RooWorkspace("workspace","workspace")

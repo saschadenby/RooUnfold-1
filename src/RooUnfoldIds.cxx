@@ -123,6 +123,7 @@ RooUnfoldIdsT<Hist,Hist2D>::histNoOverflow(const Hist* hist, bool overflow){
 template<class Hist, class Hist2D> void
 RooUnfoldIdsT<Hist,Hist2D>::Unfold() const
 {
+
   // Data and MC reco/truth must have the same number of bins
    if (this->_res->HasFakes()) {
       _nb = this->_nt+1;
@@ -170,9 +171,11 @@ RooUnfoldIdsT<Hist,Hist2D>::Unfold() const
    // Perform IDS unfolding.
    TVectorD *rechist = GetIDSUnfoldedSpectrum(vtrain, vtruth, mres, vmeas, verror, _niter);
 
+
    this->_cache._rec.ResizeTo(this->_nt);
+
    for (Int_t i = 0; i < this->_nt; ++i) {
-     this->_cache._rec[i] = (*rechist)[i+1];
+     this->_cache._rec[i] = (*rechist)[i];
    }
 
    delete rechist;
