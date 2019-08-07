@@ -168,14 +168,14 @@ RooUnfoldIdsT<Hist,Hist2D>::Unfold() const
    }
 
    // Perform IDS unfolding.
-   TVectorD rechist = GetIDSUnfoldedSpectrum(vtrain, vtruth, mres, vmeas, verror, _niter);
+   TVectorD *rechist = GetIDSUnfoldedSpectrum(vtrain, vtruth, mres, vmeas, verror, _niter);
 
    this->_cache._rec.ResizeTo(this->_nt);
    for (Int_t i = 0; i < this->_nt; ++i) {
-     this->_cache._rec[i] = rechist[i+1];
+     this->_cache._rec[i] = (*rechist)[i+1];
    }
 
-   //delete rechist;
+   delete rechist;
    TH1::AddDirectory(oldstat);
 
    this->_cache._unfolded = kTRUE;
@@ -401,50 +401,49 @@ RooUnfoldIdsT<TH1,TH2>::GetAdetCovMatrix(Int_t ntoys, Int_t seed) const
 }
 
 //______________________________________________________________________________
-template<class Hist,class Hist2D>TVectorD
+template<class Hist,class Hist2D>TVectorD*
 RooUnfoldIdsT<Hist,Hist2D>::GetIDSUnfoldedSpectrum(TVectorD h_RecoMC, TVectorD h_TruthMC, TMatrixD h_2DSmear, TVectorD h_RecoData, TVectorD h_RecoDataError, Int_t iter) const
 {
 
-  Int_t bins_reco_data = h_RecoData.GetNrows();
-  Int_t bins_reco_mc = h_RecoMC.GetNrows();
-  Int_t bins_truth_mc = h_TruthMC.GetNrows();
-  Int_t tot_bins = h_2DSmear.GetNrows() * h_2DSmear.GetNcols();
+  Int_t bins_reco = h_RecoData.GetNrows();
   
   // Sanity checks
-  if (bins_reco_data != bins_reco_mc || 
-      bins_truth_mc * bins_reco_mc != tot_bins) {
+  if (h_TruthMC.GetNrows() != bins_reco || h_RecoMC.GetNrows() != bins_reco  ||
+      h_2DSmear.GetNrows() != bins_reco){
     std::cout << "Bins of input histograms don't all match, exiting IDS unfolding and returning NULL." << std::endl;
     return NULL;
   }
-
-  for (Int_t i = 0; i < verror->GetNrows(); i++){
-    if (verror[i] <= 0.0){
-      verror[i] = 1.0;
+  
+  // TODO: Validate if setting the error to 1 if smaller then
+  // 0 is ok.
+  for (Int_t i = 0; i < h_RecoDataError.GetNrows(); i++){
+    if (h_RecoDataError[i] <= 0.0){
+      h_RecoDataError[i] = 1.0;
     }
   }
-
+  
    // Make transfer matrix and project matched MC spectra
-   TMatrixD migmatrix(nbins, nbins);
-   TVectorD recomatch(nbins);
-   TVectorD truthmatch(nbins);
-   for (Int_t i = 0; i < nbins; ++i) {
+   TMatrixD migmatrix(bins_reco, bins_reco);
+   TVectorD recomatch(bins_reco);
+   TVectorD truthmatch(bins_reco);
+   for (Int_t i = 0; i < bins_reco; ++i) {
       recomatch[i] = 0.0;
       truthmatch[i] = 0.0;
-      for (Int_t j = 0; j < nbins; ++j) {
-	recomatch[i]   += h_2DSmear[i+1][j+1];
-	truthmatch[i]  += h_2DSmear[j+1][i+1];
-	migmatrix[i][j] = h_2DSmear[i+1][j+1];
+      for (Int_t j = 0; j < bins_reco; ++j) {
+	recomatch[i]   += h_2DSmear[i][j];
+	truthmatch[i]  += h_2DSmear[j][i];
+	migmatrix[i][j] = h_2DSmear[i][j];
       }
    }
 
    // Apply matching inefficiency from reco MC to data
-   for (Int_t i = 0; i < bins_reco_data; ++i) {
+   for (Int_t i = 0; i < bins_reco; ++i) {
       if (reco[i] > 0.0) {
 	h_RecoData[i] *= recomatch[i]/reco[i];
 	h_RecoDataError[i] *= recomatch[i]/reco[i];
       } else {
-	h_recoData[i] = 0.0
-	h_recoDataError[i] = 0.0
+	h_RecoData[i] = 0.0
+	h_RecoDataError[i] = 0.0
       }
    }
 
@@ -454,22 +453,22 @@ RooUnfoldIdsT<Hist,Hist2D>::GetIDSUnfoldedSpectrum(TVectorD h_RecoMC, TVectorD h
    // Double_t lambdaMmin = 0.0;
    // Double_t lambdaS = 0.;
 
-   TVectorD result0(bins_truth_mc), result(bins_truth_mc);
-   PerformIterations(h_RecoData, h_RecoDataError, migmatrix, tot_bins,
+   TVectorD result0(bins_reco);
+   TVectorD *result = new TVectorD(bins_reco);
+   PerformIterations(h_RecoData, h_RecoDataError, migmatrix, bins_reco,
                      _lambdaL, iter, _lambdaUmin, _lambdaMmin, _lambdaS,
-                     &result0, &result);
+                     &result0, &(*result));
 
    // Apply matching efficiency from truth MC to unfolded matched data
-   for (Int_t i = 0; i < nbins; ++i) {
+   for (Int_t i = 0; i < bins_reco; ++i) {
       if (truthmatch[i] > 0.0) {
-         result[i] *= h_TruthMC[i]/truthmatch[i];
+	(*result)[i] *= h_TruthMC[i]/truthmatch[i];
       } else {
-         result[i] = 0.0;
+	(*result)[i] = 0.0;
       }
    }
 
 
-   // Return result
    return result;
 }
 
