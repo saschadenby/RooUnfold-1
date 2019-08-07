@@ -134,7 +134,12 @@ RooUnfoldIdsT<Hist,Hist2D>::Unfold() const
    Bool_t oldstat= TH1::AddDirectoryStatus();
    TH1::AddDirectory (kFALSE);
 
-   // Get the histograms without overflow?
+   // A vector is retrieved with the right under/overflow
+   // configuration.
+   // TODO: In the original code multidimensionality was
+   // was handeled by flattening histograms to 1d. Add this
+   // funcionality as soon as mutlidimensionality is added
+   // throughout the code.
    TVectorD vmeas = this->Vmeasured();
    TVectorD verror = this->Emeasured();
    TVectorD vtrain = this->_res->Vmeasured();
@@ -163,7 +168,7 @@ RooUnfoldIdsT<Hist,Hist2D>::Unfold() const
    }
 
    // Perform IDS unfolding.
-   TVectorD rechist = GetIDSUnfoldedSpectrum(_train1d, _truth1d, _reshist, _meas1d, verror, _niter);
+   TVectorD rechist = GetIDSUnfoldedSpectrum(vtrain, vtruth, mres, vmeas, verror, _niter);
 
    this->_cache._rec.ResizeTo(this->_nt);
    for (Int_t i = 0; i < this->_nt; ++i) {
@@ -228,7 +233,8 @@ RooUnfoldIdsT<TH1,TH2>::GetUnfoldCovMatrix(const TH2 *cov, Int_t ntoys, Int_t se
   TVectorD vtrain = this->_res->Vmeasured();
   TVectorD vtruth = this->_res->Vtruth();
   TMatrixD mres = this->_res->Mresponse();
- TH1* _meas1d  = histNoOverflow(this->_meas            , this->_overflow); // data
+  
+  TH1* _meas1d  = histNoOverflow(this->_meas            , this->_overflow); // data
    TH1* _train1d = histNoOverflow(this->_res->Hmeasured(), this->_overflow); // reco
    TH1* _truth1d = histNoOverflow(this->_res->Htruth()   , this->_overflow); // true
    TH2* _reshist = this->_res->HresponseNoOverflow();
@@ -396,7 +402,7 @@ RooUnfoldIdsT<TH1,TH2>::GetAdetCovMatrix(Int_t ntoys, Int_t seed) const
 
 //______________________________________________________________________________
 template<class Hist,class Hist2D>TVectorD
-RooUnfoldIdsT<Hist,Hist2D>::GetIDSUnfoldedSpectrum(TVectorD h_RecoMC, TVectorD h_TruthMC, TVector h_2DSmear, TVectorD h_RecoData, TVectorD h_RecoDataError, Int_t iter) const
+RooUnfoldIdsT<Hist,Hist2D>::GetIDSUnfoldedSpectrum(TVectorD h_RecoMC, TVectorD h_TruthMC, TMatrixD h_2DSmear, TVectorD h_RecoData, TVectorD h_RecoDataError, Int_t iter) const
 {
 
   Int_t bins_reco_data = h_RecoData.GetNrows();
