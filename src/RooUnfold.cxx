@@ -183,15 +183,15 @@ RooUnfoldT<Hist,Hist2D>::New (RooUnfolding::Algorithm alg, const RooUnfoldRespon
     unfold= new RooUnfoldBinByBinT<Hist,Hist2D> (res, meas);
     break;
 
-    //    case kTUnfold:
-    //#ifndef NOTUNFOLD
-    //      unfold= new RooUnfoldTUnfold  (res,meas);
-    //      break;
-    //#else
-    //      cerr << "TUnfold library is not available" << endl;
-    //      return 0;
-    //#endif
-
+  case kTUnfold:
+#ifndef NOTUNFOLD
+    unfold= new RooUnfoldTUnfoldT<Hist,Hist2D> (res,meas);
+    break;
+#else
+    cerr << "TUnfold library is not available" << endl;
+    return 0;
+#endif
+    
   case kInvert:
     unfold = new RooUnfoldInvertT<Hist,Hist2D>  (res,meas);
     break;

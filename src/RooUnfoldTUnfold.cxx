@@ -187,7 +187,6 @@ template<class Hist,class Hist2D>void
 RooUnfoldTUnfoldT<Hist,Hist2D>::Unfold() const
 {
   // Does the unfolding. Uses the optimal value of the unfolding parameter unless a value has already been set using FixTau
-
   if (this->_nm<this->_nt)     cerr << "Warning: fewer measured bins than truth bins. TUnfold may not work correctly." << endl;
   if (this->_covMes) cerr << "Warning: TUnfold does not account for bin-bin correlations on measured input"    << endl;
 
@@ -199,8 +198,6 @@ RooUnfoldTUnfoldT<Hist,Hist2D>::Unfold() const
   const TVectorD& vtruth(this->_res->Vtruth());
   TMatrixD mres = this->_res->Mresponse();
 
-  //TH1* meas= ::histNoOverflow (this->_meas, this->_overflow);
-  //TH2* Hres=this->_res->HresponseNoOverflow();
   TH1::AddDirectory (oldstat);
 
   Int_t i_start = 0;
@@ -209,34 +206,33 @@ RooUnfoldTUnfoldT<Hist,Hist2D>::Unfold() const
     i_start = 1;
   } 
     
-
   // Add inefficiencies to measured overflow bin
-  for (Int_t j= i_start; j<=this->_nt; j++) {
+  for (Int_t j= i_start; j<this->_nt - i_start; j++) {
     Double_t ntru= 0.0;
-    for (Int_t i= i_start; i<=this->_nm; i++) {
+    for (Int_t i= i_start; i<this->_nm - i_start; i++) {
       ntru += mres[i][j];
-      //ntru += Hres->GetBinContent(i,j);
     }
-    mres[this->_nm + 1][j] = vtruth[j - 1] - ntru;
-    //Hres->SetBinContent (this->_nm+1, j, tru[j-1]-ntru);
+    
+    mres[this->_nm - 1 + i_start][j] = vtruth[j] - ntru;
   }
 
   // Subtract fakes from measured distribution
+  // TODO: Check if the fakes are handled well here.
   if (this->_res->HasFakes()) {
     TVectorD fakes= this->_res->Vfakes();
     Double_t fac= this->_res->Vmeasured().Sum();
     if (fac!=0.0) fac=  this->Vmeasured().Sum() / fac;
     if (this->_verbose>=1) cout << "Subtract " << fac*fakes.Sum() << " fakes from measured distribution" << endl;
-    for (Int_t i= i_start; i<=this->_nm; i++)
-      vmeas[i] = vmeas[i] - (fac*fakes[i-1]);
-    //meas->SetBinContent (i, meas->GetBinContent(i)-(fac*fakes[i-1]));
+    for (Int_t i = i_start; i<this->_nm - i_start; i++){
+      vmeas[i] = vmeas[i] - (fac*fakes[i]);
+    }
   }
 
-  //Int_t ndim= this->_meas->GetDimension();
   // TODO: Add a line that derives the number of dimensions of the to be
   // unfolded histogram.
   Int_t ndim = dim(this->_meas);
   TUnfold::ERegMode reg= _reg_method;
+  std::cout << "Regmethod: " << reg << std::endl;
   if (ndim == 2 || ndim == 3) reg= TUnfold::kRegModeNone;  // set explicitly
 
   TH2D* Hres = getTH2(mres, "response matrix", "response matrix", this->_overflow);
