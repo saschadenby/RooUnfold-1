@@ -87,6 +87,7 @@ def prepare(smear,write):
   return histograms
 
 def algorithm(method):
+
   import ROOT
   alg = None
   if method == "bayes":
@@ -531,6 +532,8 @@ def main(args):
 
     # Here the first unfolding is performed.
     pdf.unfolding().PrintTable(ROOT.cout, test_truth)
+
+    return
 
     ws = ROOT.RooWorkspace("workspace","workspace")
 
