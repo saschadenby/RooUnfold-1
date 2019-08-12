@@ -508,8 +508,8 @@ RooUnfoldBayesT<Hist,Hist2D>::RooUnfoldBayesT (const TString& name, const TStrin
   Init();
 }
 
-template<class Hist,class Hist2D>
-RooUnfoldBayesT<Hist,Hist2D>& RooUnfoldBayesT<Hist,Hist2D>::operator= (const RooUnfoldBayesT<Hist,Hist2D>& rhs)
+template<class Hist,class Hist2D>RooUnfoldBayesT<Hist,Hist2D>& 
+RooUnfoldBayesT<Hist,Hist2D>::operator= (const RooUnfoldBayesT<Hist,Hist2D>& rhs)
 {
   // Assignment operator for copying RooUnfoldBayes settings.
   Assign(rhs);
