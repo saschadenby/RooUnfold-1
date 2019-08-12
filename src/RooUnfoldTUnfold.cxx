@@ -193,6 +193,7 @@ RooUnfoldTUnfoldT<Hist,Hist2D>::Unfold() const
 
   Bool_t oldstat= TH1::AddDirectoryStatus();
   TH1::AddDirectory (kFALSE);
+
   TVectorD vmeas = this->Vmeasured();
   const TVectorD& verr(this->Emeasured());
   const TVectorD& vtruth(this->_res->Vtruth());
@@ -248,10 +249,10 @@ RooUnfoldTUnfoldT<Hist,Hist2D>::Unfold() const
     _unf= new TUnfold(Hres,TUnfold::kHistMapOutputVert,reg);
 
   if        (ndim == 2) {
-    Int_t nx= this->_meas->GetNbinsX(), ny= this->_meas->GetNbinsY();
+    Int_t nx= nBins(this->_meas,X), ny= nBins(this->_meas,Y);
     _unf->RegularizeBins2D (0, 1, nx, nx, ny, _reg_method);
   } else if (ndim == 3) {
-    Int_t nx= this->_meas->GetNbinsX(), ny= this->_meas->GetNbinsY(), nz= this->_meas->GetNbinsZ(), nxy= nx*ny;
+    Int_t nx= nBins(this->_meas,X), ny= nBins(this->_meas,Y), nz= nBins(this->_meas,Z), nxy= nx*ny;
     for (Int_t i= 0; i<nx; i++) {
       _unf->RegularizeBins2D (    i, nx, ny, nxy, nz, _reg_method);
     }
