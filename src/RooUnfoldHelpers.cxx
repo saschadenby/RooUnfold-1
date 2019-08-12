@@ -21,6 +21,43 @@ namespace RooUnfolding {
     }
   }
 
+  TH1D* getTH1(const TVectorD& vec, const TVectorD& errvec, const char* name, const char* title, bool overflow){
+    
+    Int_t i_start = 1;
+
+    if(overflow){
+      i_start = 0;
+    }
+
+    TH1D* hist = new TH1D(name, title, vec.GetNrows(), 0, 1);
+
+    for (int i = 0; i < vec.GetNrows(); i++){
+      hist->SetBinContent(i + i_start, vec[i]);
+      hist->SetBinError(i + i_start, errvec[i]);
+    }
+    
+    return hist;
+  }
+
+  TH2D* getTH2(const TMatrixD& matrix, const char* name, const char* title, bool overflow){
+    Int_t i_start = 1;
+
+    if(overflow){
+      i_start = 0;
+    }
+
+    TH2D* hist = new TH2D(name, title, matrix.GetNrows(), 0, 1, matrix.GetNcols(), 0, 1);
+
+    for (int i = 0; i < matrix.GetNrows(); i++){
+      for (int j = 0; j < matrix.GetNcols(); j++){
+
+	hist->SetBinContent(i + i_start, j + i_start, matrix[i][j]);
+      }
+    }
+    
+    return hist;
+  }
+
   void printMatrix(const TMatrixD& m, const char* name, const char* format, Int_t cols_per_sheet){
   // Print the matrix as a table of elements.
   // Based on TMatrixTBase<>::Print, but allowing user to specify name and cols_per_sheet (also option -> format).

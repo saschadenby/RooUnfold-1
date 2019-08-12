@@ -112,10 +112,10 @@ RooUnfoldIdsT<Hist,Hist2D>::CopyData(const RooUnfoldIdsT&rhs)
 //     return createHist<TH1>(h2v(hist,overflow),h2ve(hist,overflow),name(hist),title(hist),vars(hist),overflow);
 //   }
 // }
-template<class Hist, class Hist2D> Hist*
-RooUnfoldIdsT<Hist,Hist2D>::histNoOverflow(const Hist* hist, bool overflow){
-  return createHist<Hist>(h2v(hist,overflow),h2ve(hist,overflow),name(hist),title(hist),vars(hist),overflow);
-}
+// template<class Hist, class Hist2D> Hist*
+// RooUnfoldIdsT<Hist,Hist2D>::histNoOverflow(const Hist* hist, bool overflow){
+//   return createHist<Hist>(h2v(hist,overflow),h2ve(hist,overflow),name(hist),title(hist),vars(hist),overflow);
+// }
 
 
 //______________________________________________________________________________
