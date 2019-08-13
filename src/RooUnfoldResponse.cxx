@@ -1145,7 +1145,7 @@ ClassImp (RooUnfoldResponse);
 
 
 namespace {
-  void makeList(const RooAbsCollection* c,std::vector<RooRealVar*>& vars,TPRegexp* re = 0){
+  template<class T> void makeList(const RooAbsCollection* c,std::vector<T*>& vars,TPRegexp* re = 0){
     RooFIter itr(c->fwdIterator());
     RooRealVar* obj = NULL;
     while((obj = (RooRealVar*)itr.next())){
@@ -1155,9 +1155,9 @@ namespace {
     }
   }
   
-  std::vector<RooRealVar*> makeList(const RooAbsCollection* c){
-    std::vector<RooRealVar*> vars;
-    makeList(c,vars);
+  template<class T> std::vector<T*> makeList(const RooAbsCollection* c){
+    std::vector<RooAbsArg*> vars;
+    makeList<T>(c,vars);
     return vars;
   }
 }
@@ -1194,15 +1194,15 @@ RooFitUnfoldResponse::RooFitUnfoldResponse(const char* name, const char* title, 
 
   std::vector<RooRealVar*> allvars;
   RooArgSet* c_reco_vars = reco->getVariables();
-  makeList(c_reco_vars,allvars,&gamma);
+  makeList<RooRealVar>(c_reco_vars,allvars,&gamma);
   delete c_reco_vars;
   if(fakes){
     RooArgSet* c_fake_vars = fakes->getVariables();
-    makeList(c_fake_vars,allvars,&gamma);
+    makeList<RooRealVar>(c_fake_vars,allvars,&gamma);
     delete c_fake_vars;
   }
   RooArgSet* c_truth_vars = truth->getVariables();
-  makeList(c_truth_vars,allvars,&gamma);
+  makeList<RooRealVar>(c_truth_vars,allvars,&gamma);
   delete c_truth_vars;
 
   this->_mes = new RooFitHist(reco,obs_reco,allvars);
@@ -1237,7 +1237,7 @@ RooFitUnfoldResponse::RooFitUnfoldResponse(const char* name, const char* title, 
   this->_mes = new RooFitHist(reco,obs_reco);
   this->_fak = fakes ? new RooFitHist(fakes,obs_reco) : 0;
   this->_tru = new RooFitHist(truth,obs_truth);
-  this->_res = new RooFitHist(response,::makeList(obs));
+  this->_res = new RooFitHist(response,::makeList<RooAbsArg>(obs));
   this->_overflow = 0;
   this->_density = density;
 }
@@ -1259,7 +1259,7 @@ RooUnfolding::RooFitHist* RooFitUnfoldResponse::makeHistSum(RooAbsReal* a, RooAb
 
 RooHistFunc* RooFitUnfoldResponse::makeHistFunc(RooDataHist* dhist){
   if(!dhist) return NULL;
-  std::vector<RooRealVar*> v;
+  std::vector<RooAbsArg*> v;
   for(size_t i=0; i<this->_mes->dim(); ++i){
     if(dhist->get()->find(*this->_mes->obs(i))) v.push_back(this->_mes->obs(i));
   }
@@ -1274,7 +1274,7 @@ RooHistFunc* RooFitUnfoldResponse::makeHistFunc(RooDataHist* dhist){
 
 RooHistFunc* RooFitUnfoldResponse::makeHistFuncMeasured(const TH1* hist){
   if(!hist) return NULL;
-  std::vector<RooRealVar*> v;
+  std::vector<RooAbsArg*> v;
   for(size_t i=0; i<this->_mes->dim(); ++i){
     v.push_back(this->_mes->obs(i));
   }
@@ -1283,7 +1283,7 @@ RooHistFunc* RooFitUnfoldResponse::makeHistFuncMeasured(const TH1* hist){
 }
 RooHistFunc* RooFitUnfoldResponse::makeHistFuncTruth(const TH1* hist){
   if(!hist) return NULL;
-  std::vector<RooRealVar*> v;
+  std::vector<RooAbsArg*> v;
   for(size_t i=0; i<this->_tru->dim(); ++i){
     v.push_back(this->_tru->obs(i));
   }
@@ -1293,7 +1293,7 @@ RooHistFunc* RooFitUnfoldResponse::makeHistFuncTruth(const TH1* hist){
 
 RooHistPdf* RooFitUnfoldResponse::makeHistPdf(RooDataHist* dhist){
   if(!dhist) return NULL;
-  std::vector<RooRealVar*> v;
+  std::vector<RooAbsArg*> v;
   for(size_t i=0; i<this->_mes->dim(); ++i){
     if(dhist->get()->find(*this->_mes->obs(i))) v.push_back(this->_mes->obs(i));
   }
@@ -1308,7 +1308,7 @@ RooHistPdf* RooFitUnfoldResponse::makeHistPdf(RooDataHist* dhist){
 
 RooHistPdf* RooFitUnfoldResponse::makeHistPdfMeasured(const TH1* hist){
   if(!hist) return NULL;
-  std::vector<RooRealVar*> v;
+  std::vector<RooAbsArg*> v;
   for(size_t i=0; i<this->_mes->dim(); ++i){
     v.push_back(this->_mes->obs(i));
   }
@@ -1317,7 +1317,7 @@ RooHistPdf* RooFitUnfoldResponse::makeHistPdfMeasured(const TH1* hist){
 }
 RooHistPdf* RooFitUnfoldResponse::makeHistPdfTruth(const TH1* hist){
   if(!hist) return NULL;
-  std::vector<RooRealVar*> v;
+  std::vector<RooAbsArg*> v;
   for(size_t i=0; i<this->_tru->dim(); ++i){
     v.push_back(this->_tru->obs(i));
   }
@@ -1335,7 +1335,7 @@ RooUnfolding::RooFitHist* RooFitUnfoldResponse::makeHistTruth(const TH1* hist){
 
 RooUnfolding::RooFitHist* RooFitUnfoldResponse::makeHist(RooAbsReal* object){
   if(!object) return NULL;
-  std::vector<RooRealVar*> v;
+  std::vector<RooAbsArg*> v;
   for(size_t i=0; i<this->_mes->dim(); ++i){
     if(object->dependsOn(*this->_mes->obs(i))) v.push_back(this->_mes->obs(i));
   }
@@ -1350,9 +1350,9 @@ RooUnfolding::RooFitHist* RooFitUnfoldResponse::makeHist(RooAbsReal* object){
 
 RooUnfolding::RooFitHist* RooFitUnfoldResponse::makeHist(RooDataHist* object){
   if(!object) return NULL;
-  std::vector<RooRealVar*> v;
+  std::vector<RooAbsArg*> v;
   TPRegexp obs("obs_.*");
-  makeList(object->get(),v,&obs);
+  makeList<RooAbsArg>(object->get(),v,&obs);
   return new RooUnfolding::RooFitHist(object,v);
 }
 

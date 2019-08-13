@@ -1549,11 +1549,11 @@ RooUnfolding::RooFitHist* RooUnfoldSpec::makeHistogram(const HistContainer& sour
   RooHistFunc* hf = source._nom;
   RooAbsReal* func = hf;
   if(!hf) return 0;
-  std::vector<RooRealVar*> obs;
+  std::vector<RooAbsArg*> obs;
   RooArgList obslist;
   RooFIter itr(this->_obs_all.fwdIterator());
-  RooRealVar* arg = NULL;
-  while((arg = (RooRealVar*)itr.next())){
+  RooAbsArg* arg = NULL;
+  while((arg = itr.next())){
     if(!arg) continue;
     if(!hf->dependsOn(*arg)) continue;
     obs.push_back(arg);
