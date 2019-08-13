@@ -232,7 +232,7 @@ RooUnfoldTUnfoldT<Hist,Hist2D>::Unfold() const
   // unfolded histogram.
   Int_t ndim = dim(this->_meas);
   TUnfold::ERegMode reg= _reg_method;
-  std::cout << "Regmethod: " << reg << std::endl;
+
   if (ndim == 2 || ndim == 3) reg= TUnfold::kRegModeNone;  // set explicitly
 
   TH2D* Hres = getTH2(mres, "response matrix", "response matrix", this->_overflow);
@@ -242,6 +242,8 @@ RooUnfoldTUnfoldT<Hist,Hist2D>::Unfold() const
     _unf= new TUnfoldSys(Hres,TUnfold::kHistMapOutputVert,reg);
   else
 #endif
+    std::cout << "Regparm: " << GetRegParm() << std::endl;
+  
     _unf= new TUnfold(Hres,TUnfold::kHistMapOutputVert,reg);
 
   if        (ndim == 2) {
@@ -279,6 +281,7 @@ RooUnfoldTUnfoldT<Hist,Hist2D>::Unfold() const
   _unf->SetInput(Hmeas);
 #endif
   //_unf->SetConstraint(TUnfold::kEConstraintArea);
+  
   if (!tau_set){
     delete _lCurve;  _lCurve  = 0;
     delete _logTauX; _logTauX = 0;
@@ -286,8 +289,7 @@ RooUnfoldTUnfoldT<Hist,Hist2D>::Unfold() const
     Int_t bestPoint = _unf->ScanLcurve(nScan,tauMin,tauMax,&_lCurve,&_logTauX,&_logTauY);
     _tau=_unf->GetTau();  // save value, even if we don't use it unless tau_set
     cout <<"Lcurve scan chose tau= "<<_tau<<endl<<" at point "<<bestPoint<<endl;
-  }
-  else{
+  } else {
     _unf->DoUnfold(_tau);
   }
   TH1F reco("_cache._rec","reconstructed dist",this->_nt,0.0,this->_nt);
