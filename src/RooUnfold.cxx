@@ -213,6 +213,8 @@ RooUnfoldT<Hist,Hist2D>::New (RooUnfolding::Algorithm alg, const RooUnfoldRespon
   if (title) unfold->SetTitle (title);
   if (regparm != -1e30){
     unfold->SetRegParm(regparm);
+  } else {
+    std::cout << "No refgparm" << std::endl;
   }
   return unfold;
 }
@@ -1768,6 +1770,8 @@ RooAbsPdf* RooUnfoldSpec::makePdf(Algorithm alg, Double_t regparam){
   delete unfold;
   return pdf;
 }
+
+
 RooAbsReal* RooUnfoldSpec::makeFunc(Algorithm alg, Double_t regparam){
   RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>* unfold = this->unfold(alg, regparam);
 
@@ -1776,6 +1780,7 @@ RooAbsReal* RooUnfoldSpec::makeFunc(Algorithm alg, Double_t regparam){
   delete unfold;
   return func;
 }
+
 
 ClassImp(RooUnfoldSpec)
 
