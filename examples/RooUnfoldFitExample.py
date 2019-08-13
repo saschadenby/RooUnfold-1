@@ -521,7 +521,10 @@ def main(args):
     spec = ROOT.RooUnfoldSpec("unfold","unfold",histograms["sig_truth"],"obs_truth",histograms["sig_reco"],"obs_reco",histograms["sig_response"],histograms["bkg_reco"],histograms["sigbkg_reco"],False,0.0005,False)
     
     # This line instantiates one of the subclasses specific to the unfolding algorithm.
-    pdf = spec.makePdf(algorithm(args.method),args.regparm)
+    if args.regparm:
+      pdf = spec.makePdf(algorithm(args.method),args.regparm)
+    else:
+      pdf = spec.makePdf(algorithm(args.method))
 
     theory = pdf.unfolding().response().makeHistFuncTruth(histograms["sig_theory"])
 
@@ -561,7 +564,7 @@ if __name__=="__main__":
   from argparse import ArgumentParser
   parser = ArgumentParser(description="RooUnfold testing script")
   parser.add_argument("method",default="bbb",type=str)
-  parser.add_argument("--regparm",default=1,type=float)
+  parser.add_argument("--regparm",type=float)
   parser.add_argument("--mode",choices=["RooUnfoldSpec","HistFactory"],default="RooUnfoldSpec",type=str)
   parser.add_argument("--bias",default=-2.5,type=float)
   parser.add_argument("--smear",default=.2,type=float)
