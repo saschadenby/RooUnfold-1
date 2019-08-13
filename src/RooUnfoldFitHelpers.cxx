@@ -274,7 +274,6 @@ namespace RooUnfolding {
       std::cout << "RooFitHist (NULL)" << std::endl;
       return;
     }
-    std::cout << "enter2" << std::endl;
     size_t n = nBins(h);
     
     std::cout << "RooFitHist " << name(h) << " @ " << h << " (" << h->func()->ClassName() << " @ " << h->func() << "): " << n << " bins in " << dim(h) << " dimensions (";
