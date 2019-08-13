@@ -16,9 +16,6 @@ file(GLOB RooUnfoldHeaders src/*.h)
 list(REMOVE_ITEM RooUnfoldHeaders ${RooUnfoldLinkDef})
 file(GLOB RooUnfoldExecSources examples/*.cxx)
 
-message("RooUnfoldSources")
-message( ${RooUnfoldSources} )
-
 if(EXISTS ${RooUnfoldDagostini})
   set(EXTRA_FLAGS "-DHAVE_DAGOSTINI")
 else()
