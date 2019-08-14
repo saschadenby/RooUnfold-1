@@ -238,10 +238,10 @@ RooUnfoldTUnfoldT<Hist,Hist2D>::Unfold() const
 
 #ifndef NOTUNFOLDSYS
   if (this->_dosys){
-  _unf= new TUnfoldSys(&mres,TUnfold::kHistMapOutputVert,reg);
+  _unf= new TUnfoldSysV17(&mres,TUnfold::kHistMapOutputVert,reg);
   } else {
 #endif
-    _unf= new TUnfold(&mres,TUnfold::kHistMapOutputVert,reg);
+    _unf= new TUnfoldV17(&mres,TUnfold::kHistMapOutputVert,reg);
   }
 
   if        (ndim == 2) {
