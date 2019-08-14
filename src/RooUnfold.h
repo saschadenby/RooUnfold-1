@@ -187,12 +187,12 @@ public:
 protected:
   class HistContainer {
   public:
-    RooHistFunc* _nom = 0;
-    std::map<const std::string,std::vector<RooHistFunc*> > _shapes;
+    RooAbsReal* _nom = 0;
+    std::map<const std::string,std::vector<RooAbsReal*> > _shapes;
     std::map<const std::string,std::pair<double,double> > _norms;
     ~HistContainer();
-    void setNominal(RooHistFunc* nom);
-    void addShape(const char* name, RooHistFunc* up, RooHistFunc* dn);
+    void setNominal(RooAbsReal* nom);
+    void addShape(const char* name, RooAbsReal* up, RooAbsReal* dn);
     void addNorm(const char* name, double up, double dn);
   };
   bool _includeUnderflowOverflow = false;
@@ -215,6 +215,9 @@ public:
   RooUnfoldSpec(const char* name, const char* title, const TH1* truth, const char* obs_truth, const TH1* reco, const char* obs_reco, const TH2* response, const TH1* data, bool includeUnderflowOverflow, double errorThreshold = -1, bool useDensity = false);  
   RooUnfoldSpec(const char* name, const char* title, const TH1* truth, const char* obs_truth, const TH1* reco, const char* obs_reco, const TH2* response, const TH1* bkg, const TH1* data, bool includeUnderflowOverflow, double errorThreshold = -1, bool useDensity = false);
   RooUnfoldSpec(const char* name, const char* title, const TH1* truth_th1, const RooArgList& obs_truth, const TH1* reco_th1, const RooArgList& obs_reco, const TH2* response_th1, const TH1* bkg_th1, const TH1* data_th1, bool includeUnderflowOverflow, double errorThreshold = -1, bool useDensity = false);
+  RooUnfoldSpec(const char* name, const char* title, const TH1* truth_th1, const RooArgList& obs_truth, RooAbsReal* reco, const RooArgList& obs_reco, const TH2* response_th1, RooAbsReal* bkg, RooDataHist* data_binned, bool includeUnderflowOverflow, double errorThreshold = -1, bool useDensity = false);
+  RooUnfoldSpec(const char* name, const char* title, const TH1* truth_th1, RooAbsArg* obs_truth, RooAbsReal* reco, RooAbsArg* obs_reco, const TH2* response_th1, RooAbsReal* bkg, RooDataHist* data_binned, bool includeUnderflowOverflow, double errorThreshold = -1, bool useDensity = false);
+
   ~RooUnfoldSpec();
   void registerSystematic(Contribution c, const char* name, const TH1* up, const TH1* down);
   void registerSystematic(Contribution c, const char* name, double up, double dn);
@@ -223,7 +226,7 @@ public:
   RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>* unfold(RooUnfolding::Algorithm alg);
 protected:
   void setup(const TH1* truth_th1, const RooArgList& obs_truth, const TH1* reco_th1, const RooArgList& obs_reco, const TH2* response_th1, const TH1* bkg_th1, const TH1* data_th1, bool includeUnderflowOverflow, double errorThreshold = -1, bool useDensity = false);
-  ClassDef(RooUnfoldSpec,1)
+  ClassDef(RooUnfoldSpec,0)
 };
 
 namespace RooUnfolding {

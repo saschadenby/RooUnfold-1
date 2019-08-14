@@ -75,7 +75,8 @@ namespace RooUnfolding {
   void setGammaUncertainties(RooWorkspace* ws);
   RooHistFunc* makeHistFunc(const TH1* histo, const RooArgList& obs, bool includeUnderflowOverflow, bool correctDensity=false);    
   RooHistFunc* makeHistFunc(const char* name, const TH1* histo, const RooArgList& obs, bool includeUnderflowOverflow, bool correctDensity=false);  
-  RooHistFunc* makeHistFunc(RooDataHist* dhist, const std::vector<RooAbsArg*>& obs);  
+  RooHistFunc* makeHistFunc(RooDataHist* dhist, const std::vector<RooAbsArg*>& obs); 
+  RooHistFunc* makeHistFunc(RooDataHist* dhist, const RooArgList& obs);
   RooHistPdf* makeHistPdf(const TH1* histo, const RooArgList& obs, bool includeUnderflowOverflow, bool correctDensity=false);    
   RooHistPdf* makeHistPdf(const char* name, const TH1* histo, const RooArgList& obs, bool includeUnderflowOverflow, bool correctDensity=false);  
   RooHistPdf* makeHistPdf(RooDataHist* dhist, const std::vector<RooAbsArg*>& obs);  

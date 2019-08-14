@@ -77,7 +77,6 @@ namespace {
   }
 }
 
-
 namespace {
   // hack to get access to RooHistFunc
   template <typename RooHistFuncTag>
@@ -798,6 +797,10 @@ namespace RooUnfolding { // section 2: non-trivial helpers
         vars.add(*obs[i]);
     }
     return new RooHistFunc(dhist->GetName(),dhist->GetName(),vars,*dhist);
+  }
+  RooHistFunc* makeHistFunc(RooDataHist* dhist, const RooArgList& obs){
+    if(!dhist) return NULL;
+    return new RooHistFunc(dhist->GetName(),dhist->GetName(),obs,*dhist);
   }
   RooHistPdf* makeHistPdf(const char* name, const TH1* histo, const RooArgList& obs, bool includeUnderflowOverflow, bool correctDensity){
     RooDataHist* dh = convertTH1(histo,obs,includeUnderflowOverflow,correctDensity);
