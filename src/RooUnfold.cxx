@@ -213,9 +213,8 @@ RooUnfoldT<Hist,Hist2D>::New (RooUnfolding::Algorithm alg, const RooUnfoldRespon
   if (title) unfold->SetTitle (title);
   if (regparm != -1e30){
     unfold->SetRegParm(regparm);
-  } else {
-    std::cout << "No refgparm" << std::endl;
   }
+
   return unfold;
 }
 
