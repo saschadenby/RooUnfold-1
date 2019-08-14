@@ -13,6 +13,11 @@
 #ifndef NOTUNFOLD
 #pragma link C++ class RooUnfoldTUnfold+;
 #endif
+#pragma link C++ class TUnfold+;
+#pragma link C++ class TUnfoldSys+;
+#pragma link C++ class TUnfoldBinning+;
+#pragma link C++ class TUnfoldDensity+;
+#pragma link C++ class TUnfoldBinningXML+;
 #pragma link C++ class RooUnfoldResponseT<TH1,TH2>-;
 #pragma link C++ class RooUnfoldResponse+;
 #ifndef NOROOFIT
@@ -36,12 +41,8 @@
 #pragma link C++ class RooUnfoldErrors+;
 #pragma link C++ class RooUnfoldParms+;
 #pragma link C++ class RooUnfoldInvert+;
-//#ifndef NOTUNFOLD
-//#pragma link C++ class RooUnfoldTUnfold+;
-//#endif
 #ifdef HAVE_DAGOSTINI
 #pragma link C++ class RooUnfoldDagostini+;
 #endif
-//#pragma link C++ class RooUnfoldIds-;
 
 #endif

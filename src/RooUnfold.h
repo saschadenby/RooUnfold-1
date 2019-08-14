@@ -23,7 +23,7 @@ class TH1;
 template<class Hist, class Hist2D>
 class RooUnfoldT : public TNamed {
 public:
-  static RooUnfoldT<Hist,Hist2D>* New (RooUnfolding::Algorithm alg, const RooUnfoldResponseT<Hist,Hist2D>* res, const Hist* meas, Double_t regparm,
+  static RooUnfoldT<Hist,Hist2D>* New (RooUnfolding::Algorithm alg, const RooUnfoldResponseT<Hist,Hist2D>* res, const Hist* meas, Double_t regparm=-1e30,
                                        const char* name= 0, const char* title= 0);
 
   // typedefs to ensure compatibility with legacy code
