@@ -11,7 +11,7 @@
 # ==============================================================================
 
 import sys
-method = "ids"
+method = "bayes"
 if len(sys.argv) > 1: method = sys.argv[1]
 
 from ROOT import gRandom, TH1, TH1D, TCanvas, cout
