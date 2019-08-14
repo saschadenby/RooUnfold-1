@@ -1,9 +1,12 @@
 // Author: Stefan Schmitt
 // DESY, 23/01/09
 
-//  Version 17.5, bug fixes in TUnfold fix problem with GetEmatrixSysUncorr
+// Version 17.8, parallel to changes in TUnfold
 //
 //  History:
+//    Version 17.7, bug fix in GetBackground()
+//    Version 17.6, with updated doxygen comments
+//    Version 17.5, bug fixes in TUnfold fix problem with GetEmatrixSysUncorr
 //    Version 17.4, in parallel to changes in TUnfoldBinning
 //    Version 17.3, in parallel to changes in TUnfoldBinning
 //    Version 17.2, add methods to find back systematic and background sources
@@ -51,8 +54,9 @@
 #include <TSortedList.h>
 #include "TUnfold.h"
 
+#define TUnfoldSys TUnfoldSysV17
 
-class TUnfoldSys : public TUnfold {
+class TUnfoldSysV17 : public TUnfoldV17 {
  private:
    void InitTUnfoldSys(void);     // initialize all data members
  protected:
@@ -107,12 +111,12 @@ class TUnfoldSys : public TUnfold {
      /// matrix gives the relative shifts
      kSysErrModeRelative=2
    };
-   TUnfoldSys(const TH2 *hist_A, EHistMap histmap, ERegMode regmode = kRegModeSize,
+   TUnfoldSysV17(const TH2 *hist_A, EHistMap histmap, ERegMode regmode = kRegModeSize,
              EConstraint constraint=kEConstraintArea);      // constructor
-   TUnfoldSys(const TMatrixD *matrix_A, EHistMap histmap, ERegMode regmode = kRegModeSize,
+   TUnfoldSysV17(const TMatrixD *matrix_A, EHistMap histmap, ERegMode regmode = kRegModeSize,
              EConstraint constraint=kEConstraintArea);      // constructor
-   TUnfoldSys(void);            // for derived classes
-   virtual ~ TUnfoldSys(void);    // delete data members
+   TUnfoldSysV17(void);            // for derived classes
+   virtual ~ TUnfoldSysV17(void);    // delete data members
    void AddSysError(const TH2 *sysError,const char *name, EHistMap histmap,
                     ESysErrMode mode); // add a systematic error source
    void SubtractBackground(const TH1 *hist_bgr,const char *name,
@@ -141,7 +145,7 @@ class TUnfoldSys : public TUnfold {
    void GetEmatrixTotal(TH2 *ematrix,const Int_t *binMap=0); // get total error including systematic,statistical,background,tau errors
    void GetRhoItotal(TH1 *rhoi,const Int_t *binMap=0,TH2 *invEmat=0); // get global correlation coefficients including systematic,statistical,background,tau errors
    Double_t GetChi2Sys(void); // get total chi**2 including all systematic errors
-   ClassDef(TUnfoldSys, TUnfold_CLASS_VERSION) //Unfolding with support for systematic error propagation
+   ClassDef(TUnfoldSysV17, TUnfold_CLASS_VERSION) //Unfolding with support for systematic error propagation
 };
 
 #endif
