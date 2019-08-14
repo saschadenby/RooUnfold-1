@@ -10,14 +10,14 @@
 #pragma link C++ class RooUnfoldSvd::SVDUnfold-;
 #pragma link C++ class RooUnfoldBinByBin+;
 #pragma link C++ class RooUnfoldIds+;
-#ifndef NOTUNFOLD
-#pragma link C++ class RooUnfoldTUnfold+;
-#endif
 #pragma link C++ class TUnfold+;
 #pragma link C++ class TUnfoldSys+;
 #pragma link C++ class TUnfoldBinning+;
 #pragma link C++ class TUnfoldDensity+;
 #pragma link C++ class TUnfoldBinningXML+;
+#ifndef NOTUNFOLD
+#pragma link C++ class RooUnfoldTUnfold+;
+#endif
 #pragma link C++ class RooUnfoldResponseT<TH1,TH2>-;
 #pragma link C++ class RooUnfoldResponse+;
 #ifndef NOROOFIT
