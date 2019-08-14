@@ -7,7 +7,8 @@ enable_language (Fortran)
 
 find_package(AnalyissBase QUIET)
 
-find_package( ROOT COMPONENTS Tree Unfold Matrix Hist RIO MathCore Physics RooFitCore RooFit HistFactory Graf Postscript Gpad)
+#find_package( ROOT COMPONENTS Tree Unfold Matrix Hist RIO MathCore Physics RooFitCore RooFit HistFactory Graf Postscript Gpad)
+find_package( ROOT COMPONENTS Tree Matrix Hist RIO MathCore Physics RooFitCore RooFit HistFactory Graf Postscript Gpad)
 
 file(GLOB RooUnfoldLinkDef src/*_LinkDef.h)
 set(RooUnfoldDagostini ${CMAKE_CURRENT_SOURCE_DIR}/src/bayes.for)
