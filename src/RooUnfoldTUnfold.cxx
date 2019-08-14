@@ -235,16 +235,14 @@ RooUnfoldTUnfoldT<Hist,Hist2D>::Unfold() const
 
   if (ndim == 2 || ndim == 3) reg= TUnfold::kRegModeNone;  // set explicitly
 
-  TH2D* Hres = getTH2(mres, "response matrix", "response matrix", this->_overflow);
 
 #ifndef NOTUNFOLDSYS
-  if (this->_dosys)
-    _unf= new TUnfoldSys(Hres,TUnfold::kHistMapOutputVert,reg);
-  else
+  if (this->_dosys){
+  _unf= new TUnfoldSys(&mres,TUnfold::kHistMapOutputVert,reg);
+  } else {
 #endif
-    std::cout << "Regparm: " << GetRegParm() << std::endl;
-  
-    _unf= new TUnfold(Hres,TUnfold::kHistMapOutputVert,reg);
+    _unf= new TUnfold(&mres,TUnfold::kHistMapOutputVert,reg);
+  }
 
   if        (ndim == 2) {
     Int_t nx= nBins(this->_meas,X), ny= nBins(this->_meas,Y);
@@ -269,18 +267,16 @@ RooUnfoldTUnfoldT<Hist,Hist2D>::Unfold() const
   // this method scans the parameter tau and finds the kink in the L curve
   // finally, the unfolding is done for the best choice of tau
 #if ROOT_VERSION_CODE >= ROOT_VERSION(5,23,0)  /* TUnfold v6 (included in ROOT 5.22) didn't have setInput return value */
-  //const Hist* Hmeas = RooUnfolding::createHist<Hist>(vmeas,this->GetName(),this->GetTitle(),var(this->_res->Hmeasured(),X));
 
-  TH1D* Hmeas = getTH1(vmeas, verr, "measured histogram", "measured histogram",this->_overflow);
 
-  Int_t stat= _unf->SetInput(Hmeas);
+  Int_t stat= _unf->SetInput(&vmeas,&verr);
   if(stat>=10000) {
     cerr<<"Unfolding result may be wrong: " << stat/10000 << " unconstrained output bins\n";
   }
 #else
-  _unf->SetInput(Hmeas);
+  _unf->SetInput(&vmeas,&verr);
 #endif
-  //_unf->SetConstraint(TUnfold::kEConstraintArea);
+  _unf->SetConstraint(TUnfold::kEConstraintArea);
   
   if (!tau_set){
     delete _lCurve;  _lCurve  = 0;
@@ -302,14 +298,9 @@ RooUnfoldTUnfoldT<Hist,Hist2D>::Unfold() const
   if (this->_verbose>=2) {
     const Hist* train1d = this->_res->Hmeasured();
     const Hist* truth1d = this->_res->Htruth();
-    //TH1* train1d= ::histNoOverflow (this->_res->Hmeasured(), this->_overflow);
-    //TH1* truth1d= ::histNoOverflow (this->_res->Htruth(),    this->_overflow);
     printTable (cout, h2v(this->_meas), h2v(train1d), h2v(truth1d), this->_cache._rec);
-    //printTable<TH1> (cout, truth1d, train1d, 0, meas, &reco, kTRUE);
   }
 
-  delete Hmeas;
-  delete Hres;
   this->_cache._unfolded= true;
   this->_cache._haveCov=  false;
 }
