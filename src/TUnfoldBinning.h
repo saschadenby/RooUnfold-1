@@ -1,9 +1,13 @@
 // Author: Stefan Schmitt
 // DESY, 10/08/11
 
-//  Version 17.5, in parallel to changes in TUnfold
+// Version 17.8, bug fix in GetNonemptyNode() and non-const access of tree
 //
 //  History:
+//    Version 17.7, bug fix in ExtractHistogram
+//    Version 17.6, bug fix to avoid possible crash in method
+//       CreateHistogramOfMigrations(). Bug fix with NaN in GetGlobalBinNumber()
+//    Version 17.5, in parallel to changes in TUnfold
 //    Version 17.4, bug fix with error handling
 //    Version 17.3, bug fix with underflow/overflow bins
 //    Version 17.2, new option isPeriodic
@@ -49,17 +53,18 @@
 #include <TAxis.h>
 #include <TF1.h>
 
+#define TUnfoldBinning TUnfoldBinningV17
 
-class TUnfoldBinning : public TNamed {
+class TUnfoldBinningV17 : public TNamed {
  protected:
    /// mother node
-   TUnfoldBinning *parentNode;
+   TUnfoldBinningV17 *parentNode;
    /// first daughter node
-   TUnfoldBinning *childNode;
+   TUnfoldBinningV17 *childNode;
    /// next sister
-   TUnfoldBinning *nextNode;
+   TUnfoldBinningV17 *nextNode;
    /// previous sister
-   TUnfoldBinning *prevNode;
+   TUnfoldBinningV17 *prevNode;
    /// for each axis the bin borders (TVectorD)
    TObjArray *fAxisList;
    /// for each axis its name (TObjString), or names of unconnected bins
@@ -84,39 +89,42 @@ class TUnfoldBinning : public TNamed {
       /// maximum numner of axes per distribution
       MAXDIM=32
    };
-   TUnfoldBinning(const char *name=0,Int_t nBins=0,const char *binNames=0); // create a new root node with a given number of unconnected bins
-   TUnfoldBinning(const TAxis &axis,Int_t includeUnderflow,Int_t includeOverflow); // create a binning scheme with one axis
-   TUnfoldBinning *AddBinning
-      (TUnfoldBinning *binning); // add a new node to the TUnfoldBinning tree
-   TUnfoldBinning *AddBinning(const char *name,Int_t nBins=0,const char *binNames=0); // add a new node to the TUnfoldBinning tree
+   TUnfoldBinningV17(const char *name=0,Int_t nBins=0,const char *binNames=0); // create a new root node with a given number of unconnected bins
+   TUnfoldBinningV17(const TAxis &axis,Int_t includeUnderflow,Int_t includeOverflow); // create a binning scheme with one axis
+   TUnfoldBinningV17 *AddBinning
+      (TUnfoldBinningV17 *binning); // add a new node to the TUnfoldBinning tree
+   TUnfoldBinningV17 *AddBinning(const char *name,Int_t nBins=0,const char *binNames=0); // add a new node to the TUnfoldBinning tree
    Bool_t AddAxis(const char *name,Int_t nBins,const Double_t *binBorders,
                 Bool_t hasUnderflow,Bool_t hasOverflow); // add an axis (variable bins) to the distribution associated with this node
    Bool_t AddAxis(const char *name,Int_t nBins,Double_t xMin,Double_t xMax,
                 Bool_t hasUnderflow,Bool_t hasOverflow); // add an axis (equidistant bins) to the distribution associated with this node
    Bool_t AddAxis(const TAxis &axis,Bool_t includeUnderflow,Bool_t includeOverflow); // add an axis (from TAxis instance) to the distribution associated with this node
-   virtual ~TUnfoldBinning(void);
+   virtual ~TUnfoldBinningV17(void);
    void PrintStream(std::ostream &out,Int_t indent=0,int debug=0) const;
    void SetBinFactorFunction(Double_t normalisation,TF1 *userFunc=0); // define function to calculate bin factor. Note: the function is not owned by this class
 
    /********************* Navigation **********************/
    /// first daughter node
-   inline TUnfoldBinning const *GetChildNode(void) const { return childNode; }
+   inline TUnfoldBinningV17 const *GetChildNode(void) const { return childNode; }
+   inline TUnfoldBinningV17 *GetChildNode(void) { return childNode; }
    /// previous sister node
-   inline TUnfoldBinning const *GetPrevNode(void) const { return prevNode; }
+   inline TUnfoldBinningV17 const *GetPrevNode(void) const { return prevNode; }
    /// next sister node
-   inline TUnfoldBinning const *GetNextNode(void) const { return nextNode; }
+   inline TUnfoldBinningV17 const *GetNextNode(void) const { return nextNode; }
+   inline TUnfoldBinningV17 *GetNextNode(void) { return nextNode; }
    /// mother node
-   inline TUnfoldBinning const *GetParentNode(void) const { return parentNode; }
-   TUnfoldBinning const *FindNode(char const *name) const; // find node by name
+   inline TUnfoldBinningV17 const *GetParentNode(void) const { return parentNode; }
+   inline TUnfoldBinningV17 *GetParentNode(void) { return parentNode; }
+   TUnfoldBinningV17 const *FindNode(char const *name) const; // find node by name
    /// return root node of the binnig scheme
-   TUnfoldBinning const *GetRootNode(void) const;
+   TUnfoldBinningV17 const *GetRootNode(void) const;
 
    /********************* Create THxx histograms **********/
    Int_t GetTH1xNumberOfBins(Bool_t originalAxisBinning=kTRUE,const char *axisSteering=0) const; // get number of bins of a one-dimensional histogram TH1
    TH1 *CreateHistogram(const char *histogramName,Bool_t originalAxisBinning=kFALSE,Int_t **binMap=0,const char *histogramTitle=0,const char *axisSteering=0) const; // create histogram and bin map for this node
    TH2D *CreateErrorMatrixHistogram(const char *histogramName,Bool_t originalAxisBinning,Int_t **binMap=0,const char *histogramTitle=0,const char *axisSteering=0) const; // create histogram and bin map for this node
-   static TH2D *CreateHistogramOfMigrations(TUnfoldBinning const *xAxis,
-                                           TUnfoldBinning const *yAxis,
+   static TH2D *CreateHistogramOfMigrations(TUnfoldBinningV17 const *xAxis,
+                                           TUnfoldBinningV17 const *yAxis,
                                            char const *histogramName,
                                            Bool_t originalXAxisBinning=kFALSE,
                                            Bool_t originalYAxisBinning=kFALSE,
@@ -162,7 +170,7 @@ class TUnfoldBinning : public TNamed {
       return (TVectorD const *)fAxisList->At(axis); }
    /// get name of an axis
    inline TString GetDistributionAxisLabel(Int_t axis) const {
-      return ((TObjString const *)fAxisLabelList->At(axis))->GetString(); }
+      return ((TObjString * const)fAxisLabelList->At(axis))->GetString(); }
 
    virtual Double_t GetDistributionUnderflowBinWidth(Int_t axis) const; // width of underflow bin on the given axis
    virtual Double_t GetDistributionOverflowBinWidth(Int_t axis) const; // width of overflow bin on the given axis
@@ -177,26 +185,27 @@ class TUnfoldBinning : public TNamed {
 			     Int_t *isOptionGiven) const; // decode axis steering options
  protected:
    /// return root node
-   TUnfoldBinning *GetRootNode(void);
+   TUnfoldBinningV17 *GetRootNode(void);
    void Initialize(Int_t nBins);
    Int_t UpdateFirstLastBin(Bool_t startWithRootNode=kTRUE); // update fFirstBin and fLastBin
-   TUnfoldBinning const *ToAxisBins(Int_t globalBin,Int_t *axisBins) const; // return distribution in which the bin is located
+   TUnfoldBinningV17 const *ToAxisBins(Int_t globalBin,Int_t *axisBins) const; // return distribution in which the bin is located
    Int_t ToGlobalBin(Int_t const *axisBins,Int_t *isBelow=0,Int_t *isAbove=0) const; // return -1 if not inside distribution
    TString BuildHistogramTitle(const char *histogramName,const char *histogramTitle,
                                Int_t const *axisList) const; // construct histogram title
    TString BuildHistogramTitle2D(const char *histogramName,const char *histogramTitle,
-                                 Int_t xAxis,const TUnfoldBinning *yAxisBinning,Int_t yAxis) const; // construct histogram title
+                                 Int_t xAxis,const TUnfoldBinningV17 *yAxisBinning,Int_t yAxis) const; // construct histogram title
    Int_t GetTHxxBinning(Int_t maxDim,Int_t *axisBins,Int_t *axisList,const char *axisSteering) const; // get binning information for creating a THxx
    Int_t GetTHxxBinningSingleNode(Int_t maxDim,Int_t *axisBins,Int_t *axisList,const char *axisSteering) const; // get binning information for creating a THxx
    Int_t GetTHxxBinsRecursive(const char *axisSteering) const; // get binning information for creating a THxx
-   const TUnfoldBinning *GetNonemptyNode(void) const; // get the only nodes with non-empty distributions if there are multiple nodes, return 0
+   const TUnfoldBinningV17 *GetNonemptyNode(void) const; // get the single node with non-empty distribution, if there are multiple nodes, return 0
+   const TUnfoldBinningV17 *GetNonemptyNode_r(int &count) const; // get a node with non-empty distributions, count how many exit
    Int_t *CreateBinMap(const TH1 *hist,Int_t nDim,const Int_t *axisList,const char *axisSteering) const; // create mapping from global bins to a histogram
    Int_t FillBinMapRecursive(Int_t startBin,const char *axisSteering,
                             Int_t *binMap) const; // fill bin map recursively
    Int_t FillBinMapSingleNode(const TH1 *hist,Int_t startBin,Int_t nDim,const Int_t *axisList,const char *axisSteering,Int_t *binMap) const; // fill bin map for a single node
    void SetBinFactor(Double_t normalisation,TObject *factors); // define function to calculate bin factor. Note: the object is owned by this class, unless it is a function
 
-   ClassDef(TUnfoldBinning, TUnfold_CLASS_VERSION) //Complex binning schemes for TUnfoldDensity
+   ClassDef(TUnfoldBinningV17, TUnfold_CLASS_VERSION) //Complex binning schemes for TUnfoldDensity
 };
 
 #endif
