@@ -1,9 +1,11 @@
 // Author: Stefan Schmitt
 // DESY, 13/10/08
 
-//  Version 17.6,  updated doxygen-style comments, add one argument for scanLCurve
+//  Version 17.8, add new method GetDXDY() for histograms
 //
 //  History:
+//    Version 17.7, updates in the TUnfold implementation
+//    Version 17.6,  updated doxygen-style comments, add one argument for scanLCurve
 //    Version 17.5, fix memory leak and other bugs
 //    Version 17.4, in parallel to changes in TUnfoldBinning
 //    Version 17.3, in parallel to changes in TUnfoldBinning
@@ -97,11 +99,12 @@
 #include <TObjArray.h>
 #include <TString.h>
 
-#define TUnfold_VERSION "V17.6"
+#define TUnfold_VERSION "V17.8"
 #define TUnfold_CLASS_VERSION 17
 
+#define TUnfold TUnfoldV17
 
-class TUnfold : public TObject {
+class TUnfoldV17 : public TObject {
  private:
    void InitTUnfold(void);     // initialize all data members
  public:
@@ -270,15 +273,15 @@ class TUnfold : public TObject {
 public:
    static const char*GetTUnfoldVersion(void);
    // Set up response matrix and regularisation scheme
-   TUnfold(const TH2 *hist_A, EHistMap histmap,
+   TUnfoldV17(const TH2 *hist_A, EHistMap histmap,
            ERegMode regmode = kRegModeSize,
            EConstraint constraint=kEConstraintArea);
-   TUnfold(const TMatrixD *matrix_A,EHistMap histmap,
+   TUnfoldV17(const TMatrixD *matrix_A, EHistMap histmap,
            ERegMode regmode = kRegModeSize,
            EConstraint constraint=kEConstraintArea);
    // for root streamer and derived classes
-   TUnfold(void);
-   virtual ~TUnfold(void);
+   TUnfoldV17(void);
+   virtual ~TUnfoldV17(void);
    // define input distribution
    virtual Int_t SetInput(const TH1 *hist_y, Double_t scaleBias=0.0,Double_t oneOverZeroError=0.0,const TH2 *hist_vyy=0,const TH2 *hist_vyy_inv=0);
    virtual Int_t SetInput(const TVectorD *vec_y, const TVectorD *errvec_y, Double_t scaleBias=0.0,Double_t oneOverZeroError=0.0,const TH2 *hist_vyy=0,const TH2 *hist_vyy_inv=0);
@@ -310,6 +313,8 @@ public:
    void GetLsquared(TH2 *lsquared) const;
 
    // access various properties of the result
+   /// get matrix connecting input and output changes
+   void GetDXDY(TH2 *dxdy) const;
    /// get maximum global correlation determined in recent unfolding
    inline Double_t GetRhoMax(void) const { return fRhoMax; }
    /// get average global correlation determined in recent unfolding
@@ -343,7 +348,7 @@ public:
    /// matrices with rank problems
    void SetEpsMatrix(Double_t eps); // set accuracy for eigenvalue analysis
 
-   ClassDef(TUnfold, TUnfold_CLASS_VERSION) //Unfolding with support for L-curve analysis
+   ClassDef(TUnfoldV17, TUnfold_CLASS_VERSION) //Unfolding with support for L-curve analysis
 };
 
 #endif

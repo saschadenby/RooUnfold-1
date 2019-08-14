@@ -1,9 +1,12 @@
 // Author: Stefan Schmitt
 // DESY, 11/08/11
 
-//  Version 17.5, bug fix in TUnfold also corrects GetEmatrixSysUncorr()
+//  Version 17.8, new method GetDXDY()
 //
 //  History:
+//    Version 17.7, with bug-fix for curvature regularisation
+//    Version 17.6, with updated doxygen comments and bug-fixes in TUnfoldBinning
+//    Version 17.5, bug fix in TUnfold also corrects GetEmatrixSysUncorr()
 //    Version 17.4, in parallel to changes in TUnfoldBinning
 //    Version 17.3, in parallel to changes in TUnfoldBinning
 //    Version 17.2, in parallel to changes in TUnfoldBinning
@@ -44,19 +47,20 @@
 #include "TUnfoldSys.h"
 #include "TUnfoldBinning.h"
 
+#define TUnfoldDensity TUnfoldDensityV17
 
-class TUnfoldDensity : public TUnfoldSys {
+class TUnfoldDensityV17 : public TUnfoldSysV17 {
  protected:
    /// binning scheme for the output (truth level)
-   const TUnfoldBinning * fConstOutputBins;
+   const TUnfoldBinningV17 * fConstOutputBins;
    /// binning scheme for the input (detector level)
-   const TUnfoldBinning * fConstInputBins;
+   const TUnfoldBinningV17 * fConstInputBins;
    /// pointer to output binning scheme if owned by this class
-   TUnfoldBinning *fOwnedOutputBins;
+   TUnfoldBinningV17 *fOwnedOutputBins;
    /// pointer to input binning scheme if owned by this class
-   TUnfoldBinning *fOwnedInputBins;
+   TUnfoldBinningV17 *fOwnedInputBins;
    /// binning scheme for the regularisation conditions
-   TUnfoldBinning *fRegularisationConditions;
+   TUnfoldBinningV17 *fRegularisationConditions;
 
  public:
    /// choice of regularisation scale factors to cinstruct the matrix L
@@ -76,26 +80,26 @@ class TUnfoldDensity : public TUnfoldSys {
 
    Double_t GetDensityFactor(EDensityMode densityMode,Int_t iBin) const; // density correction factor for this bin
    void RegularizeDistributionRecursive
-     (const TUnfoldBinning *binning,ERegMode regmode,
+     (const TUnfoldBinningV17 *binning,ERegMode regmode,
       EDensityMode densityMode,const char *distribution,
       const char *axisSteering); // regularize the given binning recursively
    void RegularizeOneDistribution
-     (const TUnfoldBinning *binning,ERegMode regmode,
+     (const TUnfoldBinningV17 *binning,ERegMode regmode,
       EDensityMode densityMode,const char *axisSteering); // regularize the distribution of one binning node
 
  public:
-   TUnfoldDensity(void); // constructor for derived classes, do nothing
+   TUnfoldDensityV17(void); // constructor for derived classes, do nothing
 
-   TUnfoldDensity(const TH2 *hist_A, EHistMap histmap,
+   TUnfoldDensityV17(const TH2 *hist_A, EHistMap histmap,
 		     ERegMode regmode = kRegModeCurvature,
 		     EConstraint constraint=kEConstraintArea,
 		     EDensityMode densityMode=kDensityModeBinWidthAndUser,
-		     const TUnfoldBinning *outputBins=0,
-		     const TUnfoldBinning *inputBins=0,
+		     const TUnfoldBinningV17 *outputBins=0,
+		     const TUnfoldBinningV17 *inputBins=0,
 		     const char *regularisationDistribution=0,
 		     const char *regularisationAxisSteering="*[UOB]"); // constructor for using the histogram classes. Default regularisation is on the curvature of the bin-width normalized density, excluding underflow and overflow bins
 
-   virtual ~ TUnfoldDensity(void); // delete data members
+   virtual ~ TUnfoldDensityV17(void); // delete data members
 
    void RegularizeDistribution(ERegMode regmode,EDensityMode densityMode,
 			       const char *distribution,
@@ -190,12 +194,14 @@ class TUnfoldDensity : public TUnfoldSys {
 
    TH2 *GetProbabilityMatrix(const char *histogramName,
                            const char *histogramTitle=0,Bool_t useAxisBinning=kTRUE) const; // get matrix of probabilities
+   TH2 *GetDXDY(const char *histogramName,
+                          const char *histogramTitle=0,Bool_t useAxisBinning=kTRUE) const; // get matrix DX/DY
 
-   const TUnfoldBinning *GetInputBinning(const char *distributionName=0) const; // find binning scheme for input bins
-   const TUnfoldBinning *GetOutputBinning(const char *distributionName=0) const; // find binning scheme for output bins
+   const TUnfoldBinningV17 *GetInputBinning(const char *distributionName=0) const; // find binning scheme for input bins
+   const TUnfoldBinningV17 *GetOutputBinning(const char *distributionName=0) const; // find binning scheme for output bins
    /// return binning scheme for regularisation conditions (matrix L)
-TUnfoldBinning *GetLBinning(void) const { return fRegularisationConditions; }
-   ClassDef(TUnfoldDensity, TUnfold_CLASS_VERSION) //Unfolding with density regularisation
+TUnfoldBinningV17 *GetLBinning(void) const { return fRegularisationConditions; }
+   ClassDef(TUnfoldDensityV17, TUnfold_CLASS_VERSION) //Unfolding with density regularisation
 };
 
 #endif
