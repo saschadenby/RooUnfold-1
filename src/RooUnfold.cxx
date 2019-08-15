@@ -1545,10 +1545,8 @@ RooUnfoldSpec::RooUnfoldSpec(const char* name, const char* title, const TH1* tru
   RooArgList obs_reco_list(*obs_reco);
   RooArgList obs_truth_list(*obs_truth);
   ParamHistFunc* reco = new ParamHistFunc(TString::Format("signal_reco_%s_differential",obs_reco->GetName()),obs_reco->GetTitle(),obs_reco_list,reco_bins);
-  reco->Print("t");
   this->_reco.setNominal(reco);
   ParamHistFunc* bkg = new ParamHistFunc(TString::Format("bkg_reco_%s_differential",obs_reco->GetName()),obs_reco->GetTitle(),obs_reco_list,bkg_bins);
-  bkg->Print("t");
   this->_bkg.setNominal(bkg);
   this->_data.setNominal(RooUnfolding::makeHistFunc(data_binned,obs_reco_list));
   this->setup(truth_th1,obs_truth_list,NULL,obs_reco_list,response_th1,NULL,NULL,includeUnderflowOverflow,errorThreshold,useDensity);
@@ -1680,12 +1678,13 @@ void RooUnfoldSpec::makeReco(){
 }
 void RooUnfoldSpec::makeDataMinusBackground(){
   this->_locked = true;
+  this->makeData();
   if(!this->_cache._data_minus_bkg){
     if(this->_bkg._nom){
       this->makeResponse();
-      this->_cache._data_minus_bkg = this->_cache._response->makeHistSum(this->_data._nom,this->_bkg._nom,1.,-1.);
+      this->makeBackground();
+      this->_cache._data_minus_bkg = this->_cache._response->makeHistSum(this->_cache._data->func(),this->_cache._bkg->func(),1.,-1.);
     } else {
-      this->makeData();
       this->_cache._data_minus_bkg = this->_cache._data;
     }
     TString name(TString::Format("%s_data_minus_bkg",this->GetName()));
