@@ -1528,6 +1528,14 @@ RooUnfoldSpec::RooUnfoldSpec(const char* name, const char* title, const TH1* tru
   this->setup(truth_th1,obs_truth,reco_th1,obs_reco,response_th1,bkg,data,includeUnderflowOverflow,errorThreshold,useDensity);
 }
 
+RooUnfoldSpec::RooUnfoldSpec(const char* name, const char* title, const TH1* truth_th1, const RooArgList& obs_truth, const TH1* reco_th1, const RooArgList& obs_reco, const TH2* response_th1, RooAbsReal* bkg, RooDataHist* data, bool includeUnderflowOverflow, double errorThreshold, bool useDensity) :
+  TNamed(name,title)
+{
+  this->_bkg.setNominal(bkg);
+  this->_data.setNominal(RooUnfolding::makeHistFunc(data,obs_reco));
+  this->setup(truth_th1,obs_truth,reco_th1,obs_reco,response_th1,NULL,NULL,includeUnderflowOverflow,errorThreshold,useDensity);
+}
+
 RooUnfoldSpec::RooUnfoldSpec(const char* name, const char* title, const TH1* truth_th1, const RooArgList& obs_truth, RooAbsReal* reco, const RooArgList& obs_reco, const TH2* response_th1, RooAbsReal* bkg, RooDataHist* data, bool includeUnderflowOverflow, double errorThreshold, bool useDensity) :
   TNamed(name,title)
 {
@@ -1550,6 +1558,19 @@ RooUnfoldSpec::RooUnfoldSpec(const char* name, const char* title, const TH1* tru
   this->_bkg.setNominal(bkg);
   this->_data.setNominal(RooUnfolding::makeHistFunc(data_binned,obs_reco_list));
   this->setup(truth_th1,obs_truth_list,NULL,obs_reco_list,response_th1,NULL,NULL,includeUnderflowOverflow,errorThreshold,useDensity);
+}
+
+RooUnfoldSpec::RooUnfoldSpec(const char* name, const char* title, const TH1* truth_th1, RooAbsArg* obs_truth, const TH1* reco_th1, RooAbsArg* obs_reco, const TH2* response_th1, RooAbsReal* bkg, RooDataHist* data_binned, bool includeUnderflowOverflow, double errorThreshold, bool useDensity) : RooUnfoldSpec(name,title,truth_th1,RooArgList(*obs_truth),reco_th1,RooArgList(*obs_reco),response_th1,bkg,data_binned,includeUnderflowOverflow,errorThreshold,useDensity) {}
+
+RooUnfoldSpec::RooUnfoldSpec(const char* name, const char* title, const TH1* truth_th1, RooAbsArg* obs_truth, const TH1* reco_th1, RooAbsArg* obs_reco, const TH2* response_th1, const RooArgList& bkg_bins, RooDataHist* data_binned, bool includeUnderflowOverflow, double errorThreshold, bool useDensity) : 
+  TNamed(name,title)
+{
+  RooArgList obs_reco_list(*obs_reco);
+  RooArgList obs_truth_list(*obs_truth);
+  ParamHistFunc* bkg = new ParamHistFunc(TString::Format("bkg_reco_%s_differential",obs_reco->GetName()),obs_reco->GetTitle(),obs_reco_list,bkg_bins);
+  this->_bkg.setNominal(bkg);
+  this->_data.setNominal(RooUnfolding::makeHistFunc(data_binned,obs_reco_list));
+  this->setup(truth_th1,obs_truth_list,reco_th1,obs_reco_list,response_th1,NULL,NULL,includeUnderflowOverflow,errorThreshold,useDensity);
 }
 
 
@@ -1720,10 +1741,7 @@ void RooUnfoldSpec::HistContainer::addNorm(const char* name, double up, double d
   this->_norms[name] = {up,dn};
 }
 
-RooUnfoldSpec::HistContainer::~HistContainer(){
-  if(this->_nom) delete this->_nom;
-  for(auto it:this->_shapes) for(auto h:it.second) delete h;
-}
+RooUnfoldSpec::HistContainer::~HistContainer(){}
 
 void RooUnfoldSpec::lockCheck(){
   if(this->_locked){

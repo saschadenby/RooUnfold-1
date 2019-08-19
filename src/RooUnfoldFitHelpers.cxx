@@ -516,7 +516,8 @@ namespace RooUnfolding { // section 2: non-trivial helpers
     RooAbsArg* yvar = obs.at(1);
     RooAbsArg* zvar = obs.at(2);
  
-    RooDataHist* dh = new RooDataHist(name,title,obs);
+    RooArgSet args(obs);
+    RooDataHist* dh = new RooDataHist(name,title,args);
 
     int offset = !includeUnderflowOverflow;
 
@@ -548,6 +549,8 @@ namespace RooUnfolding { // section 2: non-trivial helpers
         dh->add(obs,histo->GetBinContent(bin)/volume,TMath::Power(histo->GetBinError(bin)/volume,2)) ;     
       }
     }
+    dh->removeSelfFromDir();
+
     return dh;
   }
 
