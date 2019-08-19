@@ -19,6 +19,8 @@ END_HTML */
 
 /////////////////////////////////////////////////////////////
 
+//Comment
+
 #include "RooUnfoldBinByBin.h"
 #include "RooUnfoldHelpers.h"
 
@@ -66,6 +68,7 @@ RooUnfoldBinByBinT<Hist,Hist2D>::Unfold() const
   const TVectorD& vtrain(this->_res->Vmeasured());
   const TVectorD& vtruth(this->_res->Vtruth());
   const TVectorD& fakes(this->_res->Vfakes());
+  const TMatrixD& respm(this->_res->Mresponse());
 
   Double_t fac= 0.0;
   if (this->_res->HasFakes()) { 

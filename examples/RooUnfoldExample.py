@@ -62,9 +62,9 @@ elif method == "bbb":
 elif method == "inv":
   unfold= ROOT.RooUnfoldInvert     (response, hMeas);     #  OR  
 elif method == "root":
-  unfold= RooUnfoldTUnfold (response, hMeas);         #  OR
+  unfold= ROOT.RooUnfoldTUnfold (response, hMeas);         #  OR
 elif method == "ids":
-  unfold= RooUnfoldIds     (response, hMeas, 3);      #  OR
+  unfold= ROOT.RooUnfoldIds     (response, hMeas, 3);      #  OR
 
 hReco= unfold.Hreco();
 

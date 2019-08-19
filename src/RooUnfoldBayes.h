@@ -45,7 +45,7 @@ public:
   Int_t GetSmoothing()  const;
   const TMatrixD& UnfoldingMatrix() const;
 
-  virtual void  SetRegParm (double parm);
+  virtual void  SetRegParm (Double_t parm);
   virtual double GetRegParm() const;
   virtual void Reset();
   virtual void Print (Option_t* option= "") const;
@@ -94,7 +94,7 @@ protected:
   mutable TMatrixD _dnCidPjk;     // response error propagation matrix (stack j,k into each column)
 
 public:
-  ClassDefT (RooUnfoldBayesT, 0) // Bayesian Unfolding
+  ClassDefT (RooUnfoldBayesT, 1) // Bayesian Unfolding
 };
 
 

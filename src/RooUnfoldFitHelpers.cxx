@@ -269,24 +269,28 @@ namespace RooUnfolding {
     return v;
   }
   template<> void printHistogram<RooUnfolding::RooFitHist>(const RooUnfolding::RooFitHist* h){
+    
     if(!h){
       std::cout << "RooFitHist (NULL)" << std::endl;
       return;
     }
     size_t n = nBins(h);
+    
     std::cout << "RooFitHist " << name(h) << " @ " << h << " (" << h->func()->ClassName() << " @ " << h->func() << "): " << n << " bins in " << dim(h) << " dimensions (";
+    
     for(size_t i=0; i<dim(h); ++i){
       if(i!=0) std::cout << ",";
       std::cout << h->obs(i)->GetName() << "@" << h->obs(i);
     }
     std::cout << ")";
+    
     int nnps = h->nps().size();
     std::cout << " " << nnps << " bins affected by NPs" << std::endl;
     h->func()->Print("t");
     for(size_t i=0; i<n; ++i){
       setBin(h,i);
       std::cout << h->bin() << " " << h->value() << " " << h->error() << std::endl;
-    }    
+    }
   }
 }
 
