@@ -196,7 +196,8 @@ RooUnfoldTUnfoldT<Hist,Hist2D>::Unfold() const
   TVectorD vmeas = this->Vmeasured();
   const TVectorD& verr(this->Emeasured());
   const TVectorD& vtruth(this->_res->Vtruth());
-  TMatrixD mres = this->_res->Mresponse();
+  TMatrixD mres = this->_res->Mresponse(false);
+
 
   TH1::AddDirectory (oldstat);
 
@@ -205,7 +206,8 @@ RooUnfoldTUnfoldT<Hist,Hist2D>::Unfold() const
   if (this->_overflow){
     i_start = 1;
   } 
-    
+  std::cout << "overflow: " << this->_overflow << std::endl;
+
   // Add inefficiencies to measured overflow bin
   for (Int_t j= i_start; j<this->_nt - i_start; j++) {
     Double_t ntru= 0.0;
