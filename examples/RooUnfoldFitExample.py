@@ -516,7 +516,7 @@ def main(args):
     import sys
     ws = makeFinalWorkspace(algorithm(args.method),mainws,auxws,4)
   else:
-    histograms = prepare(smear,True)
+    histograms = prepare(smear,False)
 
     spec = ROOT.RooUnfoldSpec("unfold","unfold",histograms["sig_truth"],"obs_truth",histograms["sig_reco"],"obs_reco",histograms["sig_response"],histograms["bkg_reco"],histograms["sigbkg_reco"],False,0.0005,False)
     
