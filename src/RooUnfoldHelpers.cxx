@@ -5,6 +5,8 @@
 #include <sstream>
 #include <iomanip>
 
+using std::cerr;
+
 namespace RooUnfolding {
   void printVector(const char* name, const TVectorD& vec){
     std::cout << name << std::endl;
@@ -20,6 +22,77 @@ namespace RooUnfolding {
       }
     }
   }
+
+  TVectorD* resizeVector (const TVectorD& vec, Int_t n)
+  {
+
+    Int_t nbins;
+
+    if (n < vec.GetNrows()){
+      nbins = n;
+    } else {
+      cerr << "Warning: Requested vector size is smaller than the original vector. The initial size is maintained.";
+      nbins = vec.GetNrows();
+    }
+
+    TVectorD* newvec = new TVectorD(nbins);
+
+    // Add zeros to the new columns.
+    for (Int_t i = 0; i < nbins; i++){
+      if (i < vec.GetNrows()){
+	(*newvec)[i] = vec[i];
+      } else {
+	(*newvec)[i] = 0.0;
+      }
+    }
+  
+    return newvec;
+  }
+
+  void resizeVector (TVectorD& vec, Int_t n)
+  {
+
+    if (n <= vec.GetNrows()){
+      cerr << "Warning: Requested vector size is smaller than or equal to the original vector. The initial vector is maintained.";
+      return;
+    }
+
+    // Add new columns with zero as value.
+    vec.ResizeTo(n);
+  }
+
+  TMatrixD* squareMatrix (const TMatrixD& matrix)
+  {
+
+    Int_t nbins;
+
+    if (matrix.GetNrows() >= matrix.GetNcols()){
+      nbins = matrix.GetNrows();
+    } else {
+      nbins = matrix.GetNcols();
+    }
+
+    TMatrixD* newmatrix = new TMatrixD(matrix);
+
+    newmatrix->ResizeTo(nbins,nbins);
+  
+    return newmatrix;
+  }
+
+  void squareMatrix (TMatrixD& matrix)
+  {
+
+    Int_t nbins;
+
+    if (matrix.GetNrows() >= matrix.GetNcols()){
+      nbins = matrix.GetNrows();
+    } else {
+      nbins = matrix.GetNcols();
+    }
+    
+    matrix.ResizeTo(nbins,nbins);
+  }
+
 
   TH1D* getTH1(const TVectorD& vec, const TVectorD& errvec, const char* name, const char* title, bool overflow){
     

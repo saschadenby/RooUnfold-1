@@ -101,6 +101,10 @@ namespace RooUnfolding {
   TH2D* getTH2(const TMatrixD& matrix, const char* name, const char* title, bool overflow=false);
 
   void add(TMatrixD& target, const TMatrixD& addition);
+  TVectorD* resizeVector (const TVectorD& vec, Int_t n);
+  TMatrixD* squareMatrix (const TMatrixD& matrix);
+  void resizeVector (TVectorD& vec, Int_t n);
+  void squareMatrix (TMatrixD& matrix);
   TMatrixD& ABAT (const TMatrixD& a, const TMatrixD& b, TMatrixD& c);
   TMatrixD& ABAT (const TMatrixD& a, const TVectorD& b, TMatrixD& c);
   template<class Hist> RooUnfolding::Variable<Hist> var(const Hist* h, Dimension d);
