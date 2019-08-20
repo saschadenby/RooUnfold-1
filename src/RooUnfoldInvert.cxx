@@ -89,7 +89,7 @@ RooUnfoldInvertT<Hist,Hist2D>::Impl()
 template<class Hist, class Hist2D> void
 RooUnfoldInvertT<Hist,Hist2D>::Unfold() const
 {
-  TMatrixD res(this->_res->Mresponse());
+  TMatrixD res(this->_res->Mresponse(false));
   if (this->_nt>this->_nm) {
     TMatrixD resT (TMatrixD::kTransposed, res);
     _svd= new TDecompSVD (resT);
