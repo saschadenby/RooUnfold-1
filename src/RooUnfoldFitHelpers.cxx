@@ -508,8 +508,8 @@ namespace RooUnfolding { // section 2: non-trivial helpers
   }
 
   RooDataHist* convertTH1(const TH1* histo, const RooArgList& obs, bool includeUnderflowOverflow, bool correctDensity){
-    const char* name = histo->GetName();
-    const char* title = histo->GetTitle();
+    TString name(histo->GetName());
+    TString title(histo->GetTitle());
 
     // Define x,y,z as 1st, 2nd and 3rd observable
     RooAbsArg* xvar = obs.at(0);
@@ -517,7 +517,7 @@ namespace RooUnfolding { // section 2: non-trivial helpers
     RooAbsArg* zvar = obs.at(2);
  
     RooArgSet args(obs);
-    RooDataHist* dh = new RooDataHist(name,title,args);
+    RooDataHist* dh = new RooDataHist(TString::Format("%s_hist",name.Data()),title,args);
 
     int offset = !includeUnderflowOverflow;
 
@@ -686,9 +686,9 @@ namespace RooUnfolding { // section 2: non-trivial helpers
   }
   
   RooFitHist::RooFitHist(RooDataHist* dh, const RooArgList& obslist, double uncThreshold){
-    const char* name = dh->GetName();
-    const char* title = dh->GetTitle();
-    RooHistFunc* hf = new RooHistFunc(TString::Format("%s_Values",name).Data(),title,obslist,*dh);
+    TString name(dh->GetName());
+    TString title(dh->GetTitle());
+    RooHistFunc* hf = new RooHistFunc(TString::Format("%s_Values",name.Data()),title,obslist,*dh);
     RooFIter itr(obslist.fwdIterator());
     RooAbsArg* arg = NULL;
     while((arg = (RooAbsArg*)itr.next())){
@@ -785,12 +785,14 @@ namespace RooUnfolding { // section 2: non-trivial helpers
 
   RooHistFunc* makeHistFunc(const char* name, const TH1* histo, const RooArgList& obs, bool includeUnderflowOverflow, bool correctDensity){
     RooDataHist* dh = convertTH1(histo,obs,includeUnderflowOverflow,correctDensity);
-    dh->SetName(TString::Format("hist_%s",name));
-    RooHistFunc* hf = new RooHistFunc(name,histo->GetTitle(),obs,*dh);
+    dh->Print();
+    TString title(histo->GetTitle());
+    RooHistFunc* hf = new RooHistFunc(name,title.Data(),obs,*dh);
     return hf;
   }
   RooHistFunc* makeHistFunc(const TH1* histo, const RooArgList& obs, bool includeUnderflowOverflow, bool correctDensity){
-    return makeHistFunc(histo->GetName(),histo,obs,includeUnderflowOverflow,correctDensity);
+    TString name(TString::Format("%s_histfunc",histo->GetName()));
+    return makeHistFunc(name.Data(),histo,obs,includeUnderflowOverflow,correctDensity);
   }
   RooHistFunc* makeHistFunc(RooDataHist* dhist, const std::vector<RooAbsArg*>& obs){
     if(!dhist) return NULL;
@@ -799,15 +801,14 @@ namespace RooUnfolding { // section 2: non-trivial helpers
       if(dhist->get()->find(*obs[i]))
         vars.add(*obs[i]);
     }
-    return new RooHistFunc(dhist->GetName(),dhist->GetName(),vars,*dhist);
+    return new RooHistFunc(TString::Format("%s_func",dhist->GetName()),dhist->GetTitle(),vars,*dhist);
   }
   RooHistFunc* makeHistFunc(RooDataHist* dhist, const RooArgList& obs){
     if(!dhist) return NULL;
-    return new RooHistFunc(dhist->GetName(),dhist->GetName(),obs,*dhist);
+    return new RooHistFunc(TString::Format("%s_func",dhist->GetName()),dhist->GetTitle(),obs,*dhist);
   }
   RooHistPdf* makeHistPdf(const char* name, const TH1* histo, const RooArgList& obs, bool includeUnderflowOverflow, bool correctDensity){
     RooDataHist* dh = convertTH1(histo,obs,includeUnderflowOverflow,correctDensity);
-    dh->SetName(TString::Format("hist_%s",name));
     RooHistPdf* hf = new RooHistPdf(name,histo->GetTitle(),obs,*dh);
     return hf;
   }
