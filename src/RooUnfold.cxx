@@ -473,10 +473,6 @@ RooUnfoldT<Hist,Hist2D>::SetResponse (const RooUnfoldResponseT<Hist,Hist2D>* res
   _overflow= _res->UseOverflowStatus() ? 1 : 0;
   _nm= _res->GetNbinsMeasured();
   _nt= _res->GetNbinsTruth();
-  if (_overflow) {
-    _nm += 2;
-    _nt += 2;
-  }
   SetNameTitleDefault();
 }
 
@@ -715,15 +711,15 @@ RooUnfoldT<Hist,Hist2D>::Hreco (ErrorTreatment withError)
     2: Errors from the square root of of the covariance matrix given by the unfolding
     3: Errors from the square root of the covariance matrix from the variation of the results in toy MC tests
     */
-  
+
   if (!UnfoldWithErrors (withError)) withError= kNoError;
   const Hist* t = _res->Htruth();
   if (!_cache._unfolded){
-    return createHist<Hist>(name(t),title(t),vars(t));
+    return RooUnfolding::createHist(name(t),title(t),vars(t));
   } else {
     TVectorD rec(this->Vreco());
     TVectorD errors(this->ErecoV());
-    return createHist<Hist>(rec,errors,name(t),title(t),vars(t),_overflow);
+    return RooUnfolding::createHist(rec,errors,name(t),title(t),vars(t),_overflow);
   }
 }
 
@@ -1129,7 +1125,7 @@ const RooUnfoldResponseT<Hist,Hist2D>* RooUnfoldT<Hist,Hist2D>::response()  cons
 
 template<class Hist,class Hist2D> 
 RooUnfoldResponseT<Hist,Hist2D>* RooUnfoldT<Hist,Hist2D>::response()
-{
+{  
    // Response matrix object
   return _res;
 }
@@ -1340,7 +1336,7 @@ template<class Base> Bool_t RooUnfolding::RooFitWrapper<Base>::redirectServersHo
 
 
 template<class Base>const RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>* RooUnfolding::RooFitWrapper<Base>::unfolding() const { 
-  return this->_unfolding; 
+  return this->_unfolding;
 }
 
 template <class Base>
@@ -1685,7 +1681,11 @@ RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>* RooUnfoldSpec::un
   data_minus_bkg->func()->SetName(name);
   data_minus_bkg->func()->SetTitle(name);
 
+  response->UseOverflow();
+
   unfolding = RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>::New(alg,response,data_minus_bkg,regparam);
+
+  std::cout << "overflow: " << unfolding->Overflow() << std::endl;
 
   return unfolding;
 }

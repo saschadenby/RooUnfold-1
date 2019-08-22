@@ -1,8 +1,6 @@
 //=====================================================================-*-C++-*-
 // File and Version Information:
 //      $Id$
-//
-// Description:
 //      Response Matrix
 //
 // Author: Tim Adye <T.J.Adye@rl.ac.uk>
