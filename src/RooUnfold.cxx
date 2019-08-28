@@ -1616,8 +1616,8 @@ void RooUnfoldSpec::setup(const TH1* truth_th1, const RooArgList& obs_truth, con
   this->_includeUnderflowOverflow = includeUnderflowOverflow;
   this->_useDensity = useDensity;
   this->_errorThreshold = errorThreshold;
-  if(truth_th1) this->_truth.setNominal(RooUnfolding::makeHistPdf(truth_th1,obs_truth,includeUnderflowOverflow,false));
-  if(reco_th1)  this->_reco.setNominal(RooUnfolding::makeHistPdf(reco_th1,obs_reco,includeUnderflowOverflow,false));
+  if(truth_th1) this->_truth.setNominal(RooUnfolding::makeHistPdf(truth_th1,obs_truth,includeUnderflowOverflow,this->_useDensity));
+  if(reco_th1)  this->_reco.setNominal(RooUnfolding::makeHistPdf(reco_th1,obs_reco,includeUnderflowOverflow,this->_useDensity));
   this->_obs_truth.add(obs_truth);  
   this->_obs_all.add(obs_truth);
   this->_obs_reco.add(obs_reco);  

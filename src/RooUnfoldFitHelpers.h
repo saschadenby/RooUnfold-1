@@ -66,8 +66,8 @@ namespace RooUnfolding {
     Variable(RooAbsArg* var);
   };
 
-  RooDataHist* convertTH1(const TH1* histo, const std::vector<RooAbsArg*>& vars, bool includeUnderflowOverflow, bool correctDensity=false);
-  RooDataHist* convertTH1(const TH1* histo, const RooArgList& obs, bool includeUnderflowOverflow, bool correctDensity=false);
+  RooDataHist* convertTH1(const TH1* histo, const std::vector<RooAbsArg*>& vars, bool includeUnderflowOverflow, double correctDensity=0);
+  RooDataHist* convertTH1(const TH1* histo, const RooArgList& obs, bool includeUnderflowOverflow, double correctDensity=0);
   std::vector<RooRealVar*> createGammas(const TH1* histo, bool includeUnderflowOverflow, double uncThreshold);
   std::vector<RooRealVar*> createGammas(const RooDataHist* dh, const RooArgList& obs, double uncThreshold);
   RooAbsReal* makeParamHistFunc(const char* name, const char* title, const RooArgList& obslist, const std::vector<RooRealVar*>& gamma);  

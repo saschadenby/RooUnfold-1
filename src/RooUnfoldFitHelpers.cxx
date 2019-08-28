@@ -510,11 +510,11 @@ namespace RooUnfolding { // section 2: non-trivial helpers
     findDependantsPerBin(this,nps,this->_gamma);
   }
 
-  RooDataHist* convertTH1(const TH1* histo, const std::vector<RooAbsArg*>& vars, bool includeUnderflowOverflow, bool correctDensity){
+  RooDataHist* convertTH1(const TH1* histo, const std::vector<RooAbsArg*>& vars, bool includeUnderflowOverflow, double correctDensity){
     return convertTH1(histo,argList(vars),includeUnderflowOverflow,correctDensity);
   }
 
-  RooDataHist* convertTH1(const TH1* histo, const RooArgList& obs, bool includeUnderflowOverflow, bool correctDensity){
+  RooDataHist* convertTH1(const TH1* histo, const RooArgList& obs, bool includeUnderflowOverflow, double correctDensity){
     TString name(histo->GetName());
     TString title(histo->GetTitle());
 
@@ -541,18 +541,18 @@ namespace RooUnfolding { // section 2: non-trivial helpers
             for (iz=0 ; iz < ::nBins(zvar) ; iz++) {
               ::setBin(zvar,iz) ;
               int bin = histo->GetBin(ix+offset,iy+offset,iz+offset);
-              double volume = correctDensity ? (histo->GetXaxis()->GetBinWidth(ix+offset)*histo->GetYaxis()->GetBinWidth(iy+offset)*histo->GetZaxis()->GetBinWidth(iz+offset)) : 1;
+              double volume = pow(histo->GetXaxis()->GetBinWidth(ix+offset)*histo->GetYaxis()->GetBinWidth(iy+offset)*histo->GetZaxis()->GetBinWidth(iz+offset),correctDensity);
               dh->add(obs,histo->GetBinContent(bin)/volume,TMath::Power(histo->GetBinError(bin)/volume,2)) ;
             }
           } else {
             int bin = histo->GetBin(ix+offset,iy+offset);
-            double volume = correctDensity ? (histo->GetXaxis()->GetBinWidth(ix+offset)*histo->GetYaxis()->GetBinWidth(iy+offset)) : 1;
+            double volume = pow(histo->GetXaxis()->GetBinWidth(ix+offset)*histo->GetYaxis()->GetBinWidth(iy+offset),correctDensity);
             dh->add(obs,histo->GetBinContent(bin)/volume,TMath::Power(histo->GetBinError(bin)/volume,2)) ;
           }
         }
       } else {
         int bin = histo->GetBin(ix+offset);
-        double volume = correctDensity ? (histo->GetXaxis()->GetBinWidth(ix+offset)) : 1;
+        double volume = pow(histo->GetXaxis()->GetBinWidth(ix+offset),correctDensity);
         dh->add(obs,histo->GetBinContent(bin)/volume,TMath::Power(histo->GetBinError(bin)/volume,2)) ;     
       }
     }
@@ -812,7 +812,7 @@ namespace RooUnfolding { // section 2: non-trivial helpers
     return new RooHistFunc(TString::Format("%s_func",dhist->GetName()),dhist->GetTitle(),obs,*dhist);
   }
   RooAbsPdf* makeHistPdf(const char* name, const TH1* histo, const RooArgList& obs, bool includeUnderflowOverflow, bool correctDensity){
-    RooDataHist* dh = convertTH1(histo,obs,includeUnderflowOverflow,correctDensity);
+    RooDataHist* dh = convertTH1(histo,obs,includeUnderflowOverflow,-1+correctDensity);
     RooHistPdf* hf = new RooHistPdf(TString::Format("%s_shape",name),histo->GetTitle(),obs,*dh);
     RooRealVar* norm = new RooRealVar(TString::Format("%s_norm",dh->GetName()),dh->GetTitle(),dh->sumEntries());
     norm->setConstant(true);
