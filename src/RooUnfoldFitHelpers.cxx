@@ -18,6 +18,7 @@
 #include "RooAbsDataStore.h"
 #include "RooHistFunc.h"
 #include "RooHistPdf.h"
+#include "RooExtendPdf.h"
 #include "RooProduct.h"
 #include "RooParamHistFunc.h"
 #include "RooStats/HistFactory/ParamHistFunc.h"
@@ -791,10 +792,7 @@ namespace RooUnfolding { // section 2: non-trivial helpers
 
   RooHistFunc* makeHistFunc(const char* name, const TH1* histo, const RooArgList& obs, bool includeUnderflowOverflow, bool correctDensity){
     RooDataHist* dh = convertTH1(histo,obs,includeUnderflowOverflow,correctDensity);
-    dh->Print();
-    TString title(histo->GetTitle());
-    RooHistFunc* hf = new RooHistFunc(name,title.Data(),obs,*dh);
-    return hf;
+    return new RooHistFunc(name,histo->GetTitle(),obs,*dh);
   }
   RooHistFunc* makeHistFunc(const TH1* histo, const RooArgList& obs, bool includeUnderflowOverflow, bool correctDensity){
     TString name(TString::Format("%s_histfunc",histo->GetName()));
@@ -813,22 +811,27 @@ namespace RooUnfolding { // section 2: non-trivial helpers
     if(!dhist) return NULL;
     return new RooHistFunc(TString::Format("%s_func",dhist->GetName()),dhist->GetTitle(),obs,*dhist);
   }
-  RooHistPdf* makeHistPdf(const char* name, const TH1* histo, const RooArgList& obs, bool includeUnderflowOverflow, bool correctDensity){
+  RooAbsPdf* makeHistPdf(const char* name, const TH1* histo, const RooArgList& obs, bool includeUnderflowOverflow, bool correctDensity){
     RooDataHist* dh = convertTH1(histo,obs,includeUnderflowOverflow,correctDensity);
-    RooHistPdf* hf = new RooHistPdf(name,histo->GetTitle(),obs,*dh);
-    return hf;
+    RooHistPdf* hf = new RooHistPdf(TString::Format("%s_shape",name),histo->GetTitle(),obs,*dh);
+    RooRealVar* norm = new RooRealVar(TString::Format("%s_norm",dh->GetName()),dh->GetTitle(),dh->sumEntries());
+    norm->setConstant(true);
+    return new RooExtendPdf(name,histo->GetTitle(),*hf,*norm);
   }
-  RooHistPdf* makeHistPdf(const TH1* histo, const RooArgList& obs, bool includeUnderflowOverflow, bool correctDensity){
+  RooAbsPdf* makeHistPdf(const TH1* histo, const RooArgList& obs, bool includeUnderflowOverflow, bool correctDensity){
     return makeHistPdf(histo->GetName(),histo,obs,includeUnderflowOverflow,correctDensity);
   }
-  RooHistPdf* makeHistPdf(RooDataHist* dhist, const std::vector<RooAbsArg*>& obs){
+  RooAbsPdf* makeHistPdf(RooDataHist* dhist, const std::vector<RooAbsArg*>& obs){
     if(!dhist) return NULL;
     RooArgSet vars;
     for(size_t i=0; i<obs.size(); ++i){
       if(dhist->get()->find(*obs[i]))
         vars.add(*obs[i]);
     }
-    return new RooHistPdf(dhist->GetName(),dhist->GetName(),vars,*dhist);
+    RooHistPdf* hf = new RooHistPdf(TString::Format("%s_shape",dhist->GetName()),dhist->GetTitle(),vars,*dhist);
+    RooRealVar* norm = new RooRealVar(TString::Format("%s_norm",dhist->GetName()),dhist->GetTitle(),dhist->sumEntries());
+    norm->setConstant(true);
+    return new RooExtendPdf(TString::Format("%s_pdf",dhist->GetName()),dhist->GetTitle(),*hf,*norm);
   }
 
   RooFitHist::RooFitHist(RooDataHist* d, const std::vector<RooAbsArg*>& obs) : _func(0), _obs(obs) {

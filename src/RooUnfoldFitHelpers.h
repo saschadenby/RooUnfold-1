@@ -77,9 +77,9 @@ namespace RooUnfolding {
   RooHistFunc* makeHistFunc(const char* name, const TH1* histo, const RooArgList& obs, bool includeUnderflowOverflow, bool correctDensity=false);  
   RooHistFunc* makeHistFunc(RooDataHist* dhist, const std::vector<RooAbsArg*>& obs); 
   RooHistFunc* makeHistFunc(RooDataHist* dhist, const RooArgList& obs);
-  RooHistPdf* makeHistPdf(const TH1* histo, const RooArgList& obs, bool includeUnderflowOverflow, bool correctDensity=false);    
-  RooHistPdf* makeHistPdf(const char* name, const TH1* histo, const RooArgList& obs, bool includeUnderflowOverflow, bool correctDensity=false);  
-  RooHistPdf* makeHistPdf(RooDataHist* dhist, const std::vector<RooAbsArg*>& obs);  
+  RooAbsPdf* makeHistPdf(const TH1* histo, const RooArgList& obs, bool includeUnderflowOverflow, bool correctDensity=false);    
+  RooAbsPdf* makeHistPdf(const char* name, const TH1* histo, const RooArgList& obs, bool includeUnderflowOverflow, bool correctDensity=false);  
+  RooAbsPdf* makeHistPdf(RooDataHist* dhist, const std::vector<RooAbsArg*>& obs);  
   void importToWorkspace(RooWorkspace* ws, RooAbsReal* object);
   void importToWorkspace(RooWorkspace* ws, RooAbsData* object);
   RooArgSet allVars(RooWorkspace* ws, const char* pattern);

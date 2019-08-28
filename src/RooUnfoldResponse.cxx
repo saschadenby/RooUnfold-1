@@ -1291,7 +1291,7 @@ RooHistFunc* RooFitUnfoldResponse::makeHistFuncTruth(const TH1* hist){
   return RooUnfolding::makeHistFunc(dhist,v);
 }
 
-RooHistPdf* RooFitUnfoldResponse::makeHistPdf(RooDataHist* dhist){
+RooAbsPdf* RooFitUnfoldResponse::makeHistPdf(RooDataHist* dhist){
   if(!dhist) return NULL;
   std::vector<RooAbsArg*> v;
   for(size_t i=0; i<this->_mes->dim(); ++i){
@@ -1306,7 +1306,7 @@ RooHistPdf* RooFitUnfoldResponse::makeHistPdf(RooDataHist* dhist){
   return RooUnfolding::makeHistPdf(dhist,v);
 }
 
-RooHistPdf* RooFitUnfoldResponse::makeHistPdfMeasured(const TH1* hist){
+RooAbsPdf* RooFitUnfoldResponse::makeHistPdfMeasured(const TH1* hist){
   if(!hist) return NULL;
   std::vector<RooAbsArg*> v;
   for(size_t i=0; i<this->_mes->dim(); ++i){
@@ -1315,7 +1315,7 @@ RooHistPdf* RooFitUnfoldResponse::makeHistPdfMeasured(const TH1* hist){
   RooDataHist* dhist = RooUnfolding::convertTH1(hist,v,this->_overflow,this->_density);
   return RooUnfolding::makeHistPdf(dhist,v);
 }
-RooHistPdf* RooFitUnfoldResponse::makeHistPdfTruth(const TH1* hist){
+RooAbsPdf* RooFitUnfoldResponse::makeHistPdfTruth(const TH1* hist){
   if(!hist) return NULL;
   std::vector<RooAbsArg*> v;
   for(size_t i=0; i<this->_tru->dim(); ++i){
