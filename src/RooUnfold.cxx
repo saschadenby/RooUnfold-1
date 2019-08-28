@@ -1519,7 +1519,7 @@ RooUnfoldSpec::RooUnfoldSpec(const char* name, const char* title, const TH1* tru
   if(d!=dim(reco)){
     throw std::runtime_error("inconsistent dimensionality between truth and reco histograms!");
   }
-
+  
   TString obs_truth_s(obs_truth);
   TString obs_reco_s(obs_reco);
   std::vector<TString> obs_truth_v;
@@ -1572,10 +1572,10 @@ void RooUnfoldSpec::setup(const TH1* truth_th1, const RooArgList& obs_truth, con
   this->_errorThreshold = errorThreshold;
   this->_truth.setNominal(RooUnfolding::makeHistFunc(truth_th1,obs_truth,includeUnderflowOverflow,this->_useDensity));
   this->_reco.setNominal(RooUnfolding::makeHistFunc(reco_th1,obs_reco,includeUnderflowOverflow,this->_useDensity));
-  this->_obs_truth.add(obs_truth);  
+  this->_obs_truth.add(obs_truth);
+  this->_obs_all.add(obs_reco);  
   this->_obs_all.add(obs_truth);
   this->_obs_reco.add(obs_reco);  
-  this->_obs_all.add(obs_reco);
   this->_res.setNominal(RooUnfolding::makeHistFunc(response_th1,this->_obs_all,includeUnderflowOverflow,this->_useDensity));
   if(bkg_th1) this->_bkg.setNominal(RooUnfolding::makeHistFunc(bkg_th1,obs_reco,includeUnderflowOverflow,this->_useDensity));
   if(data_th1) this->_data.setNominal(RooUnfolding::makeHistFunc(data_th1,obs_reco,includeUnderflowOverflow,this->_useDensity));
@@ -1664,11 +1664,19 @@ RooUnfolding::RooFitHist* RooUnfoldSpec::makeHistogram(const HistContainer& sour
 
 RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>* RooUnfoldSpec::unfold(Algorithm alg, Double_t regparam){
 
+  
   RooUnfolding::RooFitHist* res = this->makeHistogram(this->_res,this->_errorThreshold);
   RooUnfolding::RooFitHist* truth = this->makeHistogram(this->_truth,this->_errorThreshold);
   RooUnfolding::RooFitHist* reco = this->makeHistogram(this->_reco,this->_errorThreshold);
 
   RooFitUnfoldResponse* response = new RooFitUnfoldResponse(this->GetName(),this->GetTitle(),res,truth,reco,this->_useDensity);
+
+
+  if (this->_includeUnderflowOverflow){
+    response->UseOverflow(kTRUE);    
+  } else {
+    response->UseOverflow(kFALSE);
+  }
 
   RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>* unfolding = 0;
   RooUnfolding::RooFitHist* data_minus_bkg = 0;  
@@ -1681,11 +1689,8 @@ RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>* RooUnfoldSpec::un
   data_minus_bkg->func()->SetName(name);
   data_minus_bkg->func()->SetTitle(name);
 
-  response->UseOverflow();
 
   unfolding = RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>::New(alg,response,data_minus_bkg,regparam);
-
-  std::cout << "overflow: " << unfolding->Overflow() << std::endl;
 
   return unfolding;
 }

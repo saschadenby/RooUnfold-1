@@ -194,30 +194,26 @@ RooUnfoldTUnfoldT<Hist,Hist2D>::Unfold() const
   TH1::AddDirectory (kFALSE);
 
   TVectorD vmeas = this->Vmeasured();
-  const TVectorD& verr(this->Emeasured());
+  TVectorD verr = this->Emeasured();
   const TVectorD& vtruth(this->_res->Vtruth());
   TMatrixD mres = this->_res->Mresponse(false);
-
+  
+  // The added empty bins are used to store inefficiencies.
+  RooUnfolding::addEmptyBins(vmeas);
+  RooUnfolding::addEmptyBins(verr);
+  RooUnfolding::addEmptyBins(mres);  
 
   TH1::AddDirectory (oldstat);
-
-  Int_t i_start = 0;
-
-  if (this->_overflow){
-    i_start = 1;
-  } 
-  std::cout << "overflow: " << this->_overflow << std::endl;
-
+    
   // Add inefficiencies to measured overflow bin
-  for (Int_t j= i_start; j<this->_nt - i_start; j++) {
+  for (Int_t j= 1; j<=this->_nt; j++) {
     Double_t ntru= 0.0;
-    for (Int_t i= i_start; i<this->_nm - i_start; i++) {
+    for (Int_t i= 1; i<=this->_nm; i++) {
       ntru += mres[i][j];
     }
-    
-    mres[this->_nm - 1 + i_start][j] = vtruth[j] - ntru;
+    mres[this->_nm + 1][j] = vtruth[j - 1] - ntru;
   }
-
+    
   // Subtract fakes from measured distribution
   // TODO: Check if the fakes are handled well here.
   if (this->_res->HasFakes()) {
@@ -225,8 +221,8 @@ RooUnfoldTUnfoldT<Hist,Hist2D>::Unfold() const
     Double_t fac= this->_res->Vmeasured().Sum();
     if (fac!=0.0) fac=  this->Vmeasured().Sum() / fac;
     if (this->_verbose>=1) cout << "Subtract " << fac*fakes.Sum() << " fakes from measured distribution" << endl;
-    for (Int_t i = i_start; i<this->_nm - i_start; i++){
-      vmeas[i] = vmeas[i] - (fac*fakes[i]);
+    for (Int_t i = 1; i<=this->_nm; i++){
+      vmeas[i] = vmeas[i] - (fac*fakes[i - 1]);
     }
   }
 
@@ -234,18 +230,17 @@ RooUnfoldTUnfoldT<Hist,Hist2D>::Unfold() const
   // unfolded histogram.
   Int_t ndim = dim(this->_meas);
   TUnfold::ERegMode reg= _reg_method;
-
+  
   if (ndim == 2 || ndim == 3) reg= TUnfold::kRegModeNone;  // set explicitly
-
 
 #ifndef NOTUNFOLDSYS
   if (this->_dosys){
-  _unf= new TUnfoldSysV17(&mres,TUnfold::kHistMapOutputVert,reg);
+    _unf= new TUnfoldSysV17(&mres,TUnfold::kHistMapOutputVert,reg);
   } else {
 #endif
     _unf= new TUnfoldV17(&mres,TUnfold::kHistMapOutputVert,reg);
   }
-
+  
   if        (ndim == 2) {
     Int_t nx= nBins(this->_meas,X), ny= nBins(this->_meas,Y);
     _unf->RegularizeBins2D (0, 1, nx, nx, ny, _reg_method);
@@ -263,13 +258,14 @@ RooUnfoldTUnfoldT<Hist,Hist2D>::Unfold() const
   }
 
   Int_t nScan=30;
+  
   // use automatic L-curve scan: start with taumin=taumax=0.0
   Double_t tauMin=0.0;
   Double_t tauMax=0.0;
+ 
   // this method scans the parameter tau and finds the kink in the L curve
   // finally, the unfolding is done for the best choice of tau
 #if ROOT_VERSION_CODE >= ROOT_VERSION(5,23,0)  /* TUnfold v6 (included in ROOT 5.22) didn't have setInput return value */
-
 
   Int_t stat= _unf->SetInput(&vmeas,&verr);
   if(stat>=10000) {
@@ -279,7 +275,7 @@ RooUnfoldTUnfoldT<Hist,Hist2D>::Unfold() const
   _unf->SetInput(&vmeas,&verr);
 #endif
   _unf->SetConstraint(TUnfold::kEConstraintArea);
-  
+
   if (!tau_set){
     delete _lCurve;  _lCurve  = 0;
     delete _logTauX; _logTauX = 0;
@@ -294,7 +290,7 @@ RooUnfoldTUnfoldT<Hist,Hist2D>::Unfold() const
   _unf->GetOutput(&reco);
   this->_cache._rec.ResizeTo (this->_nt);
   for (int i=0;i<this->_nt;i++){
-    this->_cache._rec(i)=(reco.GetBinContent(i+1));
+    this->_cache._rec(i)=(reco.GetBinContent(i + 1));
   }
 
   if (this->_verbose>=2) {

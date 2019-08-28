@@ -112,6 +112,43 @@ namespace RooUnfolding {
     return hist;
   }
 
+  // Add an empty bin on both sides of the vector.
+  void addEmptyBins(TVectorD& v){
+    
+    Int_t bins = v.GetNrows();
+    bins+=2;
+    
+    v.ResizeTo(bins);
+
+    for (Int_t i = bins; i > 1; i--){
+      v[i - 1] = v[i - 2];
+    }
+    v[0] = 0.0;
+  }
+
+  // Add one layer of empty bins on all sides of the matrix.
+  void addEmptyBins(TMatrixD& m){
+    
+    Int_t bins_x = m.GetNrows();
+    Int_t bins_y = m.GetNcols();
+    bins_x+=2;
+    bins_y+=2;
+
+    m.ResizeTo(bins_x, bins_y);
+
+    for (Int_t i = bins_x; i > 0; i--){
+      for (Int_t j = bins_y; j > 0; j--){
+	
+	if (i == 1 || j == 1){
+	  m[i - 1][j - 1] = 0.0;
+	} else {
+	  m[i - 1][j - 1] = m[i - 2][j - 2];
+	}
+      }
+    }
+  }
+
+
   TH2D* getTH2(const TMatrixD& matrix, const char* name, const char* title, bool overflow){
     Int_t i_start = 1;
 

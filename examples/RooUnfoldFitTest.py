@@ -1,3 +1,4 @@
+
 #!/usr/bin/env python
 # ==============================================================================
 #  File and Version Information:
@@ -11,12 +12,12 @@
 # ==============================================================================
 
 # Smearing parameters
-bias = -2.5
+bias = -1.5
 sigma = 0.3
 
 # Binning
 truthBins = 40
-recoBins = 50
+recoBins = 40
 
 # Kinematic range
 xmin = -10.0
@@ -26,7 +27,7 @@ xmax = 10.0
 nevents = 100000
 
 # In-/Exclude overflow
-overflow = False
+overflow = True
 
 
 
@@ -271,7 +272,7 @@ def main(args):
     pdf = spec.makePdf(algorithm(args.method),args.regparm)
   else:
     pdf = spec.makePdf(algorithm(args.method))
-    
+
   theory = pdf.unfolding().response().makeHistFuncTruth(histograms["sig_theory"])
 
   # required to avoid python garbage collector messing up the RooDataHists added to gDirectory
@@ -282,26 +283,16 @@ def main(args):
   # Here the first unfolding is performed.
   pdf.unfolding().PrintTable(ROOT.cout, test_truth)
 
-  #unfolded_hist = pdf.unfolding().Hreco()
+  # ws = ROOT.RooWorkspace("workspace","workspace")
   
-  ws = ROOT.RooWorkspace("workspace","workspace")
+  # getattr(ws,"import")(pdf)
   
-  getattr(ws,"import")(pdf)
+  # getattr(ws,"import")(theory)
   
-  getattr(ws,"import")(theory)
-  
-  # print(type(histograms["sig_theory"]))
-  # print(type(theory))
 
-  # pdf.unfolding().Hmeasured().printHist()
-  # pdf.unfolding().Hreco().printHist()
+  # #ws.Print("t")
 
-
-  #getattr(ws,"import")(unfolded_hist)
-
-  #ws.Print("t")
-
-  makePlots(ws)
+  # makePlots(ws)
 
   pdf.Delete()
   theory.Delete()

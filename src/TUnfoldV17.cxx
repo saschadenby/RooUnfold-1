@@ -1910,6 +1910,7 @@ TUnfoldV17::TUnfoldV17(const TMatrixD *matrix_A, EHistMap histmap, ERegMode regm
       // Remove the overflow bins on the Y axis.
       ny = matrix_A->GetNrows() - 2;
    }
+ 
    nx = 0;
    // fNx is expected to be nx0, but the input matrix may be ill-formed
    // -> all columns with zero events have to be removed
@@ -1977,9 +1978,9 @@ TUnfoldV17::TUnfoldV17(const TMatrixD *matrix_A, EHistMap histmap, ERegMode regm
       Int_t ibinx = fXToHist[ix];
       if(ibinx<1) underflowBin=1;
       if (histmap == kHistMapOutputHoriz) {
-	if(ibinx==matrix_A->GetNrows()) overflowBin=1;
+	if(ibinx>matrix_A->GetNrows() - 2) overflowBin=1;
       } else {
-	if(ibinx==matrix_A->GetNcols()) overflowBin=1;
+	if(ibinx>matrix_A->GetNcols() - 2) overflowBin=1;
       }
    }
    if(nskipped) {

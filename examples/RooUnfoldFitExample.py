@@ -543,7 +543,6 @@ def main(args):
     pdf.unfolding().PrintTable(ROOT.cout, test_truth)
 
     return
-
     ws = ROOT.RooWorkspace("workspace","workspace")
 
     getattr(ws,"import")(pdf)
@@ -552,8 +551,7 @@ def main(args):
 
     ws.Print("t")
 
-    # Explicitly free the memory that was allocated. PyROOT does not do this
-    # for you.
+    # Explicitly free the memory that was allocated. 
     pdf.Delete()
     theory.Delete()
 
