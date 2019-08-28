@@ -149,6 +149,7 @@ namespace {
     } else if(arg->InheritsFrom(RooCategory::Class())){
       return ((RooCategory*)(arg))->numTypes();
     }
+    throw std::runtime_error("unknown argument type for nBins!");
   }
   double min(RooAbsArg* arg){
     if(arg->InheritsFrom(RooRealVar::Class())){
@@ -163,6 +164,7 @@ namespace {
     } else if(arg->InheritsFrom(RooCategory::Class())){
       return ((RooCategory*)(arg))->numTypes()-1;      
     }
+    throw std::runtime_error("unknown argument type for max!");    
   }
   double binCenter(RooAbsArg* arg, int i){
     if(arg->InheritsFrom(RooRealVar::Class())){    
@@ -198,12 +200,15 @@ namespace {
     } else if(arg->InheritsFrom(RooCategory::Class())){
       return ((RooCategory*)(arg))->getIndex();
     }
+    throw std::runtime_error("unknown argument type for getVal!");                
   }
   void setVal(RooAbsArg* arg, double val){
     if(arg->InheritsFrom(RooRealVar::Class())){
       ((RooRealVar*)(arg))->setVal(val);
     } else if(arg->InheritsFrom(RooCategory::Class())){
       ((RooCategory*)(arg))->setIndex(val);
+    } else {
+      throw std::runtime_error("unknown argument type for setVal");
     }
   }
   int getBin(RooAbsArg* arg){
@@ -212,6 +217,7 @@ namespace {
     } else if(arg->InheritsFrom(RooCategory::Class())){
       return ((RooCategory*)(arg))->getIndex();
     }
+    throw std::runtime_error("unknown argument type for getBin!");        
   }  
 }
 

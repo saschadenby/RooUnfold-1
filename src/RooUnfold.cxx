@@ -1547,15 +1547,34 @@ RooUnfoldSpec::RooUnfoldSpec(const char* name, const char* title, const TH1* tru
 
 RooUnfoldSpec::RooUnfoldSpec(const char* name, const char* title, const TH1* truth_th1, RooAbsArg* obs_truth, RooAbsReal* reco, RooAbsArg* obs_reco, const TH2* response_th1, RooAbsReal* bkg, RooDataHist* data, bool includeUnderflowOverflow, double errorThreshold, bool useDensity) : RooUnfoldSpec(name,title,truth_th1,RooArgList(*obs_truth),reco,RooArgList(*obs_reco),response_th1,bkg,data,includeUnderflowOverflow,errorThreshold,useDensity) {}
 
+namespace {
+  RooAbsReal* makeParamHistFunc(const char* name, const char* title, const RooArgList& observables, const RooArgList& parameters, bool multiplyDensity){
+    ParamHistFunc* phf = new ParamHistFunc(name,title,observables,parameters);
+    if(!multiplyDensity) return phf;
+    RooArgList inverseBinWidths;
+    RooRealVar* obs = (RooRealVar*)(observables.first());
+    for(int i=0; i<obs->getBinning().numBins(); ++i){
+      double width = obs->getBinWidth(i);
+      RooRealVar* bw = new RooRealVar(TString::Format("%s_bin_%d_widthCorr",obs->GetName(),i),TString::Format("density correction of %s in bin %d",obs->GetTitle(),i),1./width);
+      bw->setConstant(true);
+      inverseBinWidths.add(*bw);
+    }
+    ParamHistFunc* bwcorr = new ParamHistFunc(TString::Format("%s_widthCorr",obs->GetName()),TString::Format("density corrections for %s",obs->GetTitle()),observables,inverseBinWidths);
+    RooArgList elems;
+    elems.add(*phf);
+    elems.add(*bwcorr);
+    RooProduct* prod = new RooProduct(TString::Format("%s_x_%s",phf->GetName(),bwcorr->GetName()),title,elems);
+    return prod;
+  }
+}
+
 RooUnfoldSpec::RooUnfoldSpec(const char* name, const char* title, const TH1* truth_th1, RooAbsArg* obs_truth, const RooArgList& reco_bins, RooAbsArg* obs_reco, const TH2* response_th1, const RooArgList& bkg_bins, RooDataHist* data, bool includeUnderflowOverflow, double errorThreshold, bool useDensity) : 
   TNamed(name,title)
 {
   RooArgList obs_reco_list(*obs_reco);
   RooArgList obs_truth_list(*obs_truth);
-  ParamHistFunc* reco = new ParamHistFunc(TString::Format("signal_reco_%s_differential",obs_reco->GetName()).Data(),obs_reco->GetTitle(),obs_reco_list,reco_bins);
-  this->_reco.setNominal(reco);
-  ParamHistFunc* bkg = new ParamHistFunc(TString::Format("bkg_reco_%s_differential",obs_reco->GetName()).Data(),obs_reco->GetTitle(),obs_reco_list,bkg_bins);
-  this->_bkg.setNominal(bkg);
+  this->_reco.setNominal(::makeParamHistFunc(TString::Format("signal_reco_%s_differential",obs_reco->GetName()).Data(),obs_reco->GetTitle(),obs_reco_list,reco_bins,useDensity));
+  this->_bkg.setNominal(::makeParamHistFunc(TString::Format("bkg_reco_%s_differential",obs_reco->GetName()).Data(),obs_reco->GetTitle(),obs_reco_list,bkg_bins,useDensity));
   this->_data.setNominal(RooUnfolding::makeHistFunc(data,obs_reco_list));
   this->setup(truth_th1,obs_truth_list,NULL,obs_reco_list,response_th1,NULL,NULL,includeUnderflowOverflow,errorThreshold,useDensity);
 }
@@ -1566,9 +1585,8 @@ RooUnfoldSpec::RooUnfoldSpec(const char* name, const char* title, const TH1* tru
   TNamed(name,title)
 {
   RooArgList obs_reco_list(*obs_reco);
-  RooArgList obs_truth_list(*obs_truth);
-  ParamHistFunc* bkg = new ParamHistFunc(TString::Format("bkg_reco_%s_differential",obs_reco->GetName()),obs_reco->GetTitle(),obs_reco_list,bkg_bins);
-  this->_bkg.setNominal(bkg);
+  RooArgList obs_truth_list(*obs_truth);  
+  this->_bkg.setNominal(::makeParamHistFunc(TString::Format("bkg_reco_%s_differential",obs_reco->GetName()),obs_reco->GetTitle(),obs_reco_list,bkg_bins,useDensity));
   this->_data.setNominal(RooUnfolding::makeHistFunc(data,obs_reco_list));
   this->setup(truth_th1,obs_truth_list,reco_th1,obs_reco_list,response_th1,NULL,NULL,includeUnderflowOverflow,errorThreshold,useDensity);
 }
@@ -1586,8 +1604,7 @@ RooUnfoldSpec::RooUnfoldSpec(const char* name, const char* title, const TH1* tru
 {
   RooArgList obs_reco_list(*obs_reco);
   RooArgList obs_truth_list(*obs_truth);
-  ParamHistFunc* meas = new ParamHistFunc(TString::Format("measured_reco_%s_differential",obs_reco->GetName()),obs_reco->GetTitle(),obs_reco_list,measured_bins);
-  this->_data.setNominal(meas);
+  this->_data.setNominal(::makeParamHistFunc(TString::Format("measured_reco_%s_differential",obs_reco->GetName()),obs_reco->GetTitle(),obs_reco_list,measured_bins,useDensity));
   this->setup(truth_th1,obs_truth_list,reco_th1,obs_reco_list,response_th1,NULL,NULL,includeUnderflowOverflow,errorThreshold,useDensity);
 }
 
@@ -1598,13 +1615,13 @@ void RooUnfoldSpec::setup(const TH1* truth_th1, const RooArgList& obs_truth, con
   this->_useDensity = useDensity;
   this->_errorThreshold = errorThreshold;
   if(truth_th1) this->_truth.setNominal(RooUnfolding::makeHistFunc(truth_th1,obs_truth,includeUnderflowOverflow,this->_useDensity));
-  if(reco_th1) this->_reco.setNominal(RooUnfolding::makeHistFunc(reco_th1,obs_reco,includeUnderflowOverflow,this->_useDensity));
+  if(reco_th1)  this->_reco.setNominal(RooUnfolding::makeHistFunc(reco_th1,obs_reco,includeUnderflowOverflow,this->_useDensity));
   this->_obs_truth.add(obs_truth);  
   this->_obs_all.add(obs_truth);
   this->_obs_reco.add(obs_reco);  
   this->_obs_all.add(obs_reco);
   if(response_th1) this->_res.setNominal(RooUnfolding::makeHistFunc(response_th1,this->_obs_all,includeUnderflowOverflow,this->_useDensity));
-  if(bkg_th1) this->_bkg.setNominal(RooUnfolding::makeHistFunc(bkg_th1,obs_reco,includeUnderflowOverflow,this->_useDensity));
+  if(bkg_th1)  this->_bkg.setNominal(RooUnfolding::makeHistFunc(bkg_th1,obs_reco,includeUnderflowOverflow,this->_useDensity));
   if(data_th1) this->_data.setNominal(RooUnfolding::makeHistFunc(data_th1,obs_reco,includeUnderflowOverflow,this->_useDensity));
 }
 
