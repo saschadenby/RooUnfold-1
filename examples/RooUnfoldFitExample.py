@@ -536,8 +536,6 @@ def main(args):
     # Here the first unfolding is performed.
     pdf.unfolding().PrintTable(ROOT.cout, test_truth)
 
-    return
-
     ws = ROOT.RooWorkspace("workspace","workspace")
 
     getattr(ws,"import")(pdf)
