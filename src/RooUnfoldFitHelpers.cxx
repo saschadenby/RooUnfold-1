@@ -797,6 +797,12 @@ namespace RooUnfolding { // section 2: non-trivial helpers
     return err;
   }
   double RooFitHist::value() const {
+    if(this->_func->InheritsFrom(RooAbsPdf::Class())){
+      const RooAbsPdf* pdf = static_cast<const RooAbsPdf*>(this->_func);
+      if(pdf->extendMode() == RooAbsPdf::CanBeExtended || pdf->extendMode() == RooAbsPdf::MustBeExtended){
+        return pdf->getVal()*pdf->expectedEvents(0);
+      }
+    }
     return this->_func->getVal();
   }
   bool RooFitHist::weighted() const {
@@ -844,7 +850,6 @@ namespace RooUnfolding { // section 2: non-trivial helpers
   RooAbsPdf* makeHistPdf(const char* name, const TH1* histo, const RooArgList& obs, bool includeUnderflowOverflow, bool correctDensity){
     double integral = getIntegral(histo,includeUnderflowOverflow,correctDensity);
     RooDataHist* dh = convertTH1(histo,obs,includeUnderflowOverflow,correctDensity,1./integral);
-    std::cout << name << " " << dh->sumEntries() << " " << integral << std::endl;
     RooHistPdf* hf = new RooHistPdf(TString::Format("%s_shape",name),histo->GetTitle(),obs,*dh);
     hf->setUnitNorm(true);
     RooRealVar* norm = new RooRealVar(TString::Format("%s_norm",dh->GetName()),dh->GetTitle(),integral);
