@@ -1,4 +1,3 @@
-
 #!/usr/bin/env python
 # ==============================================================================
 #  File and Version Information:
@@ -113,17 +112,9 @@ def makePlots(ws):
   # unfolding results.
   unfoldpdf = ws.pdf("unfold")
 
-  # Get the RooUnfold object.
-  unfolding = unfoldpdf.unfolding()
-
   # Get all the input and output distributions as RooAbsReal objects.
-  sig_response = ws.function("response")
-  sig_reco = ws.function("sig_reco")
-  sig_theory = ws.function("sig_theory")
-  # sigbkg_reco = ws.function("sigbkg_reco")
-  # sig_truth = ws.function("sig_truth")
-  # sig_reco = ws.function("unfold_data_minus_bkg")
-  # bkg_reco = ws.function("bkg")
+  sig_theory = ws.function("truth_hist")
+  data_minus_bkg_reco = ws.function("unfold_data_minus_bkg")
 
   # Get the kinematic variable.
   obs_truth = ws.var("obs_truth")
@@ -132,113 +123,29 @@ def makePlots(ws):
   plot_truth = obs_truth.frame()
   nexp = unfoldpdf.expectedEvents(0)
 
+  # Get all the variables of the histograms.
   allVars = ROOT.RooArgList(ws.allVars())
 
+  # Get the errors.
   prefit_all = ROOT.RooFitResult.prefitResult(allVars)
 
-
+  # Plot the theory prediction.
   sig_theory.plotOn(plot_truth,ROOT.RooFit.LineColor(ROOT.kRed),ROOT.RooFit.Name("sig_theory_graph"))
+
+  # Plot the unfolded result.
   unfoldpdf.plotOn(plot_truth,ROOT.RooFit.LineColor(ROOT.kBlack),ROOT.RooFit.Name("unfold_graph"),ROOT.RooFit.MarkerColor(ROOT.kBlack),ROOT.RooFit.MarkerSize(1),ROOT.RooFit.MarkerStyle(20),ROOT.RooFit.DrawOption("P"),ROOT.RooFit.VisualizeError(prefit_all),ROOT.RooFit.Normalization(nexp,ROOT.RooAbsReal.NumEvent),ROOT.RooFit.NormRange("full"))
 
-
-
-  #unfoldpdf.plotOn(plot_truth,ROOT.RooFit.LineColor(ROOT.kBlack),ROOT.RooFit.Name("unfold_graph"))
-
+  # Save the plot to a pdf file.
   canvas_truth = ROOT.TCanvas("unfolded","unfolded")
   plot_truth.Draw()
   leg_truth = ROOT.TLegend(0.7, 0.7, 0.9, 0.9)
   leg_truth.SetLineWidth(0)
   leg_truth.SetFillStyle(0)
   leg_truth.AddEntry( plot_truth.findObject("sig_theory_graph"), "Theory Prediction", "l" )
-  leg_truth.AddEntry( plot_truth.findObject("unfold_graph"), "Unfolded Signal", "pe" )
-  # leg_truth.AddEntry( plot_truth.findObject("unfold_graph_sys"), "Unfolded Signal, Sys. Uncertainty", "f" )  
+  leg_truth.AddEntry( plot_truth.findObject("unfold_graph"), "Unfolded Data", "pe" )
+  leg_truth.AddEntry( plot_truth.findObject("data_minus_bkg_reco_graph"), "Reconstructed Data", "pe" )
   leg_truth.Draw()
   canvas_truth.SaveAs("unfolded.pdf")
-
-
-  # Get the RooUnfold object.
-
-  # Get all the histograms in the form of a RooAbsReal
-
-  # Define the histogram variable as a RooRealVar 
-  
-  # Create a RooPlot object.
-
-
-
-  # obs_truth = ws.var(obsname+"_truth")
-  # plot_truth = obs_truth.frame(ROOT.RooFit.Title(obs_truth.GetTitle() +", "+label))
-
-  # plot_truth.SetYTitle("Number of Events")
-  # plot_truth.SetMinimum(0)
-  # copyBinning(hist_truth,plot_truth)  
-
-
-  # unfoldpdf = ws.pdf("unfold")
-  # unfolding = unfoldpdf.unfolding()
-
-  # sig_truth = ws.function("sig_theory")
-  # sig_reco = ws.function("sig_reco")
-  # data_minus_bkg_reco = ws.function("unfold_data_minus_bkg")
-  # bkg_reco = ws.function("bkg_reco")
-  # asm_reco = ws.function("asm_reco")
-
-  # allVars = ROOT.RooArgList(ws.allVars())
-  # sysVars = ROOT.RooArgList()
-
-  # obs_var = ws.var("obs_truth")
-  
-  # for v in allVars:
-
-  #   if "alpha_" in v.GetName():
-  #     sysVars.add(v)
-
-  # prefit_all = ROOT.RooFitResult.prefitResult(allVars)
-  # prefit_sys = ROOT.RooFitResult.prefitResult(sysVars)
-
-
-  # nexp = unfoldpdf.expectedEvents(0)
-  # unfoldpdf.plotOn(plot_truth,ROOT.RooFit.Invisible(),ROOT.RooFit.DrawOption("P"))
-  # unfoldpdf.plotOn(plot_truth,ROOT.RooFit.LineColor(0),ROOT.RooFit.FillColor(ROOT.kGray),ROOT.RooFit.FillStyle(1001),ROOT.RooFit.Name("unfold_graph_sys"),ROOT.RooFit.VisualizeError(prefit_sys),
-  #                  ROOT.RooFit.Normalization(nexp,ROOT.RooAbsReal.NumEvent),ROOT.RooFit.NormRange("full"))
-  # unfoldpdf.plotOn(plot_truth,ROOT.RooFit.LineColor(ROOT.kBlack),ROOT.RooFit.Name("unfold_graph"),ROOT.RooFit.MarkerColor(ROOT.kBlack),ROOT.RooFit.MarkerSize(1),ROOT.RooFit.MarkerStyle(20),ROOT.RooFit.DrawOption("P"),ROOT.RooFit.VisualizeError(prefit_all),
-  #                  ROOT.RooFit.Normalization(nexp,ROOT.RooAbsReal.NumEvent),ROOT.RooFit.NormRange("full"))
-  # sig_truth.plotOn(plot_truth,ROOT.RooFit.LineColor(ROOT.kRed),ROOT.RooFit.FillColor(ROOT.kRed),ROOT.RooFit.FillStyle(3345),ROOT.RooFit.Name("sig_truth_graph"),
-  #                  ROOT.RooFit.Normalization(nexp,ROOT.RooAbsReal.NumEvent),ROOT.RooFit.NormRange("full"))
-  # canvas_truth = ROOT.TCanvas("unfolded","unfolded")
-  # plot_truth.Draw()
-  # leg_truth = ROOT.TLegend(0.7, 0.7, 0.9, 0.9)
-  # leg_truth.SetLineWidth(0)
-  # leg_truth.SetFillStyle(0)
-  # leg_truth.AddEntry( plot_truth.findObject("sig_truth_graph"), "Theory Prediction", "l" )
-  # leg_truth.AddEntry( plot_truth.findObject("unfold_graph"), "Unfolded Signal", "pe" )
-  # leg_truth.AddEntry( plot_truth.findObject("unfold_graph_sys"), "Unfolded Signal, Sys. Uncertainty", "f" )  
-  # leg_truth.Draw()
-  # canvas_truth.SaveAs(pjoin(outdir,"unfolded.pdf"))
-  # canvas_truth.SaveAs(pjoin(outdir,"unfolded.root"))
-  # canvas_truth.SaveAs(pjoin(outdir,"unfolded.C"))
-  # canvas_truth.SaveAs(pjoin(outdir,"unfolded.png"))
-  
-  # obs_reco = ws.var(obsname+"_reco")
-  # plot_reco = obs_reco.frame(ROOT.RooFit.Title(obs_reco.GetTitle() +", "+label))
-  # plot_reco.SetYTitle("Number of Events")
-  # plot_reco.SetMinimum(0)
-  # copyBinning(hist_reco,plot_reco)
-  # data_minus_bkg_reco.plotOn(plot_reco,ROOT.RooFit.Name("data_minus_bkg_reco_graph"),
-  #                            ROOT.RooFit.MarkerColor(1),ROOT.RooFit.MarkerSize(1),ROOT.RooFit.MarkerStyle(20),ROOT.RooFit.DrawOption("P"),ROOT.RooFit.VisualizeError(prefit_all))
-  # sig_reco.plotOn           (plot_reco,ROOT.RooFit.LineColor(ROOT.kRed),ROOT.RooFit.Name("sig_reco_graph"),ROOT.RooFit.Normalization(hist_reco.Integral(),ROOT.RooAbsReal.NumEvent),ROOT.RooFit.NormRange("full"))
-  # canvas_reco = ROOT.TCanvas("reco","reco")
-  # plot_reco.Draw()
-  # leg_reco = ROOT.TLegend(0.7, 0.8, 0.9, 0.9)
-  # leg_reco.SetLineWidth(0)
-  # leg_reco.SetFillStyle(0)
-  # leg_reco.AddEntry( plot_reco.findObject("data_minus_bkg_reco_graph"), "Background Subtracted Data", "pe" )
-  # leg_reco.AddEntry( plot_reco.findObject("sig_reco_graph"), "Signal Reco Monte Carlo", "l" )
-  # leg_reco.Draw()
-  # canvas_reco.SaveAs(pjoin(outdir,"reco.pdf"))
-  # canvas_reco.SaveAs(pjoin(outdir,"reco.C"))    
-  # canvas_reco.SaveAs(pjoin(outdir,"reco.root"))  
-  # canvas_reco.SaveAs(pjoin(outdir,"reco.png"))
 
 
 
@@ -263,39 +170,40 @@ def main(args):
   from os.path import exists  
   import ROOT
 
+  # Prepare the histograms and response matrix.
   histograms = prepare()
 
+  # Initiate the unfolding setup.
   spec = ROOT.RooUnfoldSpec("unfold","unfold",histograms["sig_truth"],"obs_truth",histograms["sig_reco"],"obs_reco",histograms["sig_response"],histograms["bkg_reco"],histograms["sigbkg_reco"],overflow,0.0005,False)
     
-  # This line instantiates one of the subclasses specific to the unfolding algorithm.
+  # Create the object that will perform the unfolding. Pass a
+  # regularization parameter if given in the command line.
   if args.regparm:
     pdf = spec.makePdf(algorithm(args.method),args.regparm)
   else:
     pdf = spec.makePdf(algorithm(args.method))
-
-  theory = pdf.unfolding().response().makeHistFuncTruth(histograms["sig_theory"])
-
+  
   # required to avoid python garbage collector messing up the RooDataHists added to gDirectory
   ROOT.gDirectory.Clear()
   
+  # Create a RooFitHist object as input for the unfolding
+  # results printing.
   test_truth = spec.makeHistogram(histograms["sig_theory"])
   
-  # Here the first unfolding is performed.
+  # Do the unfolding and print the unfolding results.
   pdf.unfolding().PrintTable(ROOT.cout, test_truth)
 
-  # ws = ROOT.RooWorkspace("workspace","workspace")
+  # Create a workspace.
+  ws = ROOT.RooWorkspace("workspace","workspace")
   
-  # getattr(ws,"import")(pdf)
+  # Save the unfolding to the workspace.
+  getattr(ws,"import")(pdf)
   
-  # getattr(ws,"import")(theory)
-  
+  # Print the saved workspace.
+  ws.Print("t")
 
-  # #ws.Print("t")
-
-  # makePlots(ws)
-
-  pdf.Delete()
-  theory.Delete()
+  # Make a plot the unfolding result and theory prediction.
+  makePlots(ws)
 
 
   
