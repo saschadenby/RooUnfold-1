@@ -193,9 +193,9 @@ public:
   RooHistFunc* makeHistFunc(RooDataHist* dhist);  
   RooHistFunc* makeHistFuncTruth(const TH1* hist);
   RooHistFunc* makeHistFuncMeasured(const TH1* hist);
-  RooHistPdf* makeHistPdf(RooDataHist* dhist);  
-  RooHistPdf* makeHistPdfTruth(const TH1* hist);
-  RooHistPdf* makeHistPdfMeasured(const TH1* hist);
+  RooAbsPdf* makeHistPdf(RooDataHist* dhist);  
+  RooAbsPdf* makeHistPdfTruth(const TH1* hist);
+  RooAbsPdf* makeHistPdfMeasured(const TH1* hist);
   RooUnfolding::RooFitHist* makeHistMeasured(const TH1* hist);
   RooUnfolding::RooFitHist* makeHistTruth(const TH1* hist);
   RooUnfolding::RooFitHist* makeHist(RooAbsReal* object);

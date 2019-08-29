@@ -411,19 +411,19 @@ def makePlots_HistFactory(ws):
   canvas_reco.SaveAs("reco.pdf")
   canvas_reco.SaveAs("reco.png")
 
-def makePlots_RooUnfoldSpec(ws):
+def makePlots_RooUnfoldSpec(ws,spec):
   import ROOT
 
   unfoldpdf = ws.pdf("unfold")
   
   unfolding = unfoldpdf.unfolding()
-  
-  sig_response = ws.function("response")
-  sig_theory = ws.function("sig_theory")
-  sigbkg_reco = ws.function("sigbkg_reco")
-  sig_truth = ws.function("sig_truth")
-  sig_reco = ws.function("unfold_data_minus_bkg")
-  bkg_reco = ws.function("bkg")
+
+  sig_response = ws.obj("response")
+  sig_theory = ws.obj("sig_theory_hist_func")
+  sigbkg_reco = ws.obj("sigbkg_reco_histfunc")
+  sig_truth = ws.obj("sig_truth")
+  sig_reco = ws.obj("unfold_data_minus_bkg")
+  bkg_reco = ws.obj("bkg_histfunc")
 
   obs_truth = ws.var("obs_truth")
   plot_truth = obs_truth.frame()
@@ -536,8 +536,6 @@ def main(args):
     # Here the first unfolding is performed.
     pdf.unfolding().PrintTable(ROOT.cout, test_truth)
 
-    return
-
     ws = ROOT.RooWorkspace("workspace","workspace")
 
     getattr(ws,"import")(pdf)
@@ -556,7 +554,7 @@ def main(args):
   if args.mode == "HistFactory":
     makePlots_HistFactory(ws)
   else:
-    makePlots_RooUnfoldSpec(ws)
+    makePlots_RooUnfoldSpec(ws,spec)
   
 
   
