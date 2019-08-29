@@ -584,18 +584,31 @@ const TVectorD& RooUnfoldResponseT<Hist,Hist2D>::Etruth() const
 }
 
 template<class Hist, class Hist2D>
-const TMatrixD& RooUnfoldResponseT<Hist,Hist2D>::Mresponse() const
+const TMatrixD& RooUnfoldResponseT<Hist,Hist2D>::Mresponse(bool norm) const
 {
   // Response matrix as a TMatrixD: (row,column)=(measured,truth)
-  if (!_mRes) _cached= (_mRes= new TMatrixD(h2mNorm  (_res, _tru, _overflow,_density))); 
+
+  if (!_mRes){
+    if (norm){
+      _cached= (_mRes= new TMatrixD(h2mNorm  (_res, _tru, _overflow,_density))); 
+    } else {
+      _cached = (_mRes = new TMatrixD(h2m (_res, _overflow, _density)));
+    }
+  }
   return *_mRes;
 }
 
 template<class Hist, class Hist2D>
-const TMatrixD& RooUnfoldResponseT<Hist,Hist2D>::Eresponse() const
+const TMatrixD& RooUnfoldResponseT<Hist,Hist2D>::Eresponse(bool norm) const
 {
   // Response matrix errors as a TMatrixD: (row,column)=(measured,truth)
-  if (!_eRes) _cached= (_eRes= new TMatrixD(h2meNorm (_res, _tru, _overflow,_density))); 
+  if (!_eRes){
+    if (norm) {
+      _cached= (_eRes= new TMatrixD(h2meNorm (_res, _tru, _overflow,_density))); 
+    } else {
+      _cached= (_eRes= new TMatrixD(h2me (_res, _overflow,_density))); 
+    }
+  }
   return *_eRes;
 }
 

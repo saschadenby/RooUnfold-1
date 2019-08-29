@@ -65,10 +65,11 @@ RooUnfoldBayesT<Hist,Hist2D>::RooUnfoldBayesT (const RooUnfoldBayesT<Hist,Hist2D
 }
 
 template<class Hist,class Hist2D>
-RooUnfoldBayesT<Hist,Hist2D>::RooUnfoldBayesT (const RooUnfoldResponseT<Hist,Hist2D>* res, const Hist* meas, int niter, Bool_t smoothit,
+RooUnfoldBayesT<Hist,Hist2D>::RooUnfoldBayesT (const RooUnfoldResponseT<Hist,Hist2D>* res, const Hist* meas,Int_t niter, Bool_t smoothit,
                                 const char* name, const char* title)
-  : RooUnfoldT<Hist,Hist2D> (res, meas, name, title), _niter(niter), _smoothit(smoothit)
+  : _niter(niter), _smoothit(smoothit), RooUnfoldT<Hist,Hist2D> (res, meas, name, title)
 {
+
   // Constructor with response matrix object and measured unfolding input histogram.
   // The regularisation parameter is niter (number of iterations).
   Init();
@@ -106,6 +107,7 @@ RooUnfoldBayesT<Hist,Hist2D>::CopyData (const RooUnfoldBayesT<Hist,Hist2D>& rhs)
 template<class Hist,class Hist2D> void
 RooUnfoldBayesT<Hist,Hist2D>::Unfold() const
 {
+
   this->setup();
   if (this->verbose() >= 2) {
     Print();
@@ -192,6 +194,12 @@ RooUnfoldBayesT<Hist,Hist2D>::unfold() const
   // _niter = number of iterations to perform (3 by default).
   // _smoothit = smooth the matrix in between iterations (default false).
 
+  if (this->_niter < 0){
+    std::cerr << "RooUnfoldBayes invalid number of iterations: " << this->_niter << std::endl;
+    this->_niter = 4;
+    std::cerr << "RooUnfoldBayes the number is set to the default value 4." << std::endl;
+  }
+
   TMatrixD PEjCi(this->_ne,this->_nc), PEjCiEff(this->_ne,this->_nc);
   for (int i = 0 ; i < this->_nc ; i++) {
     if (this->_nCi[i] <= 0.0) { this->_efficiencyCi[i] = 0.0; continue; }
@@ -220,8 +228,10 @@ RooUnfoldBayesT<Hist,Hist2D>::unfold() const
 
     for (int j = 0 ; j < this->_ne ; j++) {
       double Uj = 0.0;
-      for (int i = 0 ; i < this->_nc ; i++)
+      for (int i = 0 ; i < this->_nc ; i++) {
         Uj += PEjCi(j,i) * this->_P0C[i];
+      }
+      
       this->_UjInv[j] = Uj > 0.0 ? 1.0/Uj : 0.0;
     }
 
@@ -477,7 +487,8 @@ template<class Hist,class Hist2D>
 RooUnfoldBayesT<Hist,Hist2D>::RooUnfoldBayesT()
   : RooUnfoldT<Hist,Hist2D>()
 {
-  // Default constructor. Use Setup() to prepare for unfolding.
+
+  // Default constructor. Use Setup() to prepare for unfolding.]
   Init();
 }
 
@@ -497,8 +508,8 @@ RooUnfoldBayesT<Hist,Hist2D>::RooUnfoldBayesT (const TString& name, const TStrin
   Init();
 }
 
-template<class Hist,class Hist2D>
-RooUnfoldBayesT<Hist,Hist2D>& RooUnfoldBayesT<Hist,Hist2D>::operator= (const RooUnfoldBayesT<Hist,Hist2D>& rhs)
+template<class Hist,class Hist2D>RooUnfoldBayesT<Hist,Hist2D>& 
+RooUnfoldBayesT<Hist,Hist2D>::operator= (const RooUnfoldBayesT<Hist,Hist2D>& rhs)
 {
   // Assignment operator for copying RooUnfoldBayes settings.
   Assign(rhs);
@@ -542,7 +553,7 @@ const TMatrixD& RooUnfoldBayesT<Hist,Hist2D>::UnfoldingMatrix() const
 }
 
 template<class Hist,class Hist2D>
-void  RooUnfoldBayesT<Hist,Hist2D>::SetRegParm (double parm)
+void  RooUnfoldBayesT<Hist,Hist2D>::SetRegParm (Double_t parm)
 {
   // Set regularisation parameter (number of iterations)
   SetIterations(int(parm+0.5));

@@ -23,7 +23,7 @@ class TH1;
 template<class Hist, class Hist2D>
 class RooUnfoldT : public TNamed {
 public:
-  static RooUnfoldT<Hist,Hist2D>* New (RooUnfolding::Algorithm alg, const RooUnfoldResponseT<Hist,Hist2D>* res, const Hist* meas, Double_t regparm= -1e30,
+  static RooUnfoldT<Hist,Hist2D>* New (RooUnfolding::Algorithm alg, const RooUnfoldResponseT<Hist,Hist2D>* res, const Hist* meas, Double_t regparm=-1e30,
                                        const char* name= 0, const char* title= 0);
 
   // typedefs to ensure compatibility with legacy code
@@ -116,6 +116,7 @@ private:
   void Init();
   void Destroy();  
   void CopyData (const RooUnfoldT<Hist,Hist2D>& rhs);
+  //RooUnfoldT<Hist,Hist2D>* clone(const RooUnfoldT<Hist,Hist2D>& rhs);
 
 protected:
   // cache 
@@ -234,7 +235,7 @@ protected:
   Cache _cache;
 
   RooUnfolding::RooFitHist* makeHistogram(const HistContainer& source, double errorThreshold);
-  
+
 public:
 
   RooAbsReal* getBackground();
@@ -261,10 +262,10 @@ public:
   ~RooUnfoldSpec();
   void registerSystematic(Contribution c, const char* name, const TH1* up, const TH1* down);
   void registerSystematic(Contribution c, const char* name, double up, double dn);
-  
-  RooAbsPdf* makePdf(RooUnfolding::Algorithm alg);
-  RooAbsReal* makeFunc(RooUnfolding::Algorithm alg);
-  RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>* unfold(RooUnfolding::Algorithm alg);
+  RooAbsPdf* makePdf(RooUnfolding::Algorithm alg, Double_t regparam=-1e30);
+  RooAbsReal* makeFunc(RooUnfolding::Algorithm alg, Double_t regparam=-1e30);
+  RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>* unfold(RooUnfolding::Algorithm alg, Double_t regparam = -1e30);
+  RooUnfolding::RooFitHist* makeHistogram(const TH1* hist);
 protected:
   void setup(const TH1* truth_th1, const RooArgList& obs_truth, const TH1* reco_th1, const RooArgList& obs_reco, const TH2* response_th1, const TH1* bkg_th1, const TH1* data_th1, bool includeUnderflowOverflow, double errorThreshold = -1, bool useDensity = false);
   ClassDef(RooUnfoldSpec,0)
