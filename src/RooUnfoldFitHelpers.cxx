@@ -420,11 +420,6 @@ namespace RooUnfolding { // section 2: non-trivial helpers
     Int_t xmin(0),ymin(0),zmin(0) ;
     
     Int_t ix(0),iy(0),iz(0) ;
-    if (name == "response"){
-      std::cout << "convertTH1: " << name << std::endl;
-      std::cout << "xvar bins: " << xvar->getBins() << std::endl;
-      std::cout << "yvar bins: " << yvar->getBins() << std::endl;
-    }
     for (ix=0 ; ix < xvar->getBins() ; ix++) {
       xvar->setBin(ix) ;
       if (yvar) {
@@ -439,8 +434,6 @@ namespace RooUnfolding { // section 2: non-trivial helpers
             }
           } else {
             int bin = histo->GetBin(ix+offset,iy+offset);
-	    // std::cout << "bins: " << ix+offset << " " << iy+offset << " bin: " << bin << std::endl;
-	    // std::cout << "bincontent: " << histo->GetBinContent(bin) << std::endl;
 	    double volume = correctDensity ? (histo->GetXaxis()->GetBinWidth(ix+offset)*histo->GetYaxis()->GetBinWidth(iy+offset)) : 1;
             dh->add(obs,histo->GetBinContent(bin)/volume,TMath::Power(histo->GetBinError(bin)/volume,2)) ;
           }
@@ -809,7 +802,6 @@ namespace RooUnfolding { // section 2: non-trivial helpers
       }
       for(size_t i=0; i<nx; ++i){
         int b = bin(h,i,j,overflow);
-	//std::cout << "b " << b << " ixj " << i << "x" << j << "= " << binContent(h,b,overflow) << std::endl;
         m(i,j) = binContent(h,b,overflow) * fac * (correctDensity ? binVolume(h,b,overflow) : 1);
       }
     }
@@ -818,8 +810,6 @@ namespace RooUnfolding { // section 2: non-trivial helpers
     // sets Matrix to errors of bins in a 2D input histogram
     size_t nx = nBins(h,X);
     size_t ny = nBins(h,Y);
-    std::cout << "nx: " << nx << std::endl;
-    std::cout << "ny: " << ny << std::endl;
     m.ResizeTo(nx,ny);
     for(size_t j=0; j<ny; ++j){
       double fac = 1.;
