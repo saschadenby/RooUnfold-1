@@ -1671,12 +1671,7 @@ RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>* RooUnfoldSpec::un
 
   RooFitUnfoldResponse* response = new RooFitUnfoldResponse(this->GetName(),this->GetTitle(),res,truth,reco,this->_useDensity);
 
-
-  if (this->_includeUnderflowOverflow){
-    response->UseOverflow(kTRUE);    
-  } else {
-    response->UseOverflow(kFALSE);
-  }
+  // propagation of the underflow/overflow flag to the RooUnfoldResponse object is not neccessary as all the RooFit-type helper functions ignore that flag anyway
 
   RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>* unfolding = 0;
   RooUnfolding::RooFitHist* data_minus_bkg = 0;  
