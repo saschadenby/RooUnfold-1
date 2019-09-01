@@ -16,7 +16,7 @@ sigma = 0.3
 
 # Binning
 truthBins = 40
-recoBins = 40
+recoBins = 50
 
 # Kinematic range
 xmin = -10.0
@@ -24,10 +24,6 @@ xmax = 10.0
 
 # Number of events
 nevents = 100000
-
-# In-/Exclude overflow
-overflow = True
-
 
 
 
@@ -174,7 +170,7 @@ def main(args):
   histograms = prepare()
 
   # Initiate the unfolding setup.
-  spec = ROOT.RooUnfoldSpec("unfold","unfold",histograms["sig_truth"],"obs_truth",histograms["sig_reco"],"obs_reco",histograms["sig_response"],histograms["bkg_reco"],histograms["sigbkg_reco"],overflow,0.0005,False)
+  spec = ROOT.RooUnfoldSpec("unfold","unfold",histograms["sig_truth"],"obs_truth",histograms["sig_reco"],"obs_reco",histograms["sig_response"],histograms["bkg_reco"],histograms["sigbkg_reco"],args.overflow,0.0005,False)
     
   # Create the object that will perform the unfolding. Pass a
   # regularization parameter if given in the command line.
@@ -192,6 +188,9 @@ def main(args):
   
   # Do the unfolding and print the unfolding results.
   pdf.unfolding().PrintTable(ROOT.cout, test_truth)
+
+  if not args.plot:
+    return
 
   # Create a workspace.
   ws = ROOT.RooWorkspace("workspace","workspace")
@@ -213,5 +212,7 @@ if __name__=="__main__":
   from argparse import ArgumentParser
   parser = ArgumentParser(description="RooUnfold testing script")
   parser.add_argument("method",default="bbb",type=str)
+  parser.add_argument("--plot",default=False,type=bool)
   parser.add_argument("--regparm",type=float)
+  parser.add_argument("--overflow",default=True,type=bool)
   main(parser.parse_args())
