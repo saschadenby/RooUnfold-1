@@ -1695,7 +1695,7 @@ RooUnfolding::RooFitHist* RooUnfoldSpec::makeHistogram(const HistContainer& sour
     for(auto var:source._shapes){
       TString sysname(var.first);
       if(var.second.size() != 2){
-        throw std::runtime_error(TString::Format("unable to process systematics '%s' with size %d != 2",var.first.c_str(),var.second.size()).Data());
+        throw std::runtime_error(TString::Format("unable to process systematics '%s' with size %d != 2",var.first.c_str(),(int)(var.second.size())).Data());
       }
       up.add(*var.second[0]);
       dn.add(*var.second[1]);
@@ -1808,7 +1808,7 @@ RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>* RooUnfoldSpec::un
   this->makeResponse();
   this->makeDataMinusBackground();
 
-  RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>* unfolding = RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>::New(alg,response,data_minus_bkg,regparam);
+  RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>* unfolding = RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>::New(alg,this->_cache._response,this->_cache._data_minus_bkg,regparam);
   return unfolding;
 }
 
