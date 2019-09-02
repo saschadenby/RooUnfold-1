@@ -999,7 +999,7 @@ namespace RooUnfolding { // section 2: non-trivial helpers
     h2meNorm(h,m,norm, overflow,correctDensity);
     return m;
   }
-  template<> void h2m  (const RooUnfolding::RooFitHist* h, TMatrixD& m, bool overflow, bool correctDensity) { h2mNorm (h,m,(const RooUnfolding::RooFitHist*)NULL,overflow,correctDensity); }
+  template<> void h2m  (const RooUnfolding::RooFitHist* h, TMatrixD& m, bool overflow, bool correctDensity) { h2mNorm (h,m,(const RooUnfolding::RooFitHist*)NULL,overflow,correctDensity);}
   template<> void h2me  (const RooUnfolding::RooFitHist* h, TMatrixD& m, bool overflow, bool correctDensity){ h2meNorm(h,m,(const RooUnfolding::RooFitHist*)NULL,overflow,correctDensity); };  
   template<> TMatrixD h2m<RooUnfolding::RooFitHist>  (const RooUnfolding::RooFitHist* h, bool overflow, bool correctDensity){
     // Returns Matrix of values of bins in a 2D input histogram

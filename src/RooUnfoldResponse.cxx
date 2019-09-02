@@ -1300,6 +1300,7 @@ RooHistFunc* RooFitUnfoldResponse::makeHistFuncTruth(const TH1* hist){
   for(size_t i=0; i<this->_tru->dim(); ++i){
     v.push_back(this->_tru->obs(i));
   }
+
   RooDataHist* dhist = RooUnfolding::convertTH1(hist,v,this->_overflow,this->_density);
   return RooUnfolding::makeHistFunc(dhist,v);
 }
@@ -1325,6 +1326,7 @@ RooAbsPdf* RooFitUnfoldResponse::makeHistPdfMeasured(const TH1* hist){
   for(size_t i=0; i<this->_mes->dim(); ++i){
     v.push_back(this->_mes->obs(i));
   }
+
   RooDataHist* dhist = RooUnfolding::convertTH1(hist,v,this->_overflow,this->_density);
   return RooUnfolding::makeHistPdf(dhist,v);
 }

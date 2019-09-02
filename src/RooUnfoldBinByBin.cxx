@@ -64,11 +64,12 @@ RooUnfoldBinByBinT<Hist,Hist2D>::Impl()
 template<class Hist,class Hist2D> void
 RooUnfoldBinByBinT<Hist,Hist2D>::Unfold() const
 {
+
   const TVectorD& vmeas(this->Vmeasured());
   const TVectorD& vtrain(this->_res->Vmeasured());
   const TVectorD& vtruth(this->_res->Vtruth());
   const TVectorD& fakes(this->_res->Vfakes());
-  const TMatrixD& respm(this->_res->Mresponse());
+  const TMatrixD& respm(this->_res->Mresponse(false));
 
   Double_t fac= 0.0;
   if (this->_res->HasFakes()) { 
@@ -76,7 +77,7 @@ RooUnfoldBinByBinT<Hist,Hist2D>::Unfold() const
     if (fac!=0.0) fac= vmeas.Sum() / fac;
     if (this->_verbose>=1) std::cout << "Subtract " << fac*fakes.Sum() << " fakes from measured distribution" << std::endl;
   }
-  
+
   this->_cache._rec.ResizeTo(this->_nt);
   this->_specialcache._factors.ResizeTo(this->_nt);
   Int_t nb= std::min(this->_nm,this->_nt);
@@ -87,6 +88,7 @@ RooUnfoldBinByBinT<Hist,Hist2D>::Unfold() const
     this->_specialcache._factors[i]= c;
     this->_cache._rec[i]= c * (vmeas[i]-fac*fakes[i]);
   }
+
   this->_cache._unfolded= true;
 }
 

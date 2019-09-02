@@ -97,10 +97,17 @@ namespace RooUnfolding {
   void printVector(const char* name, const TVectorD& vec);
   void printMatrix (const TMatrixD& m, const char* name="matrix", const char* format=0, Int_t cols_per_sheet=10);
 
+  void addEmptyBins(TVectorD& v);
+  void addEmptyBins(TMatrixD& m);
+
   TH1D* getTH1(const TVectorD& vec, const TVectorD& errvec, const char* name, const char* title, bool overflow=false);
   TH2D* getTH2(const TMatrixD& matrix, const char* name, const char* title, bool overflow=false);
 
   void add(TMatrixD& target, const TMatrixD& addition);
+  TVectorD* resizeVector (const TVectorD& vec, Int_t n);
+  TMatrixD* squareMatrix (const TMatrixD& matrix);
+  void resizeVector (TVectorD& vec, Int_t n);
+  void squareMatrix (TMatrixD& matrix);
   TMatrixD& ABAT (const TMatrixD& a, const TMatrixD& b, TMatrixD& c);
   TMatrixD& ABAT (const TMatrixD& a, const TVectorD& b, TMatrixD& c);
   template<class Hist> RooUnfolding::Variable<Hist> var(const Hist* h, Dimension d);

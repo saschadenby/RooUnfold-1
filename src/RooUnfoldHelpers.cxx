@@ -5,6 +5,8 @@
 #include <sstream>
 #include <iomanip>
 
+using std::cerr;
+
 namespace RooUnfolding {
   void printVector(const char* name, const TVectorD& vec){
     std::cout << name << std::endl;
@@ -20,6 +22,77 @@ namespace RooUnfolding {
       }
     }
   }
+
+  TVectorD* resizeVector (const TVectorD& vec, Int_t n)
+  {
+
+    Int_t nbins;
+
+    if (n < vec.GetNrows()){
+      nbins = n;
+    } else {
+      cerr << "Warning: Requested vector size is smaller than the original vector. The initial size is maintained.";
+      nbins = vec.GetNrows();
+    }
+
+    TVectorD* newvec = new TVectorD(nbins);
+
+    // Add zeros to the new columns.
+    for (Int_t i = 0; i < nbins; i++){
+      if (i < vec.GetNrows()){
+	(*newvec)[i] = vec[i];
+      } else {
+	(*newvec)[i] = 0.0;
+      }
+    }
+  
+    return newvec;
+  }
+
+  void resizeVector (TVectorD& vec, Int_t n)
+  {
+
+    if (n <= vec.GetNrows()){
+      cerr << "Warning: Requested vector size is smaller than or equal to the original vector. The initial vector is maintained.";
+      return;
+    }
+
+    // Add new columns with zero as value.
+    vec.ResizeTo(n);
+  }
+
+  TMatrixD* squareMatrix (const TMatrixD& matrix)
+  {
+
+    Int_t nbins;
+
+    if (matrix.GetNrows() >= matrix.GetNcols()){
+      nbins = matrix.GetNrows();
+    } else {
+      nbins = matrix.GetNcols();
+    }
+
+    TMatrixD* newmatrix = new TMatrixD(matrix);
+
+    newmatrix->ResizeTo(nbins,nbins);
+  
+    return newmatrix;
+  }
+
+  void squareMatrix (TMatrixD& matrix)
+  {
+
+    Int_t nbins;
+
+    if (matrix.GetNrows() >= matrix.GetNcols()){
+      nbins = matrix.GetNrows();
+    } else {
+      nbins = matrix.GetNcols();
+    }
+    
+    matrix.ResizeTo(nbins,nbins);
+  }
+
 
   TH1D* getTH1(const TVectorD& vec, const TVectorD& errvec, const char* name, const char* title, bool overflow){
     
@@ -38,6 +111,43 @@ namespace RooUnfolding {
     
     return hist;
   }
+
+  // Add an empty bin on both sides of the vector.
+  void addEmptyBins(TVectorD& v){
+    
+    Int_t bins = v.GetNrows();
+    bins+=2;
+    
+    v.ResizeTo(bins);
+
+    for (Int_t i = bins; i > 1; i--){
+      v[i - 1] = v[i - 2];
+    }
+    v[0] = 0.0;
+  }
+
+  // Add one layer of empty bins on all sides of the matrix.
+  void addEmptyBins(TMatrixD& m){
+    
+    Int_t bins_x = m.GetNrows();
+    Int_t bins_y = m.GetNcols();
+    bins_x+=2;
+    bins_y+=2;
+
+    m.ResizeTo(bins_x, bins_y);
+
+    for (Int_t i = bins_x; i > 0; i--){
+      for (Int_t j = bins_y; j > 0; j--){
+	
+	if (i == 1 || j == 1){
+	  m[i - 1][j - 1] = 0.0;
+	} else {
+	  m[i - 1][j - 1] = m[i - 2][j - 2];
+	}
+      }
+    }
+  }
+
 
   TH2D* getTH2(const TMatrixD& matrix, const char* name, const char* title, bool overflow){
     Int_t i_start = 1;

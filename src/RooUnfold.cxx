@@ -426,6 +426,7 @@ RooUnfoldT<Hist,Hist2D>::SetMeasured (const TVectorD& meas, const TVectorD& err)
   _meas = RooUnfolding::createHist<Hist>(meas,GetName(),GetTitle(),var(orig,X));
 }
 
+
 template<class Hist,class Hist2D> void
 RooUnfoldT<Hist,Hist2D>::SetMeasured (const TVectorD& meas, const TMatrixD& cov)
 {
@@ -472,10 +473,6 @@ RooUnfoldT<Hist,Hist2D>::SetResponse (const RooUnfoldResponseT<Hist,Hist2D>* res
   _overflow= _res->UseOverflowStatus() ? 1 : 0;
   _nm= _res->GetNbinsMeasured();
   _nt= _res->GetNbinsTruth();
-  if (_overflow) {
-    _nm += 2;
-    _nt += 2;
-  }
   SetNameTitleDefault();
 }
 
@@ -714,15 +711,15 @@ RooUnfoldT<Hist,Hist2D>::Hreco (ErrorTreatment withError)
     2: Errors from the square root of of the covariance matrix given by the unfolding
     3: Errors from the square root of the covariance matrix from the variation of the results in toy MC tests
     */
-  
+
   if (!UnfoldWithErrors (withError)) withError= kNoError;
   const Hist* t = _res->Htruth();
   if (!_cache._unfolded){
-    return createHist<Hist>(name(t),title(t),vars(t));
+    return RooUnfolding::createHist(name(t),title(t),vars(t));
   } else {
     TVectorD rec(this->Vreco());
     TVectorD errors(this->ErecoV());
-    return createHist<Hist>(rec,errors,name(t),title(t),vars(t),_overflow);
+    return RooUnfolding::createHist(rec,errors,name(t),title(t),vars(t),_overflow);
   }
 }
 
@@ -1128,7 +1125,7 @@ const RooUnfoldResponseT<Hist,Hist2D>* RooUnfoldT<Hist,Hist2D>::response()  cons
 
 template<class Hist,class Hist2D> 
 RooUnfoldResponseT<Hist,Hist2D>* RooUnfoldT<Hist,Hist2D>::response()
-{
+{  
    // Response matrix object
   return _res;
 }
@@ -1342,7 +1339,7 @@ template<class Base> Bool_t RooUnfolding::RooFitWrapper<Base>::redirectServersHo
 
 
 template<class Base>const RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>* RooUnfolding::RooFitWrapper<Base>::unfolding() const { 
-  return this->_unfolding; 
+  return this->_unfolding;
 }
 
 template <class Base>
@@ -1525,7 +1522,7 @@ RooUnfoldSpec::RooUnfoldSpec(const char* name, const char* title, const TH1* tru
   if(d!=dim(reco)){
     throw std::runtime_error("inconsistent dimensionality between truth and reco histograms!");
   }
-
+  
   TString obs_truth_s(obs_truth);
   TString obs_reco_s(obs_reco);
   std::vector<TString> obs_truth_v;
@@ -1698,7 +1695,7 @@ RooUnfolding::RooFitHist* RooUnfoldSpec::makeHistogram(const HistContainer& sour
     for(auto var:source._shapes){
       TString sysname(var.first);
       if(var.second.size() != 2){
-        throw std::runtime_error(TString::Format("unable to process systematics '%s' with size %d != 2",var.first.c_str(),var.second.size()).Data());
+        throw std::runtime_error(TString::Format("unable to process systematics '%s' with size %d != 2",var.first.c_str(),(int)(var.second.size())).Data());
       }
       up.add(*var.second[0]);
       dn.add(*var.second[1]);
@@ -1812,7 +1809,6 @@ RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>* RooUnfoldSpec::un
   this->makeDataMinusBackground();
 
   RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>* unfolding = RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>::New(alg,this->_cache._response,this->_cache._data_minus_bkg,regparam);
-
   return unfolding;
 }
 

@@ -1,3 +1,4 @@
+
 #!/usr/bin/env python
 # ==============================================================================
 #  File and Version Information:
@@ -14,22 +15,27 @@ infname = "hist_tmp.root"
 
 def prepare(smear,write):
 
+  truthBins = 40
+  recoBins = 40
+  xmin = -10.0
+  xmax = 10.0
+
   import ROOT
 
-  response= ROOT.RooUnfoldResponse (40, -10.0, 10.0);
+  response= ROOT.RooUnfoldResponse (recoBins, xmin, xmax, truthBins, xmin, xmax);
 
   nevents = 100000
   
   # The histograms that are used to validate the unfolding result.
-  sig_theory= ROOT.TH1D ("sig_theory", "Test Truth",    40, -10.0, 10.0);
-  sig_theory_alt= ROOT.TH1D ("sig_theory_alt", "Test Truth",    40, -10.0, 10.0);
+  sig_theory= ROOT.TH1D ("sig_theory", "Test Truth",    truthBins, xmin, xmax);
+  sig_theory_alt= ROOT.TH1D ("sig_theory_alt", "Test Truth",    truthBins, xmin, xmax);
 
   # The histograms that will be unfolded.
-  sigbkg_reco= ROOT.TH1D ("sigbkg_reco", "Test Measured", 40, -10.0, 10.0);
-  sigbkg_reco_alt= ROOT.TH1D ("sigbkg_reco_alt", "Test Measured", 40, -10.0, 10.0);
+  sigbkg_reco= ROOT.TH1D ("sigbkg_reco", "Test Measured", recoBins, xmin, xmax);
+  sigbkg_reco_alt= ROOT.TH1D ("sigbkg_reco_alt", "Test Measured", recoBins, xmin, xmax);
   
   # The histogram containing the background that is needed for the unfolding.
-  bkg_reco= ROOT.TH1D ("bkg", "Test Bkg",    40, -10.0, 10.0);
+  bkg_reco= ROOT.TH1D ("bkg", "Test Bkg",    recoBins, xmin, xmax);
 
 
   #  Train with a Breit-Wigner, mean 0.3 and width 2.5.
@@ -544,8 +550,7 @@ def main(args):
 
     ws.Print("t")
 
-    # Explicitly free the memory that was allocated. PyROOT does not do this
-    # for you.
+    # Explicitly free the memory that was allocated. 
     pdf.Delete()
     theory.Delete()
 
