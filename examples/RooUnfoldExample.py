@@ -52,14 +52,19 @@ for i in range(10000):
   hTrue.Fill(xt);
   if x!=None: hMeas.Fill(x);
 
+
 if method == "bayes":
   unfold= ROOT.RooUnfoldBayes     (response, hMeas, 4);    #  OR
 elif method == "svd":
   unfold= ROOT.RooUnfoldSvd     (response, hMeas, 20);     #  OR
+elif method == "bbb":
+  unfold= ROOT.RooUnfoldBinByBin     (response, hMeas);     #  OR  
+elif method == "inv":
+  unfold= ROOT.RooUnfoldInvert     (response, hMeas);     #  OR  
 elif method == "root":
-  unfold= RooUnfoldTUnfold (response, hMeas);         #  OR
+  unfold= ROOT.RooUnfoldTUnfold (response, hMeas);         #  OR
 elif method == "ids":
-  unfold= RooUnfoldIds     (response, hMeas, 3);      #  OR
+  unfold= ROOT.RooUnfoldIds     (response, hMeas, 3);      #  OR
 
 hReco= unfold.Hreco();
 

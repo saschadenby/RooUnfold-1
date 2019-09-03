@@ -26,7 +26,8 @@ set(VERSION_MAJOR   1   CACHE STRING "Project major version number.")
 set(VERSION_MINOR   12   CACHE STRING "Project minor version number.")
 mark_as_advanced(VERSION_MAJOR VERSION_MINOR)
 
-find_package( ROOT COMPONENTS Tree Unfold Matrix Hist RIO MathCore Physics RooFitCore RooFit Graf Postscript Gpad)
+find_package( ROOT COMPONENTS Tree Unfold Matrix Hist RIO MathCore Physics RooFitCore RooFit HistFactory Graf Postscript Gpad)
+
 
 file(GLOB RooUnfoldLinkDef src/*_LinkDef.h)
 set(RooUnfoldDagostini ${CMAKE_CURRENT_SOURCE_DIR}/src/bayes.for)
@@ -45,7 +46,11 @@ else()
   set(RooUnfoldDagostini "")  
 endif()
 
-SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${EXTRA_FLAGS}")
+execute_process( COMMAND ln -sf ${RooUnfoldHeaders} -t ${CMAKE_CURRENT_BINARY_DIR} )
+
+file(GLOB Tests "test/*.sh")
+
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${EXTRA_FLAGS} -g ")
 
 get_filename_component (Fortran_COMPILER_NAME ${CMAKE_Fortran_COMPILER} NAME)
 if (Fortran_COMPILER_NAME MATCHES "gfortran")

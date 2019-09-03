@@ -14,10 +14,10 @@
 #define ROOUNFOLDDAGOSTINI_H_
 
 #include "RooUnfold.h"
+#include "RooUnfoldResponse.h"
 
-class RooUnfoldResponse;
 class TH1;
-class TH1D;
+class TH1;
 class TH2D;
 
 class RooUnfoldDagostini : public RooUnfold {
@@ -29,8 +29,7 @@ public:
   RooUnfoldDagostini (const RooUnfoldDagostini& rhs); // copy constructor
   virtual ~RooUnfoldDagostini(); // destructor
   RooUnfoldDagostini& operator= (const RooUnfoldDagostini& rhs); // assignment operator
-  virtual RooUnfoldDagostini* Clone (const char* newname= 0) const;
-  RooUnfoldDagostini (const RooUnfoldResponse* res, const TH1* meas, Int_t niter= 4, const char* name=0, const char* title=0);
+  RooUnfoldDagostini (const RooUnfoldResponseT<TH1,TH2>* res, const TH1* meas, Int_t niter= 4, const char* name=0, const char* title=0);
 
   void SetIterations (Int_t niter= 4);
   Int_t GetIterations() const;

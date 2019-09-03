@@ -44,10 +44,11 @@ class TH1D;
 class TH2D;
 class TF1;
 class TNtuple;
-class RooUnfoldResponse;
-class RooUnfold;
-class RooUnfoldErrors;
-class RooUnfoldParms;
+
+#include "RooUnfold.h"
+#include "RooUnfoldResponse.h"
+#include "RooUnfoldErrors.h"
+#include "RooUnfoldParms.h"
 
 class RooUnfoldTestHarness : public TNamed {
 public:

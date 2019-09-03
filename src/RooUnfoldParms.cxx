@@ -28,6 +28,7 @@ return an rms. The chi squared values are calculated using the chi2() method in 
 ////////////////////////////////////////////////////////////////
 
 #include "RooUnfoldParms.h"
+#include "RooUnfoldHelpers.h"
 
 #include <cfloat>
 #include <iostream>
@@ -36,7 +37,7 @@ return an rms. The chi squared values are calculated using the chi2() method in 
 
 #include "TROOT.h"
 #include "TStyle.h"
-#include "TH1D.h"
+#include "TH1.h"
 #include "TProfile.h"
 #include "RooUnfold.h"
 #include "TRandom.h"
@@ -110,12 +111,12 @@ RooUnfoldParms::GetMeanResiduals()
 TH1*
 RooUnfoldParms::GetRMSResiduals()
 {
-    /*Returns TH1D of RMS spread of Residuals for each regularisation parameter.
+    /*Returns TH1 of RMS spread of Residuals for each regularisation parameter.
      Requires a known truth distribution*/
      if (!_done_math){DoMath();} 
     hrms->SetMarkerStyle(4);
     hrms->SetMinimum(0);
-    return dynamic_cast<TH1D*>(hrms->Clone());
+    return dynamic_cast<TH1*>(hrms->Clone());
 }
 
 void
@@ -146,11 +147,11 @@ RooUnfoldParms::DoMath()
     }
     
     else{ 
-        vector<TH1D*> graph_vector;    
+        vector<TH1*> graph_vector;    
         for(Double_t a = _minparm; a<=_maxparm; a+=_stepsizeparm) {
         TString graph_title("Residuals at k= ");
         graph_title+=a;
-        TH1D* graph_name = new TH1D (graph_title,graph_title, 200,0,1000);
+        TH1* graph_name = new TH1D (graph_title,graph_title, 200,0,1000);
         graph_vector.push_back(graph_name);
         }
         Int_t gvl=0;
@@ -160,13 +161,13 @@ RooUnfoldParms::DoMath()
     
         for (Double_t k=_minparm;k<=_maxparm;k+=_stepsizeparm)
         {   
-            RooUnfold* unf = unfold->Clone("unfold_toy");
+          RooUnfold* unf = (RooUnfold*)unfold->Clone("unfold_toy");
             unf->SetRegParm(k);
             Double_t sq_err_tot=0;
             TH1* hReco=unf->Hreco(doerror); 
             for (Int_t i= 0; i < nt; i++)
             {
-              sq_err_tot += RooUnfoldResponse::GetBinError (hReco, i, _overflow);
+              sq_err_tot += RooUnfolding::binError (hReco, i, _overflow);
             }
             herr->Fill(k,sq_err_tot/nt);
             if (hTrue)
@@ -174,7 +175,7 @@ RooUnfoldParms::DoMath()
                 Double_t rsqt=0;    
                 Double_t res_tot=0;
                 for (int i=0;i<nt;i++){
-                    Int_t j= RooUnfoldResponse::GetBin (hReco, i, _overflow);
+                  Int_t j= RooUnfolding::bin (hReco, i, _overflow);
                     if (hReco->GetBinContent(j)!=0.0 || (hReco->GetBinError(j)>0.0)) 
                     {
                         Double_t res=hReco->GetBinContent(j) - hTrue->GetBinContent(j);
