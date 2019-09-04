@@ -26,7 +26,7 @@ set(VERSION_MAJOR   1   CACHE STRING "Project major version number.")
 set(VERSION_MINOR   12   CACHE STRING "Project minor version number.")
 mark_as_advanced(VERSION_MAJOR VERSION_MINOR)
 
-find_package( ROOT COMPONENTS Tree Unfold Matrix Hist RIO MathCore Physics RooFitCore RooFit HistFactory Graf Postscript Gpad)
+find_package( ROOT COMPONENTS Tree Unfold Matrix Hist RIO MathCore Physics RooFitCore RooFit HistFactory Graf Postscript Gpad XMLParser)
 
 
 file(GLOB RooUnfoldLinkDef src/*_LinkDef.h)
