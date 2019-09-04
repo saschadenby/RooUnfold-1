@@ -4,7 +4,6 @@
 #include "TH1.h"
 #include "TAxis.h"
 #include "RooUnfoldTH1Helpers.h"
-#include <RooUnfoldHelpers.tpp>
 
 #include <iostream>
 #include <limits>
