@@ -32,6 +32,7 @@ namespace RooUnfolding {
     RooFitHist(RooDataHist* hist, const RooArgList& obslist, double uncThreshold = -1);    
     RooFitHist(const TH1* hist, const std::vector<RooAbsArg*>& obs, bool includeUnderflowOverflow, double errorThreshold, bool correctDensity=false);
     RooFitHist(const TH1* hist, const RooArgList& obs, bool includeUnderflowOverflow, double errorThreshold, bool correctDensity=false);
+    virtual ~RooFitHist() = default;
     
     virtual const char* name() const;
     virtual const char* title() const;

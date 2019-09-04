@@ -296,12 +296,11 @@ RooUnfoldT<Hist,Hist2D>::Cache::Cache() :
   _stepsizeparm(0),
   _defaultparm(0),
   _unfolded(false),
-  _haveCov(false),
   _fail(false),
+  _haveCov(false),
+  _haveWgt(false),
   _have_err_mat(false),
   _haveErrors(false),
-  _haveWgt(false),
-  _withError(kDefault),
   _rec(1),
   _cov(1,1),
   _wgt(1,1),
@@ -310,7 +309,8 @@ RooUnfoldT<Hist,Hist2D>::Cache::Cache() :
   _vMes(0),
   _eMes(0),
   _covL(0),
-  _covMes(0)
+  _covMes(0),
+  _withError(kDefault)
 {
 }
 
@@ -1241,7 +1241,7 @@ RooUnfoldT<Hist,Hist2D>* RooUnfoldT<Hist,Hist2D>::clone(const RooUnfoldT<Hist,Hi
 */
 
 template class RooUnfoldT<TH1,TH2>;
-ClassImp (RooUnfold);
+ClassImp (RooUnfold)
 
 #ifndef NOROOFIT
 #include "RooBinning.h"
@@ -1254,7 +1254,7 @@ ClassImp (RooUnfold);
 
 template class RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>;
 typedef RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist> RooUnfoldT_RooFitHist;
-ClassImp (RooUnfoldT_RooFitHist);
+ClassImp (RooUnfoldT_RooFitHist)
 
 
 template<class Base>RooUnfolding::RooFitWrapper<Base>::RooFitWrapper(const char* name, const char* title, const RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>* unf) : Base(name,title), _unfolding((RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>*)(unf->Clone())) {
@@ -1265,28 +1265,28 @@ template<class Base>RooUnfolding::RooFitWrapper<Base>::RooFitWrapper(const char*
     const RooFitHist* htruth = res->Htruth();
     if(htruth){
       this->addServer(*(htruth->func()));
-      for(size_t i=0; i<dim(htruth); ++i){
+      for(int i=0; i<dim(htruth); ++i){
         this->addServer(*htruth->obs(i));
       }
     }
     const RooFitHist* hfakes = res->Hfakes();
     if(hfakes){
       this->addServer(*(hfakes->func()));
-      for(size_t i=0; i<dim(hfakes); ++i){
+      for(int i=0; i<dim(hfakes); ++i){
         this->addServer(*hfakes->obs(i));
       }
     }
     const RooFitHist* hresponse = res->Hresponse();
     if(hresponse){
       this->addServer(*(hresponse->func()));
-      for(size_t i=0; i<dim(hresponse); ++i){
+      for(int i=0; i<dim(hresponse); ++i){
         this->addServer(*hresponse->obs(i));
       }
     }
     const RooFitHist* hmeasured = res->Hmeasured();
     if(hmeasured){
       this->addServer(*(hmeasured->func()));    
-      for(size_t i=0; i<dim(hmeasured); ++i){
+      for(int i=0; i<dim(hmeasured); ++i){
         this->addServer(*hmeasured->obs(i));
       }
     }
@@ -1295,14 +1295,14 @@ template<class Base>RooUnfolding::RooFitWrapper<Base>::RooFitWrapper(const char*
 
   if(hmeasured){
     this->addServer(*(hmeasured->func()));    
-    for(size_t i=0; i<dim(hmeasured); ++i){
+    for(int i=0; i<dim(hmeasured); ++i){
       this->addServer(*hmeasured->obs(i));
     }
   }
 }
 RooUnfoldFunc::RooUnfoldFunc(const char* name, const char* title, const RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>* unf) : RooFitWrapper(name,title,unf) {}
 RooUnfoldPdf::RooUnfoldPdf(const char* name, const char* title, const RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>* unf) : RooFitWrapper(name,title,unf) {}
-template<class Base>RooUnfolding::RooFitWrapper<Base>::RooFitWrapper() : _unfolding(NULL) {};
+template<class Base>RooUnfolding::RooFitWrapper<Base>::RooFitWrapper() : _unfolding(NULL) {}
 template<class Base>RooUnfolding::RooFitWrapper<Base>::~RooFitWrapper(){
   
   delete _unfolding;
@@ -1406,7 +1406,7 @@ template<class Base>
 Double_t RooUnfolding::RooFitWrapper<Base>::analyticalIntegralWN(Int_t code, const RooArgSet *normSet, const char *rangeName) const {
   double val = 0;
   auto vec = this->_unfolding->Vreco();
-  for(size_t i=0; i<vec.GetNrows(); ++i){
+  for(int i=0; i<vec.GetNrows(); ++i){
     // assuming uniform binning for now
     val += vec[i];
   }
@@ -1442,7 +1442,7 @@ RooUnfoldFunc::~RooUnfoldFunc() {
 TObject* RooUnfoldFunc::clone(const char* newname) const {
   return new RooUnfoldFunc(newname ? newname : this->GetName(),this->GetTitle(),this->_unfolding);
 }
-ClassImp (RooUnfoldFunc);
+ClassImp (RooUnfoldFunc)
 RooUnfoldPdf::RooUnfoldPdf() : RooFitWrapper() {
 }
 RooUnfoldPdf::~RooUnfoldPdf( ) {}
@@ -1452,7 +1452,7 @@ TObject* RooUnfoldPdf::clone(const char* newname) const {
   
   return retval;
 }
-ClassImp (RooUnfoldPdf);
+ClassImp (RooUnfoldPdf)
 
 RooAbsPdf::ExtendMode RooUnfoldPdf::extendMode() const {
     // Return extended mode capabilities
@@ -1468,7 +1468,7 @@ Double_t RooUnfoldPdf::expectedEvents(const RooArgSet* nset) const {
   this->_unfolding->response()->Htruth()->checkValidity();
   double events = 0;
   const auto vec(this->_unfolding->Vreco());
-  for(size_t bin = 0; bin<vec.GetNrows(); ++bin){
+  for(int bin = 0; bin<vec.GetNrows(); ++bin){
     events += vec[bin];
   }
   this->_unfolding->response()->Hresponse()->loadSnapshot(snapshot);
@@ -1504,7 +1504,7 @@ namespace {
     int n = ax->GetNbins()+(includeUnderflowOverflow?2:0);
     if(ax->IsVariableBinSize()){
       std::vector<double> bounds;
-      for(size_t i=0; i<ax->GetNbins()+1; ++i){
+      for(int i=0; i<ax->GetNbins()+1; ++i){
         bounds.push_back(ax->GetBinLowEdge(i+1));
       }
       RooBinning bins(n,&((bounds[0])));
@@ -1529,15 +1529,15 @@ RooUnfoldSpec::RooUnfoldSpec(const char* name, const char* title, const TH1* tru
   std::vector<TString> obs_reco_v;
   bool more_truth = false;
   bool more_reco = false;
-  for(size_t i=0; i<d; ++i){
+  for(int i=0; i<d; ++i){
     more_truth = ::readToken(obs_truth_s,obs_truth_v);
     more_reco = ::readToken(obs_reco_s,obs_reco_v);
     if(!more_truth || !more_reco) break;
   }
   if(more_truth) throw std::runtime_error(TString::Format("encountered additional characters on truth observable list: '%s'",obs_truth_s.Data()).Data());
   if(more_reco) throw std::runtime_error(TString::Format("encountered additional characters on reco observable list: '%s'",obs_reco_s.Data()).Data());
-  if(obs_truth_v.size() != d) throw std::runtime_error(TString::Format("truth observable list is too short for %d dimensions: '%s'",d,obs_truth).Data());
-  if(obs_reco_v.size() != d) throw std::runtime_error(TString::Format("reco observable list is too short for %d dimensions: '%s'",d,obs_truth).Data());
+  if((int)obs_truth_v.size() != d) throw std::runtime_error(TString::Format("truth observable list is too short for %d dimensions: '%s'",d,obs_truth).Data());
+  if((int)obs_reco_v.size() != d) throw std::runtime_error(TString::Format("reco observable list is too short for %d dimensions: '%s'",d,obs_truth).Data());
     
   RooArgList truth_vars;
   for(int i=0; i<d; ++i){

@@ -809,10 +809,10 @@ void RooUnfoldSvdT<Hist,Hist2D>::SVDUnfold::RegularisedSymMatInvert( TMatrixDSym
 }
 
 template class RooUnfoldSvdT<TH1,TH2>::SVDUnfold;
-ClassImp (RooUnfoldSvd::SVDUnfold);
+ClassImp (RooUnfoldSvd::SVDUnfold)
 
 #ifndef NOROOFIT
 template class RooUnfoldSvdT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>::SVDUnfold;
 typedef RooUnfoldSvdT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist> RooFitUnfoldSvd;
-ClassImp (RooFitUnfoldSvd::SVDUnfold);
+ClassImp (RooFitUnfoldSvd::SVDUnfold)
 #endif

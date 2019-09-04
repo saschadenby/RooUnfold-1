@@ -136,10 +136,10 @@ protected:
     Double_t _stepsizeparm;  // StepSize value to be used in RooUnfoldParms
     Double_t _defaultparm;   // Recommended value for regularisation parameter
     Bool_t   _unfolded;      // unfolding done
+    Bool_t   _fail;          // unfolding failed
     Bool_t   _haveCov;       // have _cov
     Bool_t   _haveWgt;       // have _wgt
     Bool_t   _have_err_mat;  // have _err_mat
-    Bool_t   _fail;          // unfolding failed
     Bool_t   _haveErrors;    // have _variances
     TVectorD _rec;           // Reconstructed distribution
     TMatrixD _cov;           // Reconstructed distribution covariance
