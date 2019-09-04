@@ -32,7 +32,7 @@ find_package( ROOT COMPONENTS Tree Unfold Matrix Hist RIO MathCore Physics RooFi
 file(GLOB RooUnfoldLinkDef src/*_LinkDef.h)
 set(RooUnfoldDagostini ${CMAKE_CURRENT_SOURCE_DIR}/src/bayes.for)
 file(GLOB RooUnfoldSources src/*.cxx)
-file(GLOB RooUnfoldHeaders src/*.h)
+file(GLOB RooUnfoldHeaders src/*.h src/*.tpp)
 list(REMOVE_ITEM RooUnfoldHeaders ${RooUnfoldLinkDef})
 file(GLOB RooUnfoldExecSources examples/*.cxx)
 
