@@ -2,18 +2,37 @@
 # Project: RooUnfold
 ################################################################################
 
+if (${RunningAtlasCI})
+  message("Setup for CI in ATLAS analysis release")
+  include (CMakeLists_forAtlasCI.txt)
+endif()
+
+
 cmake_minimum_required(VERSION 2.8)
 enable_language (Fortran)
 
-find_package(AnalyissBase QUIET)
+find_package(AnalysisBase QUIET)
+find_package(AthAnalysis QUIET)
 
-find_package( ROOT COMPONENTS Tree Unfold Matrix Hist RIO MathCore Physics RooFitCore RooFit HistFactory Graf Postscript Gpad)
+if (${AnalysisBase_FOUND} OR ${AthAnalysis_FOUND})
+  message ("Configuring for build within analysis release")
+  set (foundAnalysisRelease  1)
+else() 
+  set (foundAnalysisRelease  0)
+endif()
+
+# The project version number.
+set(VERSION_MAJOR   1   CACHE STRING "Project major version number.")
+set(VERSION_MINOR   12   CACHE STRING "Project minor version number.")
+mark_as_advanced(VERSION_MAJOR VERSION_MINOR)
+
+find_package( ROOT COMPONENTS Tree Unfold Matrix Hist RIO MathCore Physics RooFitCore RooFit HistFactory Graf Postscript Gpad XMLParser)
 
 
 file(GLOB RooUnfoldLinkDef src/*_LinkDef.h)
 set(RooUnfoldDagostini ${CMAKE_CURRENT_SOURCE_DIR}/src/bayes.for)
 file(GLOB RooUnfoldSources src/*.cxx)
-file(GLOB RooUnfoldHeaders src/*.h)
+file(GLOB RooUnfoldHeaders src/*.h src/*.tpp)
 list(REMOVE_ITEM RooUnfoldHeaders ${RooUnfoldLinkDef})
 file(GLOB RooUnfoldExecSources examples/*.cxx)
 
@@ -40,22 +59,20 @@ elseif (Fortran_COMPILER_NAME MATCHES "g77")
   set (CMAKE_Fortran_FLAGS "-funroll-all-loops -fno-f2c -O3 -std=f95 -fimplicit-none -m32")
 endif()
 
-set(SETUP ${CMAKE_CURRENT_BINARY_DIR}/setup.sh)
-file(WRITE ${SETUP} "#!/bin/bash\n")
-file(APPEND ${SETUP} "# this is an auto-generated setup script\n" )
-
-
-if(${AnalysisBase_FOUND})
+if(${foundAnalysisRelease})
   atlas_subdir( RooUnfold )
 
-  file(APPEND ${SETUP} "export PATH=\${PATH}:${CMAKE_CURRENT_BINARY_DIR}/${BINARY_TAG}/bin\n")  
-  file(APPEND ${SETUP} "export PYTHONPATH=\${PYTHONPATH}:${CMAKE_CURRENT_BINARY_DIR}/${BINARY_TAG}/python\n")  
-  file(APPEND ${SETUP} "export LD_LIBRARY_PATH=\${LD_LIBRARY_PATH}:${CMAKE_CURRENT_BINARY_DIR}/${BINARY_TAG}/lib\n")  
-  
   atlas_add_root_dictionary( RooUnfold _dictSource
     ROOT_HEADERS
     ${RooUnfoldHeaders}
     ${RooUnfoldLinkDef})
+
+  # Ensure that the 'RooUnfold' folder expected by atlas_add_library exists at source level
+  # by linking the appropriate files from src/ 
+  set( _RooUnfold_header_dir ${CMAKE_CURRENT_SOURCE_DIR}/RooUnfold )
+  file(MAKE_DIRECTORY ${_RooUnfold_header_dir})
+  execute_process( COMMAND ln -sf ${RooUnfoldHeaders} -t ${_RooUnfold_header_dir} )
+
   
   atlas_add_library( RooUnfold
     ${RooUnfoldHeaders} ${RooUnfoldSources} ${_dictSource}
@@ -70,6 +87,13 @@ if(${AnalysisBase_FOUND})
       LINK_LIBRARIES ${ROOT_LIBRARIES} RooUnfold)      
   endforeach()
 else()
+
+  execute_process( COMMAND ln -sf ${RooUnfoldHeaders} -t ${CMAKE_CURRENT_BINARY_DIR} )
+  set(SETUP ${CMAKE_CURRENT_BINARY_DIR}/setup.sh)
+  file(WRITE ${SETUP} "#!/bin/bash\n")
+  file(APPEND ${SETUP} "# this is an auto-generated setup script\n" )
+
+
   # register all the files and directories
   include_directories ("${CMAKE_CURRENT_SOURCE_DIR}/src")
   include_directories ("${ROOT_INCLUDE_DIRS}")
@@ -117,6 +141,8 @@ else()
   endforeach()
 endif()
 
+file(GLOB Tests "test/*.sh")
+
 foreach(TestScript ${Tests})
   get_filename_component(TestName ${TestScript} NAME)
   add_test(
@@ -125,3 +151,27 @@ foreach(TestScript ${Tests})
     COMMAND bash ${TestScript}
     )
 endforeach()
+
+# first we can indicate the documentation build as an option and set it to ON by default
+option(BUILD_DOC "Build documentation" ON)
+
+# check if Doxygen is installed
+find_package(Doxygen)
+if (DOXYGEN_FOUND)
+    # set input and output files
+    set(DOXYGEN_IN ${CMAKE_CURRENT_SOURCE_DIR}/Doxyfile.cmake)
+    set(DOXYGEN_OUT ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile)
+
+    # request to configure the file
+    configure_file(${DOXYGEN_IN} ${DOXYGEN_OUT} @ONLY)
+    message("Doxygen build started")
+
+    # note the option ALL which allows to build the docs together with the application
+    add_custom_target( doxygen ALL
+        COMMAND ${DOXYGEN_EXECUTABLE} ${DOXYGEN_OUT}
+        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+        COMMENT "Generating API documentation with Doxygen"
+        VERBATIM )
+else (DOXYGEN_FOUND)
+  message("Doxygen need to be installed to generate the doxygen documentation")
+endif (DOXYGEN_FOUND)

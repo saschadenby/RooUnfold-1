@@ -114,4 +114,6 @@ namespace RooUnfolding {
   template<class Hist> std::vector<RooUnfolding::Variable<Hist>> vars(const Hist* h);
 }
 
+#include "RooUnfoldHelpers.tpp"
+
 #endif
