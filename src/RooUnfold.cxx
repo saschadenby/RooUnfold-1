@@ -1246,6 +1246,7 @@ ClassImp (RooUnfold)
 #ifndef NOROOFIT
 #include "RooBinning.h"
 #include "RooHistFunc.h"
+#include "RooRealSumFunc.h"
 #include "RooHistPdf.h"
 #include "RooStats/HistFactory/PiecewiseInterpolation.h"
 #include "RooStats/HistFactory/FlexibleInterpVar.h"
@@ -1649,6 +1650,38 @@ RooUnfoldSpec::RooUnfoldSpec(const char* name, const char* title, const TH1* tru
   this->setup(truth_th1,obs_truth_list,reco_th1,obs_reco_list,response_th1,NULL,NULL,includeUnderflowOverflow,errorThreshold,useDensity);
 }
 
+namespace {
+  RooRealSumFunc* makeRooRealSumFunc(const char* name, const char* title, const RooArgSet& contributions, double densityCorrection){
+    RooRealVar* binWidth = new RooRealVar(TString::Format("%s_binWidthCorrection",name),"bin width correction",densityCorrection);
+    binWidth->setConstant(true);
+    RooArgList functions;
+    RooArgList coefs;
+    RooFIter itr(contributions.fwdIterator());
+    RooAbsArg* obj;
+    while((obj = itr.next())){
+      functions.add(*obj);
+      coefs.add(*binWidth);
+    }
+    return new RooRealSumFunc(name,title,functions,coefs);
+  }
+}
+
+
+RooUnfoldSpec::RooUnfoldSpec(const char* name, const char* title, RooAbsReal* truth, RooAbsArg* obs_truth,  RooAbsReal* reco, RooAbsArg* obs_reco, const TH2* response_th1, const RooArgSet& bkg_contributions, RooDataHist* data, bool includeUnderflowOverflow, double errorThreshold, bool useDensity) :
+  TNamed(name,title)
+{
+  RooArgList obs_reco_list(*obs_reco);
+  RooArgList obs_truth_list(*obs_truth);
+  this->_truth.setNominal(truth);
+  this->_reco.setNominal(reco);
+  this->_data.setNominal(RooUnfolding::makeHistFunc(data,obs_reco_list));
+  double densityCorr = 1;
+  if(useDensity && obs_reco->InheritsFrom(RooRealVar::Class())){
+    densityCorr = 1./((RooRealVar*)(obs_reco))->getBinning().averageBinWidth();
+  }
+  this->_bkg.setNominal(::makeRooRealSumFunc(TString::Format("bkg_reco_%s_differential",obs_reco->GetName()),obs_reco->GetTitle(),bkg_contributions,densityCorr));
+  this->setup(NULL,obs_truth_list,NULL,obs_reco_list,response_th1,NULL,NULL,includeUnderflowOverflow,errorThreshold,useDensity);
+}
 
 
 void RooUnfoldSpec::setup(const TH1* truth_th1, const RooArgList& obs_truth, const TH1* reco_th1, const RooArgList& obs_reco, const TH2* response_th1, const TH1* bkg_th1, const TH1* data_th1, bool includeUnderflowOverflow, double errorThreshold, bool useDensity){
