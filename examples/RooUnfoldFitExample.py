@@ -301,8 +301,8 @@ def makeFinalWorkspace(method,mainws,auxws,regparm):
 def makePlots(outdir,ws,obsname,hist_truth,hist_reco,label):
   import ROOT
 
-  unfoldpdf = ws.pdf("unfold")
-  unfolding = unfoldpdf.unfolding()
+  unfoldfunc = ws.obj("unfold")
+  unfolding = unfoldfunc.unfolding()
 
   sig_truth = ws.function("sig_theory")
   sig_reco = ws.function("sig_reco")
@@ -376,9 +376,9 @@ def makePlots(outdir,ws,obsname,hist_truth,hist_reco,label):
 def makePlots_HistFactory(ws):
   import ROOT
 
-  unfoldpdf = ws.pdf("unfolding")
+  unfoldfunc = ws.obj("unfolding")
   
-  unfolding = unfoldpdf.unfolding()
+  unfolding = unfoldfunc.unfolding()
 
 
   sig_response = ws.function("sig_response")
@@ -392,7 +392,7 @@ def makePlots_HistFactory(ws):
   obs_truth = ws.var("obs_truth")
   plot_truth = obs_truth.frame()
   sig_theory.plotOn(plot_truth,ROOT.RooFit.LineColor(ROOT.kRed),ROOT.RooFit.Name("sig_theory"))
-  unfoldpdf.plotOn(plot_truth,ROOT.RooFit.Name("unfoldedpdf"))
+  unfoldfunc.plotOn(plot_truth,ROOT.RooFit.Name("unfoldedpdf"))
   canvas_truth = ROOT.TCanvas("unfolded","unfolded")
   plot_truth.Draw()
   leg_truth = ROOT.TLegend(0.1, 0.8, 0.3, 0.9)
@@ -420,9 +420,8 @@ def makePlots_HistFactory(ws):
 def makePlots_RooUnfoldSpec(ws,spec):
   import ROOT
 
-  unfoldpdf = ws.pdf("unfold")
-  
-  unfolding = unfoldpdf.unfolding()
+  unfoldfunc = ws.obj("unfold")
+  unfolding = unfoldfunc.unfolding()
 
   sig_response = ws.obj("response")
   sig_theory = ws.obj("sig_theory_hist_func")
@@ -433,11 +432,9 @@ def makePlots_RooUnfoldSpec(ws,spec):
 
   obs_truth = ws.var("obs_truth")
   plot_truth = obs_truth.frame()
-  nexp = unfoldpdf.expectedEvents(0)
 
   sig_theory.plotOn(plot_truth,ROOT.RooFit.LineColor(ROOT.kRed),ROOT.RooFit.Name("sig_theory_graph"))
-  unfoldpdf.plotOn(plot_truth,ROOT.RooFit.LineColor(ROOT.kBlue),ROOT.RooFit.Name("unfolded_data_graph"))
-  #unfoldpdf.plotOn(plot_truth,ROOT.RooFit.Name("unfoldedpdf_graph"),ROOT.RooFit.Normalization(nexp,ROOT.RooAbsReal.NumEvent),ROOT.RooFit.NormRange("full"))
+  unfoldfunc.plotOn(plot_truth,ROOT.RooFit.LineColor(ROOT.kBlue),ROOT.RooFit.Name("unfolded_data_graph"))
   canvas_truth = ROOT.TCanvas("unfolded","unfolded")
   plot_truth.Draw()
   leg_truth = ROOT.TLegend(0.1, 0.8, 0.3, 0.9)
@@ -459,19 +456,6 @@ def makePlots_RooUnfoldSpec(ws,spec):
   leg_reco.Draw()
   canvas_reco.SaveAs("reco.pdf")
   canvas_reco.SaveAs("reco.png")
-
-def runFit(ws):
-  mu = ws.var("mu")
-  
-  for var in ROOT.RooUnfolding.matchingObjects(ws.allVars(),"gamma_stat_.*"):
-    var.setConstant(True)
-  
-  mu.setVal(1.02)
-  unfolding = ws.pdf("unfolding")
-  data = ws.data("asimovData")
-  
-  nps = ROOT.RooUnfolding.allVars(ws,"gamma_.*")
-  unfolding.fitTo(data,ROOT.RooFit.GlobalObservables(nps))
 
 def algorithm(method):
   import ROOT
@@ -528,11 +512,11 @@ def main(args):
     
     # This line instantiates one of the subclasses specific to the unfolding algorithm.
     if args.regparm:
-      pdf = spec.makePdf(algorithm(args.method),args.regparm)
+      func = spec.makeFunc(algorithm(args.method),args.regparm)
     else:
-      pdf = spec.makePdf(algorithm(args.method))
+      func = spec.makeFunc(algorithm(args.method))
 
-    theory = pdf.unfolding().response().makeHistFuncTruth(histograms["sig_theory"])
+    theory = func.unfolding().response().makeHistFuncTruth(histograms["sig_theory"])
 
     # required to avoid python garbage collector messing up the RooDataHists added to gDirectory
     ROOT.gDirectory.Clear()
@@ -540,18 +524,18 @@ def main(args):
     test_truth = spec.makeHistogram(histograms["sig_theory"])
 
     # Here the first unfolding is performed.
-    pdf.unfolding().PrintTable(ROOT.cout, test_truth)
+    func.unfolding().PrintTable(ROOT.cout, test_truth)
 
     ws = ROOT.RooWorkspace("workspace","workspace")
 
-    getattr(ws,"import")(pdf)
+    getattr(ws,"import")(func)
 
     getattr(ws,"import")(theory)
 
     ws.Print("t")
 
     # Explicitly free the memory that was allocated. 
-    pdf.Delete()
+    func.Delete()
     theory.Delete()
 
   ws.writeToFile("unfolding.root")

@@ -1870,10 +1870,10 @@ RooProdPdf* RooUnfoldSpec::makeConstraints(){
 }
 
 void RooUnfoldSpec::addGaussNP(RooRealVar* v){
-  this->_alphas.add(*v);
+  if(v) this->_alphas.add(*v);
 }
 void RooUnfoldSpec::addPoissonNP(RooRealVar* v){
-  this->_gammas.add(*v);
+  if(v) this->_gammas.add(*v);
 }
 
 void RooUnfoldSpec::makeBackground(){
