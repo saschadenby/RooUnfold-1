@@ -4,7 +4,6 @@
 #include "TH1.h"
 #include "TAxis.h"
 #include "RooUnfoldTH1Helpers.h"
-#include <RooUnfoldHelpers.tpp>
 
 #include <iostream>
 #include <limits>
@@ -226,7 +225,7 @@ namespace {
 namespace RooUnfolding { // section 1: trivial helpers
   
   Variable<RooUnfolding::RooFitHist>::Variable(int nBins,double min,double max,const char* name) : _var(new RooRealVar(name,name,nBins,min,max)) {}
-  Variable<RooUnfolding::RooFitHist>::Variable(RooAbsArg* var) : _var(var) {};
+  Variable<RooUnfolding::RooFitHist>::Variable(RooAbsArg* var) : _var(var) {}
 
   template<> Variable<RooUnfolding::RooFitHist> var(const RooUnfolding::RooFitHist* h, Dimension d){
     return Variable<RooUnfolding::RooFitHist>(NULL);
@@ -378,7 +377,7 @@ namespace RooUnfolding {
     double v = 1;
     std::vector<int> ibins = {0,0,0};
     binXYZ(h,bin,ibins[0],ibins[1],ibins[2]);
-    for(size_t d=0; d<h->dim(); ++d){
+    for(int d=0; d<h->dim(); ++d){
       v *= ::binWidth(h->obs(d),ibins[d]);
     }
     return v;
@@ -393,7 +392,7 @@ namespace RooUnfolding {
     
     std::cout << "RooFitHist " << name(h) << " @ " << h << " (" << h->func()->ClassName() << " @ " << h->func() << "): " << n << " bins in " << dim(h) << " dimensions (";
     
-    for(size_t i=0; i<dim(h); ++i){
+    for(int i=0; i<dim(h); ++i){
       if(i!=0) std::cout << ",";
       std::cout << h->obs(i)->GetName() << "@" << h->obs(i);
     }
@@ -462,7 +461,7 @@ namespace RooUnfolding { // section 2: non-trivial helpers
   const char* RooFitHist::name() const { return this->_func->GetName(); }
   const char* RooFitHist::title() const { return this->_func->GetTitle(); }
   RooAbsArg* RooFitHist::obs(size_t i) const { if(i>this->_obs.size()) throw std::runtime_error("attempt to access invalid observable!"); return this->_obs[i]; }
-  size_t RooFitHist::dim() const { return this->_obs.size(); };
+  size_t RooFitHist::dim() const { return this->_obs.size(); }
 
   void RooFitHist::saveSnapshot(std::map<std::string,double>& snsh) const {
     for(size_t i=0; i<this->_obs.size(); ++i){
@@ -485,7 +484,7 @@ namespace RooUnfolding { // section 2: non-trivial helpers
       offset *= ::nBins(x);
     }
     return ibin;
-  };
+  }
 
   RooAbsReal* RooFitHist::func() const { return this->_func; }
 
@@ -1000,7 +999,7 @@ namespace RooUnfolding { // section 2: non-trivial helpers
     return m;
   }
   template<> void h2m  (const RooUnfolding::RooFitHist* h, TMatrixD& m, bool overflow, bool correctDensity) { h2mNorm (h,m,(const RooUnfolding::RooFitHist*)NULL,overflow,correctDensity);}
-  template<> void h2me  (const RooUnfolding::RooFitHist* h, TMatrixD& m, bool overflow, bool correctDensity){ h2meNorm(h,m,(const RooUnfolding::RooFitHist*)NULL,overflow,correctDensity); };  
+  template<> void h2me  (const RooUnfolding::RooFitHist* h, TMatrixD& m, bool overflow, bool correctDensity){ h2meNorm(h,m,(const RooUnfolding::RooFitHist*)NULL,overflow,correctDensity);}
   template<> TMatrixD h2m<RooUnfolding::RooFitHist>  (const RooUnfolding::RooFitHist* h, bool overflow, bool correctDensity){
     // Returns Matrix of values of bins in a 2D input histogram
     TMatrixD m;
@@ -1022,7 +1021,7 @@ namespace RooUnfolding { // section 2: non-trivial helpers
     if(!h) return NULL;
     RooAbsReal* rr = (RooAbsReal*)(h->func()->cloneTree());
     std::vector<RooAbsArg*> obs;
-    for(size_t i=0; i<dim(h); ++i){
+    for(int i=0; i<dim(h); ++i){
       RooAbsArg* rrv = findLeafServer<RooAbsArg>(rr,h->obs(i)->GetName());
       obs.push_back(rrv);
     }
@@ -1035,7 +1034,7 @@ namespace RooUnfolding { // section 2: non-trivial helpers
       nps.push_back(new_np);
     }    
     if(h->dim() != obs.size()) throw std::runtime_error("dimensionality mismatch!");
-    if(nps.size() > 0 && nBins(h) != nps.size()) throw std::runtime_error("bin number mismatch!");
+    if(nps.size() > 0 && nBins(h) != (int)nps.size()) throw std::runtime_error("bin number mismatch!");
     RooFitHist* newh = new RooFitHist(rr,obs,nps);
     newh->checkValidity();
     return newh;

@@ -136,10 +136,10 @@ protected:
     Double_t _stepsizeparm;  // StepSize value to be used in RooUnfoldParms
     Double_t _defaultparm;   // Recommended value for regularisation parameter
     Bool_t   _unfolded;      // unfolding done
+    Bool_t   _fail;          // unfolding failed
     Bool_t   _haveCov;       // have _cov
     Bool_t   _haveWgt;       // have _wgt
     Bool_t   _have_err_mat;  // have _err_mat
-    Bool_t   _fail;          // unfolding failed
     Bool_t   _haveErrors;    // have _variances
     TVectorD _rec;           // Reconstructed distribution
     TMatrixD _cov;           // Reconstructed distribution covariance
@@ -171,9 +171,10 @@ public:
 
 typedef RooUnfoldT<TH1,TH2> RooUnfold;
 #ifndef NOROOFIT
-#include <RooHistFunc.h>
 #include <RooAbsPdf.h>
 #include <RooAbsReal.h>
+
+class RooProdPdf;
 
 class RooUnfoldSpec : public TNamed {
 public:
@@ -206,6 +207,7 @@ protected:
   RooArgList _obs_reco;    
   RooArgList _obs_all;
   RooArgList _alphas;
+  RooArgList _gammas;
 
   HistContainer _bkg;  
   HistContainer _data;
@@ -238,6 +240,8 @@ protected:
 
 public:
 
+  RooProdPdf* makeConstraints();
+
   RooAbsReal* getBackground();
   RooAbsReal* getData();
   RooAbsReal* getResponse();
@@ -245,7 +249,8 @@ public:
   RooAbsReal* getReco();
   RooAbsReal* getDataMinusBackground();
 
-
+  void addGaussNP(RooRealVar* v);
+  void addPoissonNP(RooRealVar* v);
 
   RooUnfoldSpec(const char* name, const char* title, const TH1* truth, const char* obs_truth, const TH1* reco, const char* obs_reco, const TH2* response, const TH1* data, bool includeUnderflowOverflow, double errorThreshold = -1, bool useDensity = false);  
   RooUnfoldSpec(const char* name, const char* title, const TH1* truth, const char* obs_truth, const TH1* reco, const char* obs_reco, const TH2* response, const TH1* bkg, const TH1* data, bool includeUnderflowOverflow, double errorThreshold = -1, bool useDensity = false);
@@ -258,6 +263,8 @@ public:
   RooUnfoldSpec(const char* name, const char* title, const TH1* truth_th1, RooAbsArg* obs_truth, const TH1* reco, RooAbsArg* obs_reco, const TH2* response_th1, const RooArgList& bkg_bins, RooDataHist* data, bool includeUnderflowOverflow, double errorThreshold = -1, bool useDensity = false);
   RooUnfoldSpec(const char* name, const char* title, const TH1* truth_th1, RooAbsArg* obs_truth, const TH1* reco, RooAbsArg* obs_reco, const TH2* response_th1, RooAbsReal* measured, bool includeUnderflowOverflow, double errorThreshold = -1, bool useDensity = false);
   RooUnfoldSpec(const char* name, const char* title, const TH1* truth_th1, RooAbsArg* obs_truth, const TH1* reco, RooAbsArg* obs_reco, const TH2* response_th1, const RooArgList& measured_bins, bool includeUnderflowOverflow, double errorThreshold = -1, bool useDensity = false);  
+  RooUnfoldSpec(const char* name, const char* title, RooAbsReal* truth, RooAbsArg* obs_truth, RooAbsReal* reco, RooAbsArg* obs_reco, const TH2* response_th1, const RooArgSet& bkg_contributions, RooDataHist* data, bool includeUnderflowOverflow, double errorThreshold = -1, bool useDensity = false);  
+  RooUnfoldSpec(const char* name, const char* title, const TH1* truth_th1, RooAbsArg* obs_truth, RooAbsReal* reco, RooAbsArg* obs_reco, const TH2* response_th1, const RooArgSet& bkg_contributions, RooDataHist* data, bool includeUnderflowOverflow, double errorThreshold = -1, bool useDensity = false);  
 
   ~RooUnfoldSpec();
   void registerSystematic(Contribution c, const char* name, const TH1* up, const TH1* down);

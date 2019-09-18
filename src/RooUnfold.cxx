@@ -296,12 +296,11 @@ RooUnfoldT<Hist,Hist2D>::Cache::Cache() :
   _stepsizeparm(0),
   _defaultparm(0),
   _unfolded(false),
-  _haveCov(false),
   _fail(false),
+  _haveCov(false),
+  _haveWgt(false),
   _have_err_mat(false),
   _haveErrors(false),
-  _haveWgt(false),
-  _withError(kDefault),
   _rec(1),
   _cov(1,1),
   _wgt(1,1),
@@ -310,7 +309,8 @@ RooUnfoldT<Hist,Hist2D>::Cache::Cache() :
   _vMes(0),
   _eMes(0),
   _covL(0),
-  _covMes(0)
+  _covMes(0),
+  _withError(kDefault)
 {
 }
 
@@ -1241,12 +1241,16 @@ RooUnfoldT<Hist,Hist2D>* RooUnfoldT<Hist,Hist2D>::clone(const RooUnfoldT<Hist,Hi
 */
 
 template class RooUnfoldT<TH1,TH2>;
-ClassImp (RooUnfold);
+ClassImp (RooUnfold)
 
 #ifndef NOROOFIT
 #include "RooBinning.h"
 #include "RooHistFunc.h"
+#include "RooRealSumFunc.h"
 #include "RooHistPdf.h"
+#include "RooProdPdf.h"
+#include "RooGaussian.h"
+#include "RooPoisson.h"
 #include "RooStats/HistFactory/PiecewiseInterpolation.h"
 #include "RooStats/HistFactory/FlexibleInterpVar.h"
 #include "RooStats/HistFactory/ParamHistFunc.h"
@@ -1254,7 +1258,7 @@ ClassImp (RooUnfold);
 
 template class RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>;
 typedef RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist> RooUnfoldT_RooFitHist;
-ClassImp (RooUnfoldT_RooFitHist);
+ClassImp (RooUnfoldT_RooFitHist)
 
 
 template<class Base>RooUnfolding::RooFitWrapper<Base>::RooFitWrapper(const char* name, const char* title, const RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>* unf) : Base(name,title), _unfolding((RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>*)(unf->Clone())) {
@@ -1265,28 +1269,28 @@ template<class Base>RooUnfolding::RooFitWrapper<Base>::RooFitWrapper(const char*
     const RooFitHist* htruth = res->Htruth();
     if(htruth){
       this->addServer(*(htruth->func()));
-      for(size_t i=0; i<dim(htruth); ++i){
+      for(int i=0; i<dim(htruth); ++i){
         this->addServer(*htruth->obs(i));
       }
     }
     const RooFitHist* hfakes = res->Hfakes();
     if(hfakes){
       this->addServer(*(hfakes->func()));
-      for(size_t i=0; i<dim(hfakes); ++i){
+      for(int i=0; i<dim(hfakes); ++i){
         this->addServer(*hfakes->obs(i));
       }
     }
     const RooFitHist* hresponse = res->Hresponse();
     if(hresponse){
       this->addServer(*(hresponse->func()));
-      for(size_t i=0; i<dim(hresponse); ++i){
+      for(int i=0; i<dim(hresponse); ++i){
         this->addServer(*hresponse->obs(i));
       }
     }
     const RooFitHist* hmeasured = res->Hmeasured();
     if(hmeasured){
       this->addServer(*(hmeasured->func()));    
-      for(size_t i=0; i<dim(hmeasured); ++i){
+      for(int i=0; i<dim(hmeasured); ++i){
         this->addServer(*hmeasured->obs(i));
       }
     }
@@ -1295,14 +1299,14 @@ template<class Base>RooUnfolding::RooFitWrapper<Base>::RooFitWrapper(const char*
 
   if(hmeasured){
     this->addServer(*(hmeasured->func()));    
-    for(size_t i=0; i<dim(hmeasured); ++i){
+    for(int i=0; i<dim(hmeasured); ++i){
       this->addServer(*hmeasured->obs(i));
     }
   }
 }
 RooUnfoldFunc::RooUnfoldFunc(const char* name, const char* title, const RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>* unf) : RooFitWrapper(name,title,unf) {}
 RooUnfoldPdf::RooUnfoldPdf(const char* name, const char* title, const RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>* unf) : RooFitWrapper(name,title,unf) {}
-template<class Base>RooUnfolding::RooFitWrapper<Base>::RooFitWrapper() : _unfolding(NULL) {};
+template<class Base>RooUnfolding::RooFitWrapper<Base>::RooFitWrapper() : _unfolding(NULL) {}
 template<class Base>RooUnfolding::RooFitWrapper<Base>::~RooFitWrapper(){
   
   delete _unfolding;
@@ -1406,7 +1410,7 @@ template<class Base>
 Double_t RooUnfolding::RooFitWrapper<Base>::analyticalIntegralWN(Int_t code, const RooArgSet *normSet, const char *rangeName) const {
   double val = 0;
   auto vec = this->_unfolding->Vreco();
-  for(size_t i=0; i<vec.GetNrows(); ++i){
+  for(int i=0; i<vec.GetNrows(); ++i){
     // assuming uniform binning for now
     val += vec[i];
   }
@@ -1442,7 +1446,7 @@ RooUnfoldFunc::~RooUnfoldFunc() {
 TObject* RooUnfoldFunc::clone(const char* newname) const {
   return new RooUnfoldFunc(newname ? newname : this->GetName(),this->GetTitle(),this->_unfolding);
 }
-ClassImp (RooUnfoldFunc);
+ClassImp (RooUnfoldFunc)
 RooUnfoldPdf::RooUnfoldPdf() : RooFitWrapper() {
 }
 RooUnfoldPdf::~RooUnfoldPdf( ) {}
@@ -1452,12 +1456,11 @@ TObject* RooUnfoldPdf::clone(const char* newname) const {
   
   return retval;
 }
-ClassImp (RooUnfoldPdf);
+ClassImp (RooUnfoldPdf)
 
 RooAbsPdf::ExtendMode RooUnfoldPdf::extendMode() const {
     // Return extended mode capabilities
-  // TODO
-  return RooAbsPdf::CanBeExtended;
+  return RooAbsPdf::MustBeExtended;
 }
 Double_t RooUnfoldPdf::expectedEvents(const RooArgSet* nset) const {
   // Return expected number of events for extended likelihood calculation
@@ -1468,7 +1471,7 @@ Double_t RooUnfoldPdf::expectedEvents(const RooArgSet* nset) const {
   this->_unfolding->response()->Htruth()->checkValidity();
   double events = 0;
   const auto vec(this->_unfolding->Vreco());
-  for(size_t bin = 0; bin<vec.GetNrows(); ++bin){
+  for(int bin = 0; bin<vec.GetNrows(); ++bin){
     events += vec[bin];
   }
   this->_unfolding->response()->Hresponse()->loadSnapshot(snapshot);
@@ -1493,6 +1496,51 @@ namespace {
   }
 }
 
+
+
+#include <RooAbsCollection.h>
+
+#if ROOT_VERSION_CODE < ROOT_VERSION(6,18,0)
+namespace {
+  
+  struct IteratorHelper {
+    RooFIter itr;
+    RooAbsArg* nextItem;
+    IteratorHelper(const RooAbsCollection& c);
+    IteratorHelper();
+    RooAbsArg* operator++();
+    bool operator!=(const IteratorHelper& other);
+    bool operator!=(const RooAbsArg* other);  
+    RooAbsArg* operator*();
+  };
+  
+  IteratorHelper::IteratorHelper(const RooAbsCollection& c) : itr(c.fwdIterator()), nextItem(itr.next()) {}
+  IteratorHelper::IteratorHelper() : itr(), nextItem(NULL) {}  
+  RooAbsArg* IteratorHelper::operator++(){
+    nextItem = itr.next();
+    return nextItem;
+  }
+  bool IteratorHelper::operator!=(const IteratorHelper& other){
+    return this->nextItem != other.nextItem;
+  }
+  bool IteratorHelper::operator!=(const RooAbsArg* other){
+    return this->nextItem != other;
+  }
+  
+  RooAbsArg* IteratorHelper::operator*(){
+    return nextItem;
+  }
+}
+
+::IteratorHelper begin(const RooAbsCollection& c){
+  return ::IteratorHelper(c);
+}
+
+::IteratorHelper end(const RooAbsCollection&){
+  return ::IteratorHelper();
+}
+#endif
+
 RooUnfoldSpec::RooUnfoldSpec(const char* name, const char* title, const TH1* truth, const char* obs_truth, const TH1* reco, const char* obs_reco, const TH2* response, const TH1* data, bool includeUnderflowOverflow, double errorThreshold, bool useDensity) : 
   RooUnfoldSpec(name,title,truth,obs_truth,reco,obs_reco,response,0,data,includeUnderflowOverflow,errorThreshold,useDensity)
 {
@@ -1504,7 +1552,7 @@ namespace {
     int n = ax->GetNbins()+(includeUnderflowOverflow?2:0);
     if(ax->IsVariableBinSize()){
       std::vector<double> bounds;
-      for(size_t i=0; i<ax->GetNbins()+1; ++i){
+      for(int i=0; i<ax->GetNbins()+1; ++i){
         bounds.push_back(ax->GetBinLowEdge(i+1));
       }
       RooBinning bins(n,&((bounds[0])));
@@ -1529,15 +1577,15 @@ RooUnfoldSpec::RooUnfoldSpec(const char* name, const char* title, const TH1* tru
   std::vector<TString> obs_reco_v;
   bool more_truth = false;
   bool more_reco = false;
-  for(size_t i=0; i<d; ++i){
+  for(int i=0; i<d; ++i){
     more_truth = ::readToken(obs_truth_s,obs_truth_v);
     more_reco = ::readToken(obs_reco_s,obs_reco_v);
     if(!more_truth || !more_reco) break;
   }
   if(more_truth) throw std::runtime_error(TString::Format("encountered additional characters on truth observable list: '%s'",obs_truth_s.Data()).Data());
   if(more_reco) throw std::runtime_error(TString::Format("encountered additional characters on reco observable list: '%s'",obs_reco_s.Data()).Data());
-  if(obs_truth_v.size() != d) throw std::runtime_error(TString::Format("truth observable list is too short for %d dimensions: '%s'",d,obs_truth).Data());
-  if(obs_reco_v.size() != d) throw std::runtime_error(TString::Format("reco observable list is too short for %d dimensions: '%s'",d,obs_truth).Data());
+  if((int)obs_truth_v.size() != d) throw std::runtime_error(TString::Format("truth observable list is too short for %d dimensions: '%s'",d,obs_truth).Data());
+  if((int)obs_reco_v.size() != d) throw std::runtime_error(TString::Format("reco observable list is too short for %d dimensions: '%s'",d,obs_truth).Data());
     
   RooArgList truth_vars;
   for(int i=0; i<d; ++i){
@@ -1649,6 +1697,53 @@ RooUnfoldSpec::RooUnfoldSpec(const char* name, const char* title, const TH1* tru
   this->setup(truth_th1,obs_truth_list,reco_th1,obs_reco_list,response_th1,NULL,NULL,includeUnderflowOverflow,errorThreshold,useDensity);
 }
 
+namespace {
+  RooRealSumFunc* makeRooRealSumFunc(const char* name, const char* title, const RooArgSet& contributions, double densityCorrection){
+    RooRealVar* binWidth = new RooRealVar(TString::Format("%s_binWidthCorrection",name),"bin width correction",densityCorrection);
+    binWidth->setConstant(true);
+    RooArgList functions;
+    RooArgList coefs;
+    RooFIter itr(contributions.fwdIterator());
+    RooAbsArg* obj;
+    while((obj = itr.next())){
+      functions.add(*obj);
+      coefs.add(*binWidth);
+    }
+    return new RooRealSumFunc(name,title,functions,coefs);
+  }
+}
+
+
+RooUnfoldSpec::RooUnfoldSpec(const char* name, const char* title, const TH1* truth_th1, RooAbsArg* obs_truth, RooAbsReal* reco, RooAbsArg* obs_reco, const TH2* response_th1, const RooArgSet& bkg_contributions, RooDataHist* data, bool includeUnderflowOverflow, double errorThreshold, bool useDensity) :
+  TNamed(name,title)
+{
+  RooArgList obs_reco_list(*obs_reco);
+  RooArgList obs_truth_list(*obs_truth);
+  this->_reco.setNominal(reco);
+  this->_data.setNominal(RooUnfolding::makeHistFunc(data,obs_reco_list));
+  double densityCorr = 1;
+  if(useDensity && obs_reco->InheritsFrom(RooRealVar::Class())){
+    densityCorr = 1./((RooRealVar*)(obs_reco))->getBinning().averageBinWidth();
+  }
+  this->_bkg.setNominal(::makeRooRealSumFunc(TString::Format("bkg_reco_%s_differential",obs_reco->GetName()),obs_reco->GetTitle(),bkg_contributions,densityCorr));
+  this->setup(truth_th1,obs_truth_list,NULL,obs_reco_list,response_th1,NULL,NULL,includeUnderflowOverflow,errorThreshold,useDensity);
+}
+
+RooUnfoldSpec::RooUnfoldSpec(const char* name, const char* title, RooAbsReal* truth, RooAbsArg* obs_truth,  RooAbsReal* reco, RooAbsArg* obs_reco, const TH2* response_th1, const RooArgSet& bkg_contributions, RooDataHist* data, bool includeUnderflowOverflow, double errorThreshold, bool useDensity) :
+  TNamed(name,title)
+{
+  RooArgList obs_reco_list(*obs_reco);
+  RooArgList obs_truth_list(*obs_truth);
+  this->_truth.setNominal(truth);
+  this->_reco.setNominal(reco);
+  this->_data.setNominal(RooUnfolding::makeHistFunc(data,obs_reco_list));
+  double densityCorr = 1;
+  if(useDensity && obs_reco->InheritsFrom(RooRealVar::Class())){
+    densityCorr = 1./((RooRealVar*)(obs_reco))->getBinning().averageBinWidth();
+  }
+  this->_bkg.setNominal(::makeRooRealSumFunc(TString::Format("bkg_reco_%s_differential",obs_reco->GetName()),obs_reco->GetTitle(),bkg_contributions,densityCorr));
+  this->setup(NULL,obs_truth_list,NULL,obs_reco_list,response_th1,NULL,NULL,includeUnderflowOverflow,errorThreshold,useDensity);
+}
 
 
 void RooUnfoldSpec::setup(const TH1* truth_th1, const RooArgList& obs_truth, const TH1* reco_th1, const RooArgList& obs_reco, const TH2* response_th1, const TH1* bkg_th1, const TH1* data_th1, bool includeUnderflowOverflow, double errorThreshold, bool useDensity){
@@ -1704,7 +1799,7 @@ RooUnfolding::RooFitHist* RooUnfoldSpec::makeHistogram(const HistContainer& sour
       if(!p){
         p = new RooRealVar(name,name,0,-5,5);
         p->setError(1);
-        this->_alphas.add(*p);
+        this->addGaussNP(p);
       }
       params.add(*p);
     }
@@ -1725,7 +1820,7 @@ RooUnfolding::RooFitHist* RooUnfoldSpec::makeHistogram(const HistContainer& sour
       if(!p){
         p = new RooRealVar(name,name,0,-5,5);
         p->setError(1);
-        this->_alphas.add(*p);
+        this->addGaussNP(p);
       }
       params.add(*p);
     }
@@ -1735,6 +1830,9 @@ RooUnfolding::RooFitHist* RooUnfoldSpec::makeHistogram(const HistContainer& sour
   std::vector<RooRealVar*> gammas;
   if(errorThreshold >= 0 && hf->InheritsFrom(RooHistFunc::Class())){
     gammas = RooUnfolding::createGammas(&(((RooHistFunc*)hf)->dataHist()),obslist,errorThreshold);
+    for(auto g:gammas){
+      this->addPoissonNP(g);
+    }
     RooAbsReal* phf = RooUnfolding::makeParamHistFunc(hf->GetName(),hf->GetTitle(),obslist,gammas);
     if(phf) components.add(*phf);
   }
@@ -1745,6 +1843,37 @@ RooUnfolding::RooFitHist* RooUnfoldSpec::makeHistogram(const HistContainer& sour
     func = new RooProduct(name.Data(),hf->GetTitle(),components);  
   }
   return new RooUnfolding::RooFitHist(func,obs,gammas);
+}
+
+RooProdPdf* RooUnfoldSpec::makeConstraints(){
+  RooArgList constraints;
+  for(auto a:this->_alphas){
+    RooRealVar* p = (RooRealVar*)(a);
+    RooRealVar* mean = new RooRealVar(TString::Format("%s_nom",p->GetName()),TString::Format("Mean value for %s",p->GetName()),p->getVal());
+    RooRealVar* sigma = new RooRealVar(TString::Format("%s_sigma",p->GetName()),TString::Format("Sigma for %s",p->GetName()),p->getError());
+    mean->setConstant(true);
+    sigma->setConstant(true);
+    RooGaussian* gaus = new RooGaussian(TString::Format("%s_constraint",p->GetName()),TString::Format("Gaussian constraint term for %s",p->GetName()),*p,*mean,*sigma);
+    constraints.add(*gaus);
+  }
+  for(auto g:this->_gammas){
+    RooRealVar* p = (RooRealVar*)(g);
+    double n = pow(p->getError(),-2);
+    RooRealVar* tau = new RooRealVar(TString::Format("%s_tau",p->GetName()),TString::Format("Tau parameter value for %s",p->GetName()),n);
+    tau->setConstant(true);
+    RooArgList params(*p,*tau);
+    RooProduct* prod = new RooProduct(TString::Format("%s_nEvents",p->GetName()),TString::Format("Number of events for %s",p->GetName()),params);
+    RooPoisson* pois = new RooPoisson(TString::Format("%s_constraint",p->GetName()),TString::Format("Poisson constraint term for %s",p->GetName()),*prod,*tau);
+    constraints.add(*pois);
+  }
+  return new RooProdPdf(TString::Format("%s_constraints",this->GetName()),"Unfolding constraint terms",constraints);
+}
+
+void RooUnfoldSpec::addGaussNP(RooRealVar* v){
+  if(v) this->_alphas.add(*v);
+}
+void RooUnfoldSpec::addPoissonNP(RooRealVar* v){
+  if(v) this->_gammas.add(*v);
 }
 
 void RooUnfoldSpec::makeBackground(){
@@ -1892,9 +2021,12 @@ RooAbsPdf* RooUnfoldSpec::makePdf(Algorithm alg, Double_t regparam){
   RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>* unfold = this->unfold(alg, regparam);
 
   RooUnfoldPdf* pdf = new RooUnfoldPdf(this->GetName(),this->GetTitle(),unfold);
-
+  RooProdPdf* constraints = this->makeConstraints();
+  RooArgList comps(*pdf,*constraints);
+  RooProdPdf* prod = new RooProdPdf(TString::Format("%s_x_constraints",this->GetName()),"Unfolding pdf, including constraints",comps);
+  
   delete unfold;
-  return pdf;
+  return prod;
 }
 
 
