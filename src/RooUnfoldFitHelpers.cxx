@@ -382,6 +382,7 @@ namespace RooUnfolding {
     }
     return v;
   }
+
   template<> void printHistogram<RooUnfolding::RooFitHist>(const RooUnfolding::RooFitHist* h){
     
     if(!h){
@@ -462,7 +463,11 @@ namespace RooUnfolding { // section 2: non-trivial helpers
   const char* RooFitHist::title() const { return this->_func->GetTitle(); }
   RooAbsArg* RooFitHist::obs(size_t i) const { if(i>this->_obs.size()) throw std::runtime_error("attempt to access invalid observable!"); return this->_obs[i]; }
   size_t RooFitHist::dim() const { return this->_obs.size(); }
-
+  
+  const char* RooFitHist::GetName() const { return this->name(); }
+  const char* RooFitHist::GetTitle() const { return this->title(); }
+  void RooFitHist::Print(const char* opts) const { std::cout << this->GetName() << " " << this->GetTitle() << std::endl; this->printHist(); }
+  
   void RooFitHist::saveSnapshot(std::map<std::string,double>& snsh) const {
     for(size_t i=0; i<this->_obs.size(); ++i){
       snsh[this->_obs[i]->GetName()] = ::getVal(this->_obs[i]);

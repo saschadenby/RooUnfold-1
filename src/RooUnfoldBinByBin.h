@@ -30,6 +30,7 @@ public:
   RooUnfoldBinByBinT<Hist,Hist2D>& operator= (const RooUnfoldBinByBinT<Hist,Hist2D>& rhs); // assignment operator
   RooUnfoldBinByBinT (const RooUnfoldResponseT<Hist,Hist2D>* res, const Hist* meas, const char* name=0, const char* title=0);
 
+  virtual RooUnfolding::Algorithm GetMethod() const override;
   TVectorD* Impl();
 
 protected:

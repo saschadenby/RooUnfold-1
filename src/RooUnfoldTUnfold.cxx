@@ -52,8 +52,6 @@ END_HTML */
 
 using namespace RooUnfolding;
 
-ClassImp(RooUnfoldTUnfold)
-
 // namespace{
 //   TH1* histNoOverflow(const TH1* hist, bool overflow){
 //     return createHist<TH1>(h2v<TH1>(hist,overflow),h2ve<TH1>(hist,overflow),hist->GetName(),hist->GetTitle(),vars(hist),overflow);
@@ -63,8 +61,6 @@ ClassImp(RooUnfoldTUnfold)
 using std::cout;
 using std::cerr;
 using std::endl;
-
-ClassImp (RooUnfoldTUnfold);
 
 template<class Hist,class Hist2D>
 RooUnfoldTUnfoldT<Hist,Hist2D>::RooUnfoldTUnfoldT (const RooUnfoldTUnfoldT& rhs)
@@ -439,9 +435,9 @@ RooUnfoldTUnfoldT<Hist,Hist2D>::GetRegMethod() const
 
 
 template class RooUnfoldTUnfoldT<TH1,TH2>;
-ClassImp (RooUnfoldTUnfold);
+ClassImp (RooUnfoldTUnfold)
 
 #ifndef NOROOFIT
 template class RooUnfoldTUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>;
-ClassImp (RooFitUnfoldTUnfold);
+ClassImp (RooFitUnfoldTUnfold)
 #endif

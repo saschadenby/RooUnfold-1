@@ -149,6 +149,11 @@ RooUnfoldT<Hist,Hist2D>::RooUnfoldT (const RooUnfoldResponseT<Hist,Hist2D>* res,
   Setup (res, meas);
 }
 
+template<class Hist,class Hist2D> Algorithm
+RooUnfoldT<Hist,Hist2D>::GetMethod() const {
+  return kNone;
+}
+
 template<class Hist,class Hist2D> RooUnfoldT<Hist,Hist2D>*
 RooUnfoldT<Hist,Hist2D>::New (RooUnfolding::Algorithm alg, const RooUnfoldResponseT<Hist,Hist2D>* res, const Hist* meas,Double_t regparm,
                            const char* name, const char* title)
@@ -469,7 +474,7 @@ RooUnfoldT<Hist,Hist2D>::SetResponse (const RooUnfoldResponseT<Hist,Hist2D>* res
   // Set response matrix for unfolding, optionally taking ownership of the RooUnfoldResponseT<Hist,Hist2D> object
   if(!res) throw std::runtime_error("cannot set response to invalid value!");
   if(takeOwnership) _res= const_cast<RooUnfoldResponseT<Hist,Hist2D>*>(res);
-  else _res = (RooUnfoldResponseT<Hist,Hist2D>*)(res->Clone());
+  else _res = new RooUnfoldResponseT<Hist,Hist2D>(*res);
   _overflow= _res->UseOverflowStatus() ? 1 : 0;
   _nm= _res->GetNbinsMeasured();
   _nt= _res->GetNbinsTruth();
@@ -837,6 +842,21 @@ RooUnfoldT<Hist,Hist2D>::Print(Option_t* /*opt*/) const
   cout << " bins truth";
   if (_overflow) cout << " including overflows";
   cout << endl;
+}
+
+template<class Hist,class Hist2D> void
+RooUnfoldT<Hist,Hist2D>::Dump() const {
+  std::cout << "covMes=" <<  _covMes << std::endl;
+  std::cout << "verbose=" <<  _verbose << std::endl;
+  std::cout << "nm=" <<  _nm << std::endl;
+  std::cout << "nt=" <<  _nt << std::endl;
+  std::cout << "overflow=" <<  _overflow << std::endl;
+  std::cout << "NToys=" <<  _NToys << std::endl;
+  std::cout << "dosys=" <<  _dosys << std::endl;
+  std::cout << "res=" <<  _res << std::endl;
+  std::cout << "meas=" <<  _meas << std::endl;
+  _res->Print();
+  _meas->Print();
 }
 
 template<class Hist,class Hist2D> TMatrixD
@@ -1260,9 +1280,10 @@ template class RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>;
 typedef RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist> RooUnfoldT_RooFitHist;
 ClassImp (RooUnfoldT_RooFitHist)
 
-
-template<class Base>RooUnfolding::RooFitWrapper<Base>::RooFitWrapper(const char* name, const char* title, const RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>* unf) : Base(name,title), _unfolding((RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>*)(unf->Clone())) {
-  
+template<class Base>RooUnfolding::RooFitWrapper<Base>::RooFitWrapper(const char* name, const char* title, const RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>* unf) : Base(name,title){
+  auto unfolding = RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>::New(unf->GetMethod(),unf->response(),unf->Hmeasured(),unf->GetRegParm(),unf->GetName(),unf->GetTitle());
+  //unf->Clone();
+  this->_unfolding = dynamic_cast<RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>*>(unfolding);
   this->_unfolding->SetVerbose(0);
   const RooUnfoldResponseT<RooFitHist,RooFitHist>* res = this->_unfolding->response();
   if(res){

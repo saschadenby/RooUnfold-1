@@ -12,7 +12,7 @@ class RooHistFunc;
 class RooHistPdf;
 
 namespace RooUnfolding {
-  class RooFitHist { 
+  class RooFitHist : public TObject { 
   public:
     RooFitHist();
     RooFitHist(const RooFitHist* h);
@@ -52,6 +52,10 @@ namespace RooUnfolding {
 
     virtual void saveSnapshot(std::map<std::string,double>& snsh) const;
     virtual void loadSnapshot(const std::map<std::string,double>& snsh);    
+
+    virtual const char* GetName() const override;
+    virtual const char* GetTitle() const override;
+    virtual void Print(const char* opts = 0) const override;
     
   protected:
     RooAbsReal* setupErrors(const RooHistFunc* hf, const RooDataHist* dh, double uncThreshold);    

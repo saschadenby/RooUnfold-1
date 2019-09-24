@@ -53,8 +53,6 @@ using std::setw;
 using std::left;
 using std::right;
 
-ClassImp (RooUnfoldBayes);
-
 template<class Hist,class Hist2D>
 RooUnfoldBayesT<Hist,Hist2D>::RooUnfoldBayesT (const RooUnfoldBayesT<Hist,Hist2D>& rhs)
   : RooUnfoldT<Hist,Hist2D> (rhs)
@@ -567,9 +565,9 @@ double RooUnfoldBayesT<Hist,Hist2D>::GetRegParm() const
 }
 
 template class RooUnfoldBayesT<TH1,TH2>;
-ClassImp (RooUnfoldBayes);
+ClassImp (RooUnfoldBayes)
 
 #ifndef NOROOFIT
 template class RooUnfoldBayesT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>;
-ClassImp (RooFitUnfoldBayes);
+ClassImp (RooFitUnfoldBayes)
 #endif

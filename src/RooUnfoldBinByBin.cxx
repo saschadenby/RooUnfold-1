@@ -30,6 +30,11 @@ END_HTML */
 
 #include "RooUnfoldResponse.h"
 
+template<class Hist,class Hist2D> RooUnfolding::Algorithm
+RooUnfoldBinByBinT<Hist,Hist2D>::GetMethod() const {
+  return RooUnfolding::kBinByBin;
+}
+
 template<class Hist,class Hist2D> 
 RooUnfoldBinByBinT<Hist,Hist2D>::RooUnfoldBinByBinT (const RooUnfoldBinByBinT<Hist,Hist2D>& rhs)
   : RooUnfoldT<Hist,Hist2D> (rhs)
@@ -138,11 +143,11 @@ RooUnfoldBinByBinT<Hist,Hist2D>& RooUnfoldBinByBinT<Hist,Hist2D>::operator= (con
 }
 
 template class RooUnfoldBinByBinT<TH1,TH2>;
-ClassImp (RooUnfoldBinByBin);
+ClassImp (RooUnfoldBinByBin)
 
 #ifndef NOROOFIT
 typedef RooUnfoldBinByBinT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist> RooFitUnfoldBinByBin;
 template class RooUnfoldBinByBinT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>;
-ClassImp (RooFitUnfoldBinByBin);
+ClassImp (RooFitUnfoldBinByBin)
 #endif
 

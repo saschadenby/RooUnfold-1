@@ -332,11 +332,11 @@ RooUnfoldSvdT<Hist,Hist2D>::GetRegParm() const
 }
 
 template class RooUnfoldSvdT<TH1,TH2>;
-ClassImp (RooUnfoldSvd);
+ClassImp (RooUnfoldSvd)
 
 #ifndef NOROOFIT
 typedef RooUnfoldSvdT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist> RooFitUnfoldSvd;
 template class RooUnfoldSvdT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>;
-ClassImp (RooFitUnfoldSvd);
+ClassImp (RooFitUnfoldSvd)
 #endif
 

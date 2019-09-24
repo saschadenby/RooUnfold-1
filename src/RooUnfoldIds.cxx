@@ -912,5 +912,5 @@ ClassImp (RooUnfoldIds);
 #ifndef NOROOFIT
 typedef RooUnfoldIdsT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist> RooFitUnfoldIds;
 template class RooUnfoldIdsT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>;
-ClassImp (RooFitUnfoldIds);
+ClassImp (RooFitUnfoldIds)
 #endif

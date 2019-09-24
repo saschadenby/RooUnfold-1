@@ -193,12 +193,12 @@ RooUnfoldInvertT<Hist,Hist2D>& RooUnfoldInvertT<Hist,Hist2D>::operator= (const R
 }
 
 template class RooUnfoldInvertT<TH1,TH2>;
-ClassImp (RooUnfoldInvert);
+ClassImp (RooUnfoldInvert)
 
 #ifndef NOROOFIT
 template class RooUnfoldInvertT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>;
 typedef RooUnfoldInvertT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist> RooFitUnfoldInvert;
-ClassImp (RooFitUnfoldInvert);
+ClassImp (RooFitUnfoldInvert)
 #endif
 
 

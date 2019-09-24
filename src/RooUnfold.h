@@ -52,6 +52,7 @@ public:
   RooUnfoldT (const RooUnfoldT<Hist,Hist2D>& rhs); // copy constructor
   virtual ~RooUnfoldT(); // destructor
   RooUnfoldT<Hist,Hist2D>& operator= (const RooUnfoldT<Hist,Hist2D>& rhs); // assignment operator
+  virtual RooUnfolding::Algorithm GetMethod() const ;
 
   // Special constructors
 
@@ -101,6 +102,7 @@ public:
   Double_t GetDefaultParm() const;
   RooUnfoldT<Hist,Hist2D>* RunToy() const;
   void Print(Option_t* opt="") const;
+  void Dump() const;    
   void ForceRecalculation();
 
 protected:
@@ -329,6 +331,7 @@ public:
   RooUnfoldPdf();
   RooUnfoldPdf(const char* name, const char* title, const RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>* unf);    
   virtual RooAbsPdf::ExtendMode extendMode() const override;
+  using RooAbsPdf::expectedEvents;
   virtual Double_t expectedEvents(const RooArgSet* nset) const override;
   virtual Bool_t selfNormalized() const override;
   virtual ~RooUnfoldPdf();    
