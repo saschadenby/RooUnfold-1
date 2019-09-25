@@ -49,6 +49,7 @@ public:
   virtual double GetRegParm() const;
   virtual void Reset();
   virtual void Print (Option_t* option= "") const;
+  virtual RooUnfolding::Algorithm GetMethod() const override;
 
 protected:
   void Assign (const RooUnfoldBayesT<Hist,Hist2D>& rhs); // implementation of assignment operator

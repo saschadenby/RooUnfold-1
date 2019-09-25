@@ -58,6 +58,11 @@ extern "C" {
 
 ClassImp (RooUnfoldDagostini);
 
+RooUnfolding::Algorithm
+RooUnfoldDagostini::GetMethod() const {
+  return RooUnfolding::kDagostini;
+}
+
 RooUnfoldDagostini::RooUnfoldDagostini (const RooUnfoldDagostini& rhs)
   : RooUnfold (rhs)
 {

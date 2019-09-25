@@ -24,7 +24,10 @@
 
 using namespace RooUnfolding;
 
-ClassImp(RooUnfoldIds)
+template<class Hist,class Hist2D> RooUnfolding::Algorithm
+RooUnfoldIdsT<Hist,Hist2D>::GetMethod() const {
+  return RooUnfolding::kIDS;
+}
 
 //______________________________________________________________________________
 template<class Hist,class Hist2D>
@@ -907,7 +910,7 @@ Double_t RooUnfoldIdsT<Hist,Hist2D>::GetLambdaS() const
 
 
 template class RooUnfoldIdsT<TH1,TH2>;
-ClassImp (RooUnfoldIds);
+ClassImp (RooUnfoldIds)
 
 #ifndef NOROOFIT
 typedef RooUnfoldIdsT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist> RooFitUnfoldIds;

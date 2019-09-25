@@ -39,6 +39,11 @@ using std::cout;
 using std::cerr;
 using std::endl;
 
+template<class Hist,class Hist2D> RooUnfolding::Algorithm
+RooUnfoldInvertT<Hist,Hist2D>::GetMethod() const {
+  return RooUnfolding::kInvert;
+}
+
 template<class Hist, class Hist2D>
 RooUnfoldInvertT<Hist,Hist2D>::RooUnfoldInvertT(const RooUnfoldInvertT<Hist,Hist2D>& rhs)
   : RooUnfoldT<Hist,Hist2D> (rhs)

@@ -56,6 +56,7 @@ template<class Hist, class Hist2D>
   Double_t GetLambdaS() const;
   
   virtual void Reset();
+  virtual RooUnfolding::Algorithm GetMethod() const override;
 
   TMatrixD* GetUnfoldCovMatrix(const TMatrixD *cov, Int_t ntoys, Int_t seed = 1) const;
   TMatrixD* GetAdetCovMatrix(Int_t ntoys, Int_t seed = 1) const;

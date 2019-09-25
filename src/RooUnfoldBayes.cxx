@@ -53,6 +53,11 @@ using std::setw;
 using std::left;
 using std::right;
 
+template<class Hist,class Hist2D> RooUnfolding::Algorithm
+RooUnfoldBayesT<Hist,Hist2D>::GetMethod() const {
+  return RooUnfolding::kBayes;
+}
+
 template<class Hist,class Hist2D>
 RooUnfoldBayesT<Hist,Hist2D>::RooUnfoldBayesT (const RooUnfoldBayesT<Hist,Hist2D>& rhs)
   : RooUnfoldT<Hist,Hist2D> (rhs)

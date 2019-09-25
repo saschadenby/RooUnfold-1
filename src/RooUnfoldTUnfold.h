@@ -51,6 +51,7 @@ public:
   virtual Double_t GetRegParm() const override;
   void SetRegMethod (TUnfold::ERegMode regmethod);
   TUnfold::ERegMode GetRegMethod() const;
+  virtual RooUnfolding::Algorithm GetMethod() const override;    
 
 protected:
   void Init();

@@ -44,6 +44,11 @@ using std::cout;
 using std::cerr;
 using std::endl;
 
+template<class Hist,class Hist2D> RooUnfolding::Algorithm
+RooUnfoldSvdT<Hist,Hist2D>::GetMethod() const {
+  return RooUnfolding::kSVD;
+}
+
 template<class Hist,class Hist2D>
 RooUnfoldSvdT<Hist,Hist2D>::RooUnfoldSvdT (const RooUnfoldSvdT<Hist,Hist2D>& rhs)
   : RooUnfoldT<Hist,Hist2D> (rhs)
@@ -125,7 +130,7 @@ template<class Hist,class Hist2D> void RooUnfoldSvdT<Hist,Hist2D>::PrepareHistog
   this->_train1d= this->_res->Hmeasured();
   this->_truth1d= this->_res->Htruth();
   this->_reshist= this->_res->Hresponse();
-};
+}
 
 namespace{
   TH1* histNoOverflow(const TH1* hist, bool overflow){
@@ -165,7 +170,7 @@ template<> void RooUnfoldSvdT<TH1,TH2>::PrepareHistograms() const {
   this->_train1d = train1d;
   this->_truth1d = truth1d;
   this->_reshist = reshist ;
-};
+}
 
 template<class Hist,class Hist2D> void
 RooUnfoldSvdT<Hist,Hist2D>::Unfold() const

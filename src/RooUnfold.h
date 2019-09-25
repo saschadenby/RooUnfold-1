@@ -52,7 +52,7 @@ public:
   RooUnfoldT (const RooUnfoldT<Hist,Hist2D>& rhs); // copy constructor
   virtual ~RooUnfoldT(); // destructor
   RooUnfoldT<Hist,Hist2D>& operator= (const RooUnfoldT<Hist,Hist2D>& rhs); // assignment operator
-  virtual RooUnfolding::Algorithm GetMethod() const ;
+  virtual RooUnfolding::Algorithm GetMethod() const;
 
   // Special constructors
 

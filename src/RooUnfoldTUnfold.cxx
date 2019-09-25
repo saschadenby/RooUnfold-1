@@ -62,6 +62,11 @@ using std::cout;
 using std::cerr;
 using std::endl;
 
+template<class Hist,class Hist2D> RooUnfolding::Algorithm
+RooUnfoldTUnfoldT<Hist,Hist2D>::GetMethod() const {
+  return RooUnfolding::kTUnfold;
+}
+
 template<class Hist,class Hist2D>
 RooUnfoldTUnfoldT<Hist,Hist2D>::RooUnfoldTUnfoldT (const RooUnfoldTUnfoldT& rhs)
 : RooUnfoldT<Hist,Hist2D> (rhs)
