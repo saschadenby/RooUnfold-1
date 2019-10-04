@@ -1276,6 +1276,17 @@ ClassImp (RooUnfold)
 #include "RooStats/HistFactory/ParamHistFunc.h"
 #include "RooProduct.h"
 
+
+template<> void RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>::SetResponse (const RooUnfoldResponseT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>* res, Bool_t takeOwnership){
+  // Set response matrix for unfolding, optionally taking ownership of the RooUnfoldResponseT<Hist,Hist2D> object
+  if(!res) throw std::runtime_error("cannot set response to invalid value!");
+  _res = new RooFitUnfoldResponse(res);
+  _overflow= _res->UseOverflowStatus() ? 1 : 0;
+  _nm= _res->GetNbinsMeasured();
+  _nt= _res->GetNbinsTruth();
+  SetNameTitleDefault();
+}
+
 template class RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>;
 typedef RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist> RooUnfoldT_RooFitHist;
 ClassImp (RooUnfoldT_RooFitHist)

@@ -183,6 +183,7 @@ class RooFitUnfoldResponse : public RooUnfoldResponseT<RooUnfolding::RooFitHist,
 public:
 
   RooFitUnfoldResponse(){}; // default constructor
+  RooFitUnfoldResponse(const RooUnfoldResponseT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>* res); // copy constructor
   virtual ~RooFitUnfoldResponse(){}; // destructor
   RooFitUnfoldResponse(const char* name, const char* title, RooAbsReal* response, RooAbsReal* truth, RooAbsReal* reco, RooAbsReal* fakes, const RooAbsCollection* observables, bool density = false);
   RooFitUnfoldResponse(const char* name, const char* title, RooAbsReal* response, RooAbsReal* truth, RooAbsReal* reco, RooAbsReal* fakes, RooRealVar* obs_truth, RooRealVar* obs_reco, bool density = false);  

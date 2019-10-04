@@ -1185,6 +1185,11 @@ RooUnfoldResponseT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>::Hresponse
 
 template class RooUnfoldResponseT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>;
 
+RooFitUnfoldResponse::RooFitUnfoldResponse(const RooUnfoldResponseT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>* res) :
+  RooUnfoldResponseT(res->GetName(),res->GetTitle(),static_cast<const RooFitUnfoldResponse*>(res)->_res,static_cast<const RooFitUnfoldResponse*>(res)->_tru,static_cast<const RooFitUnfoldResponse*>(res)->_mes,false,static_cast<const RooFitUnfoldResponse*>(res)->_density)  
+{
+}
+
 RooFitUnfoldResponse::RooFitUnfoldResponse(const char* name, const char* title, RooUnfolding::RooFitHist* response, RooUnfolding::RooFitHist* truth, RooUnfolding::RooFitHist* reco, bool density) : 
   RooUnfoldResponseT(name,title,response,truth,reco,false,density)
 {
