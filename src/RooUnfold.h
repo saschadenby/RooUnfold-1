@@ -2,7 +2,6 @@
 // File and Version Information:
 //      $Id$
 //
-// Description:
 //      Unfolding framework base class.
 //
 // Author: Tim Adye <T.J.Adye@rl.ac.uk>
@@ -38,6 +37,7 @@ public:
   static const Algorithm kInvert;
   static const Algorithm kDagostini;
   static const Algorithm kIDS;
+  static const Algorithm kGP;
   static const ErrorTreatment kNoError;
   static const ErrorTreatment kErrors;
   static const ErrorTreatment kCovariance;
@@ -66,7 +66,6 @@ public:
   virtual void SetMeasured (const TVectorD& meas, const TVectorD& err);
   virtual void SetMeasuredCov (const TMatrixD& cov);
   virtual void SetResponse (const RooUnfoldResponseT<Hist,Hist2D>* res, Bool_t takeOwnership = false);
-
   virtual void Reset ();
 
   // Accessors
@@ -76,6 +75,9 @@ public:
   virtual const Hist* Hmeasured() const;
   virtual Hist* Hmeasured();
   virtual       Hist* Hreco (RooUnfolding::ErrorTreatment withError=RooUnfolding::kErrors);
+  virtual TH1D TH1reco ();
+  virtual TH1D TH1bias ();
+
   const    TVectorD& Vmeasured() const;   // Measured distribution as a TVectorD
   const    TVectorD& Emeasured() const;   // Measured distribution errors as a TVectorD
   const    TMatrixD& GetMeasuredCov() const;   // Measured distribution covariance matrix
@@ -84,9 +86,10 @@ public:
   virtual TMatrixD   Ereco  (RooUnfolding::ErrorTreatment witherror=RooUnfolding::kCovariance) const;
   virtual TVectorD   ErecoV (RooUnfolding::ErrorTreatment witherror=RooUnfolding::kErrors) const;
   virtual TMatrixD   Wreco  (RooUnfolding::ErrorTreatment witherror=RooUnfolding::kCovariance) const;
-
+  
   virtual Int_t      verbose() const;
   virtual void       SetVerbose (Int_t level);
+  virtual void       SetOverflow(Int_t overflow);
   virtual void       IncludeSystematics (Int_t dosys= 1);
   virtual Int_t      SystematicsIncluded() const;
   virtual Int_t      NToys() const;         // Number of toys
@@ -94,13 +97,18 @@ public:
   virtual Int_t      Overflow() const;
   virtual void       PrintTable (std::ostream& o, const Hist* hTrue= 0, RooUnfolding::ErrorTreatment withError=RooUnfolding::kDefault) const;
   virtual void       SetRegParm (Double_t parm);
+  virtual void       SetRangeReco(Int_t obs, Double_t min, Double_t max);
+  virtual void       SetRangeTruth(Int_t obs, Double_t min, Double_t max);
   virtual Double_t   GetRegParm() const; // Get Regularisation Parameter
   Double_t Chi2 (const Hist* hTrue,RooUnfolding::ErrorTreatment DoChi2=RooUnfolding::kCovariance) const;
+  virtual void CalculateBias(Int_t ntoys = 50, const Hist* hTrue = 0) const; // Estimate bias by throwing toys.
+
+  RooUnfolding::Algorithm GetAlgorithm() const;
   Double_t GetMinParm() const;
   Double_t GetMaxParm() const;
   Double_t GetStepSizeParm() const;
   Double_t GetDefaultParm() const;
-  RooUnfoldT<Hist,Hist2D>* RunToy() const;
+  RooUnfoldT<TH1,TH2>* RunToy() const;
   void Print(Option_t* opt="") const;
   void Dump() const;    
   void ForceRecalculation();
@@ -112,12 +120,13 @@ protected:
   virtual Bool_t UnfoldWithErrors (RooUnfolding::ErrorTreatment withError, bool getWeights=false) const;
 
   static TMatrixD CutZeros     (const TMatrixD& ereco);
-  static Int_t    InvertMatrix (const TMatrixD& mat, TMatrixD& inv, const char* name="matrix", Int_t verbose=1);
+  static Int_t    InvertMatrix (const TMatrixD& mat, TMatrixD& inv, const char* name="matrix", Int_t verbose=0);
 
 private:
   void Init();
   void Destroy();  
   void CopyData (const RooUnfoldT<Hist,Hist2D>& rhs);
+  void SetAlgorithm (RooUnfolding::Algorithm alg);
   //RooUnfoldT<Hist,Hist2D>* clone(const RooUnfoldT<Hist,Hist2D>& rhs);
 
 protected:
@@ -143,6 +152,9 @@ protected:
     Bool_t   _haveWgt;       // have _wgt
     Bool_t   _have_err_mat;  // have _err_mat
     Bool_t   _haveErrors;    // have _variances
+    Bool_t   _haveBias;      // have _bias
+    TVectorD _bias;          // Estimated bias on each truth bin
+    TVectorD _sigbias;       // SD of the bias
     TVectorD _rec;           // Reconstructed distribution
     TMatrixD _cov;           // Reconstructed distribution covariance
     TMatrixD _wgt;           // Reconstructed distribution weights (inverse of _cov)
@@ -159,12 +171,17 @@ protected:
   TMatrixD* _covMes;                       // Measurement covariance matrix
   Int_t    _verbose;                       // Debug print level
   Int_t    _nm;                            // Total number of measured bins (including under/overflows if _overflow set)
-  Int_t    _nt;                            // Total number of truth    bins (including under/overflows if _overflow set)
+  Int_t    _nt;                            // Total number of truth    bins (including under/overflows if _overflow set
+  std::vector<Double_t> _truth_min;
+  std::vector<Double_t> _truth_max;
+  std::vector<Double_t> _reco_min;
+  std::vector<Double_t> _reco_max;
   Int_t    _overflow;                      // Use histogram under/overflows if 1 (set from RooUnfoldResponse)
   Int_t    _NToys;                         // Number of toys to be used
   Int_t    _dosys;                         // include systematic errors from response matrix? use _dosys=2 to exclude measurement errors
   RooUnfoldResponseT<Hist,Hist2D>* _res;   // Response matrix (not owned)
   Hist*    _meas;                          // Measured distribution (not owned)
+  RooUnfolding::Algorithm _alg;            // The used algorithm.
 
 public:
 
@@ -175,6 +192,7 @@ typedef RooUnfoldT<TH1,TH2> RooUnfold;
 #ifndef NOROOFIT
 #include <RooAbsPdf.h>
 #include <RooAbsReal.h>
+#include <RooHistFunc.h>
 
 class RooProdPdf;
 
@@ -269,12 +287,16 @@ public:
   RooUnfoldSpec(const char* name, const char* title, const TH1* truth_th1, RooAbsArg* obs_truth, RooAbsReal* reco, RooAbsArg* obs_reco, const TH2* response_th1, const RooArgSet& bkg_contributions, RooDataHist* data, bool includeUnderflowOverflow, double errorThreshold = -1, bool useDensity = false);  
 
   ~RooUnfoldSpec();
+  RooHistFunc* makeHistFuncT(const TH1* hist);
+  RooHistFunc* makeHistFuncM(const TH1* hist);
   void registerSystematic(Contribution c, const char* name, const TH1* up, const TH1* down);
   void registerSystematic(Contribution c, const char* name, double up, double dn);
   RooAbsPdf* makePdf(RooUnfolding::Algorithm alg, Double_t regparam=-1e30);
   RooAbsReal* makeFunc(RooUnfolding::Algorithm alg, Double_t regparam=-1e30);
   RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>* unfold(RooUnfolding::Algorithm alg, Double_t regparam = -1e30);
   RooUnfolding::RooFitHist* makeHistogram(const TH1* hist);
+  RooHistFunc* makeHistFuncTruth(const TH1* hist);
+  RooHistFunc* makeHistFuncMeasured(const TH1* hist);
 
 protected:
   void setup(const TH1* truth_th1, const RooArgList& obs_truth, const TH1* reco_th1, const RooArgList& obs_reco, const TH2* response_th1, const TH1* bkg_th1, const TH1* data_th1, bool includeUnderflowOverflow, double errorThreshold = -1, bool useDensity = false);

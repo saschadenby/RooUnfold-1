@@ -144,6 +144,7 @@ namespace {
     }
   }
   int nBins(RooAbsArg* arg){
+    if(!arg) return 0;
     if(arg->InheritsFrom(RooRealVar::Class())){
       return ((RooRealVar*)(arg))->getBinning().numBins();
     } else if(arg->InheritsFrom(RooCategory::Class())){
@@ -493,6 +494,8 @@ namespace RooUnfolding { // section 2: non-trivial helpers
 
   RooAbsReal* RooFitHist::func() const { return this->_func; }
 
+  RooFitHist* RooFitHist::clone() const { return new RooFitHist(*this); }
+
   RooFitHist::RooFitHist() : _func(0) {
     // default constructor
   }
@@ -598,6 +601,8 @@ namespace RooUnfolding { // section 2: non-trivial helpers
 
     return dh;
   }
+
+
 
   std::vector<RooRealVar*> createGammas(const TH1* histo, bool includeUnderflowOverflow, double uncThreshold){
     std::vector<RooRealVar*> gammas;
@@ -918,7 +923,7 @@ namespace RooUnfolding { // section 2: non-trivial helpers
     return 0;
   }
   template<> RooUnfolding::RooFitHist* createHist<RooUnfolding::RooFitHist>(const TVectorD& v, const TVectorD& ve, const char* name, const char* title, const std::vector<Variable<RooUnfolding::RooFitHist>>& x, bool overflow){
-    std::runtime_error("createHist 6 called");                    
+    std::runtime_error("createHist 6 called");   
     return 0;
   }
   template<> TVectorD subtract<RooUnfolding::RooFitHist,TVectorD>(const TVectorD& orig, const RooUnfolding::RooFitHist* hist, bool overflow) {

@@ -538,6 +538,8 @@ def main(args):
     func.Delete()
     theory.Delete()
 
+  return
+
   ws.writeToFile("unfolding.root")
   
   if args.mode == "HistFactory":
