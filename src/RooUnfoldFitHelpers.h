@@ -38,6 +38,7 @@ namespace RooUnfolding {
     virtual const char* title() const;
     virtual RooAbsArg* obs(size_t) const;
     virtual size_t dim() const;
+    RooFitHist* clone() const;
 
     virtual double error() const;
     virtual double value() const;
