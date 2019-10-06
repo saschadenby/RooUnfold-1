@@ -55,7 +55,7 @@ execute_process( COMMAND ln -sf ${RooUnfoldHeaders} -t ${CMAKE_CURRENT_BINARY_DI
 
 file(GLOB Tests "test/*.sh")
 
-SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${EXTRA_FLAGS} -g ")
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${EXTRA_FLAGS} -g")
 
 if(${foundAnalysisRelease})
   atlas_subdir( RooUnfold )
@@ -102,7 +102,7 @@ else()
   
   # generate the dictionary source code
   include(${ROOT_USE_FILE})
-  ROOT_GENERATE_DICTIONARY(G__RooUnfold ${RooUnfoldHeaders} LINKDEF ${RooUnfoldLinkDef} OPTIONS ${EXTRA_FLAGS})
+  ROOT_GENERATE_DICTIONARY(G__RooUnfold ${RooUnfoldHeaders} LINKDEF ${RooUnfoldLinkDef} OPTIONS ${EXTRA_FLAGS} -Wno-inconsistent-missing-override)
 
   # register the shared object to include both sources and dictionaries
   add_library( RooUnfold SHARED ${RooUnfoldSources} ${RooUnfoldDagostini} G__RooUnfold.cxx)
