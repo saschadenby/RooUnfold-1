@@ -7,7 +7,6 @@ if (${RunningAtlasCI})
   include (CMakeLists_forAtlasCI.txt)
 endif()
 
-
 cmake_minimum_required(VERSION 2.8)
 
 find_package(AnalysisBase QUIET)
@@ -21,12 +20,12 @@ else()
 endif()
 
 # The project version number.
-set(VERSION_MAJOR   1   CACHE STRING "Project major version number.")
-set(VERSION_MINOR   12   CACHE STRING "Project minor version number.")
+project(RooUnfold)
+set(VERSION_MAJOR   3   CACHE STRING "Project major version number.")
+set(VERSION_MINOR   0   CACHE STRING "Project minor version number.")
 mark_as_advanced(VERSION_MAJOR VERSION_MINOR)
 
 find_package( ROOT COMPONENTS Tree Unfold Matrix Hist RIO MathCore Physics RooFitCore RooFit HistFactory Graf Postscript Gpad XMLParser)
-
 
 file(GLOB RooUnfoldLinkDef src/*_LinkDef.h)
 set(RooUnfoldDagostini ${CMAKE_CURRENT_SOURCE_DIR}/src/bayes.for)

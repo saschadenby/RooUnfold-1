@@ -833,7 +833,7 @@ RooUnfoldT<Hist,Hist2D>::Hreco (ErrorTreatment withError)
   }
 }
 
-template<class Hist,class Hist2D> TH1D
+template<class Hist,class Hist2D> TH1*
 RooUnfoldT<Hist,Hist2D>::TH1reco() {
 
   Double_t min = _truth_min.at(0);
@@ -853,23 +853,23 @@ RooUnfoldT<Hist,Hist2D>::TH1reco() {
     nbins = unfolded.GetNrows();
   }
 
-  TH1D unf_th1("test","test",nbins,min,max);
+  TH1D* unf_th1 = new TH1D("test","test",nbins,min,max);
   for (int i = i_st; i < unfolded.GetNrows(); i++){
-    unf_th1.SetBinContent(i, unfolded[i - i_st]);
-    unf_th1.SetBinError(i, err[i - i_st]);
+    unf_th1->SetBinContent(i, unfolded[i - i_st]);
+    unf_th1->SetBinError(i, err[i - i_st]);
   }
 
   return unf_th1;
 }
 
-template<class Hist, class Hist2D> TH1D
+template<class Hist, class Hist2D> TH1*
 RooUnfoldT<Hist,Hist2D>::TH1bias() {
   
-  TH1D bias("bias","bias",_cache._bias.GetNrows(),_truth_min.at(0),_truth_max.at(0));
+  TH1D* bias = new TH1D("bias","bias",_cache._bias.GetNrows(),_truth_min.at(0),_truth_max.at(0));
 
-  for (int i = 0; i < bias.GetNbinsX(); i++){
-    bias.SetBinContent(i + 1, _cache._bias(i));
-    bias.SetBinError(i + 1, _cache._sigbias(i));
+  for (int i = 0; i < bias->GetNbinsX(); i++){
+    bias->SetBinContent(i + 1, _cache._bias(i));
+    bias->SetBinError(i + 1, _cache._sigbias(i));
   }
 
   return bias;

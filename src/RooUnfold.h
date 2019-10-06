@@ -74,9 +74,9 @@ public:
   virtual RooUnfoldResponseT<Hist,Hist2D>* response();
   virtual const Hist* Hmeasured() const;
   virtual Hist* Hmeasured();
-  virtual       Hist* Hreco (RooUnfolding::ErrorTreatment withError=RooUnfolding::kErrors);
-  virtual TH1D TH1reco ();
-  virtual TH1D TH1bias ();
+  virtual Hist* Hreco (RooUnfolding::ErrorTreatment withError=RooUnfolding::kErrors);
+  virtual TH1* TH1reco ();
+  virtual TH1* TH1bias ();
 
   const    TVectorD& Vmeasured() const;   // Measured distribution as a TVectorD
   const    TVectorD& Emeasured() const;   // Measured distribution errors as a TVectorD
