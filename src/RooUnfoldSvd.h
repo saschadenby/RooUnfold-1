@@ -130,7 +130,6 @@ public:
   virtual Double_t GetRegParm() const;
   virtual void Reset();
   SVDUnfold* Impl();
-  virtual RooUnfolding::Algorithm GetMethod() const override;
 
 protected:
   void Assign (const RooUnfoldSvdT<Hist,Hist2D>& rhs); // implementation of assignment operator

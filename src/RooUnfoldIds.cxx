@@ -1,9 +1,3 @@
-// Author: Bogdan Malaescu <bogdan.malaescu@cern.ch>
-// Author: Christopher Meyer <chris.meyer@cern.ch>
-//
-// Inspired by Tim Adye code for RooUnfoldSvd
-// For support, contact: chris.meyer@cern.ch
-
 #include "RooUnfoldIds.h"
 #include "RooUnfoldTH1Helpers.h"
 #ifndef NOROOFIT
@@ -23,11 +17,6 @@
 #include "RooUnfoldResponse.h"
 
 using namespace RooUnfolding;
-
-template<class Hist,class Hist2D> RooUnfolding::Algorithm
-RooUnfoldIdsT<Hist,Hist2D>::GetMethod() const {
-  return RooUnfolding::kIDS;
-}
 
 //______________________________________________________________________________
 template<class Hist,class Hist2D>

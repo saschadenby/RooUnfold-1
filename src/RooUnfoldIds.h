@@ -1,8 +1,8 @@
-// Author: Bogdan Malaescu <bogdan.malaescu@cern.ch>
-// Author: Christopher Meyer <chris.meyer@cern.ch>
-//
-// Inspired by Tim Adye code for RooUnfoldSvd
-// For support, contact: chris.meyer@cern.ch
+//=====================================================================-*-C++-*-
+//! \class RooUnfoldIdsT
+//! \brief Inspired by Tim Adye code for RooUnfoldSvd. For support, contact: chris.meyer@cern.ch
+//! \author Bogdan Malaescu <bogdan.malaescu@cern.ch>, Christopher Meyer <chris.meyer@cern.ch>
+//==============================================================================
 
 #ifndef ROOUNFOLDIDS_HH
 #define ROOUNFOLDIDS_HH
@@ -13,10 +13,6 @@
 #include "RooUnfoldFitHelpers.h"
 
 #include "TRandom3.h"
-
-class TH1;
-class TH2;
-
 
 template<class Hist, class Hist2D> 
   class RooUnfoldIdsT : public RooUnfoldT<Hist,Hist2D> {
@@ -56,7 +52,6 @@ template<class Hist, class Hist2D>
   Double_t GetLambdaS() const;
   
   virtual void Reset();
-  virtual RooUnfolding::Algorithm GetMethod() const override;
 
   TMatrixD* GetUnfoldCovMatrix(const TMatrixD *cov, Int_t ntoys, Int_t seed = 1) const;
   TMatrixD* GetAdetCovMatrix(Int_t ntoys, Int_t seed = 1) const;
@@ -99,8 +94,12 @@ template<class Hist, class Hist2D>
   ClassDefT (RooUnfoldIdsT, 1)
 };
 
+//! \class RooUnfoldIds 
+//! \brief specialization of RooUnfoldIdsT for TH1/TH2 objects
 typedef RooUnfoldIdsT<TH1,TH2> RooUnfoldIds;
 #ifndef NOROOFIT
+//! \class RooFitUnfoldIds
+//! \brief specialization of RooUnfoldIdsT for RooAbsReal objects
 typedef RooUnfoldIdsT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist> RooFitUnfoldIds;
 #endif
 

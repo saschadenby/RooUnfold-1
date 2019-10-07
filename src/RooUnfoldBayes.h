@@ -94,7 +94,7 @@ public:
 
 
 //! \class RooUnfoldBayes 
-//! \brief specialization of RooUnfoldBayes for TH1/TH2 objects
+//! \brief specialization of RooUnfoldBayesT for TH1/TH2 objects
 typedef RooUnfoldBayesT<TH1,TH2> RooUnfoldBayes;
 #ifndef NOROOFIT
 //! \class RooFitUnfoldBayes

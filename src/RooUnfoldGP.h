@@ -1,14 +1,9 @@
 //=====================================================================-*-C++-*-
-// File and Version Information:
-//      $Id$
-//
-// Description:
-//      Unfolding class using inversion of the response matrix. This does not produce
-//      good results and is designed to illustrate the need for more sophisticated
-//      unfolding techniques
-//
-// Authors: Richard Claridge <richard.claridge@stfc.ac.uk> & Tim Adye <T.J.Adye@rl.ac.uk>
-//
+//! \class RooUnfoldGPT
+//! \brief Unfolding class using Gaussian Processes. It uses the RooUnfoldInvertT class 
+//!      to get an initial solution and uses a marginal likelihood minimization 
+//!      to find the optimal regularization. 
+//! \author Pim Verschuuren <pim.verschuuren@rhul.ac.uk>
 //==============================================================================
 
 #ifndef ROOUNFOLDGP_H_
@@ -81,44 +76,51 @@ private:
   void printVector(const TVectorD& vector) const;
 
 protected:
-  
+
+  // cache
+  class Cache {
+  public:
   // instance variables
-  mutable TDecompSVD* _svd;
-  mutable TMatrixD*   _resinv;
-  mutable Bool_t      _haveMLEst;
-  mutable Bool_t      _haveMLCov;
-  mutable Bool_t      _MLHConverged;
-
-  mutable TVectorD    _MAPEst;
-  mutable TMatrixD    _MAPCov;
-
-  mutable TVectorD    _MLEst;
-  mutable TMatrixD    _MLCov;
-  mutable TMatrixD    _K;
-  mutable TMatrixD    _Kstar;
-  mutable TMatrixD    _Kstarstar;
-
-  mutable Double_t    _truMin;
-  mutable Double_t    _truMax;
-  mutable Double_t    _obsMin;
-  mutable Double_t    _obsMax;
-  mutable TVectorD    _truBinCenters;
-  mutable TVectorD    _obsBinCenters;
-
-  mutable std::vector<Double_t> _kernel_init;
-  mutable std::vector<Double_t> _kernel_step;
-  mutable std::vector<Double_t> _opt_params;
-  
-
-  mutable Int_t _kernel;
-
+    TDecompSVD* _svd;
+    TMatrixD*   _resinv;
+    Bool_t      _haveMLEst;
+    Bool_t      _haveMLCov;
+    Bool_t      _MLHConverged;
+    
+    TVectorD    _MAPEst;
+    TMatrixD    _MAPCov;
+    
+    TVectorD    _MLEst;
+    TMatrixD    _MLCov;
+    TMatrixD    _K;
+    TMatrixD    _Kstar;
+    TMatrixD    _Kstarstar;
+    
+    Double_t    _truMin;
+    Double_t    _truMax;
+    Double_t    _obsMin;
+    Double_t    _obsMax;
+    TVectorD    _truBinCenters;
+    TVectorD    _obsBinCenters;
+    
+    std::vector<Double_t> _kernel_init;
+    std::vector<Double_t> _kernel_step;
+    std::vector<Double_t> _opt_params;
+    ~Cache();
+  };
+  mutable Cache _specialcache;  //!
+  Int_t _kernel;
 
 public:
   ClassDefT (RooUnfoldGPT, 1)  // Unregularised unfolding
 };
 
+//! \class RooUnfoldGP 
+//! \brief specialization of RooUnfoldGPT for TH1/TH2 objects
 typedef RooUnfoldGPT<TH1,TH2> RooUnfoldGP;
 #ifndef NOROOFIT
+//! \class RooFitUnfoldGP
+//! \brief specialization of RooUnfoldGPT for RooAbsReal objects
 typedef RooUnfoldGPT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist> RooFitUnfoldGP;
 #endif
 

@@ -1,12 +1,7 @@
 //=====================================================================-*-C++-*-
-// File and Version Information:
-//      $Id$
-//
-// Description:
-//      Unfolding class using TUnfold from ROOT to do the actual unfolding.
-//
-// Authors: Richard Claridge <richard.claridge@stfc.ac.uk> & Tim Adye <T.J.Adye@rl.ac.uk>
-//
+//! \class RooUnfoldTUnfoldT
+//! \brief Unfolding class using TUnfold from ROOT to do the actual unfolding.
+//! \author Richard Claridge <richard.claridge@stfc.ac.uk> & Tim Adye <T.J.Adye@rl.ac.uk>
 //==============================================================================
 
 #ifndef ROOUNFOLDTUNFOLD_HH
@@ -33,7 +28,6 @@ public:
   RooUnfoldTUnfoldT (const RooUnfoldTUnfoldT& rhs); // copy constructor
   virtual ~RooUnfoldTUnfoldT(); // destructor
   RooUnfoldTUnfoldT& operator= (const RooUnfoldTUnfoldT& rhs); // assignment operator
-  // virtual RooUnfoldTUnfoldT* Clone (const char* newname= 0) const;
   RooUnfoldTUnfoldT (const RooUnfoldResponseT<Hist,Hist2D>* res, const Hist* meas,TUnfold::ERegMode reg=TUnfold::kRegModeDerivative,
                     const char* name= 0, const char* title= 0);
   RooUnfoldTUnfoldT (const RooUnfoldResponseT<Hist,Hist2D>* res, const Hist* meas,Double_t tau,TUnfold::ERegMode reg=TUnfold::kRegModeDerivative,
@@ -51,7 +45,6 @@ public:
   virtual Double_t GetRegParm() const override;
   void SetRegMethod (TUnfold::ERegMode regmethod);
   TUnfold::ERegMode GetRegMethod() const;
-  virtual RooUnfolding::Algorithm GetMethod() const override;    
 
 protected:
   void Init();
@@ -76,8 +69,12 @@ public:
   ClassDefT (RooUnfoldTUnfoldT, 1)   // Interface to TUnfold
 };
 
+//! \class RooUnfoldTUnfold 
+//! \brief specialization of RooUnfoldTUnfoldT for TH1/TH2 objects
 typedef RooUnfoldTUnfoldT<TH1,TH2> RooUnfoldTUnfold;
 #ifndef NOROOFIT
+//! \class RooFitUnfoldTUnfold
+//! \brief specialization of RooUnfoldTUnfoldT for RooAbsReal objects
 typedef RooUnfoldTUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist> RooFitUnfoldTUnfold;
 #endif
 

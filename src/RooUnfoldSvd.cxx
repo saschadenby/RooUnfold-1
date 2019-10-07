@@ -26,15 +26,6 @@ Can account for both smearing and biasing
 
 using namespace RooUnfolding;
 
-using std::cout;
-using std::cerr;
-using std::endl;
-
-template<class Hist,class Hist2D> RooUnfolding::Algorithm
-RooUnfoldSvdT<Hist,Hist2D>::GetMethod() const {
-  return RooUnfolding::kSVD;
-}
-
 template<class Hist,class Hist2D>
 RooUnfoldSvdT<Hist,Hist2D>::RooUnfoldSvdT (const RooUnfoldSvdT<Hist,Hist2D>& rhs)
   : RooUnfoldT<Hist,Hist2D> (rhs)
@@ -143,7 +134,7 @@ template<> void RooUnfoldSvdT<TH1,TH2>::PrepareHistograms() const {
     TVectorD fakes(this->_res->Vfakes());
     Double_t fac= this->_res->Vmeasured().Sum();
     if (fac!=0.0) fac=  this->Vmeasured().Sum() / fac;
-    if (this->_verbose>=1) cout << "Subtract " << fac*fakes.Sum() << " fakes from measured distribution" << endl;
+    if (this->_verbose>=1) std::cout << "Subtract " << fac*fakes.Sum() << " fakes from measured distribution" << std::endl;
     ::subtract(meas1d,fakes,fac);
   }
 
@@ -162,17 +153,17 @@ template<class Hist,class Hist2D> void
 RooUnfoldSvdT<Hist,Hist2D>::Unfold() const
 {
   if (this->_res->GetDimensionTruth() != 1 || this->_res->GetDimensionMeasured() != 1) {
-    cerr << "RooUnfoldSvdT may not work very well for multi-dimensional distributions" << endl;
+    std::cerr << "RooUnfoldSvdT may not work very well for multi-dimensional distributions" << std::endl;
   }
   if (this->_kreg < 0) {
-    cerr << "RooUnfoldSvdT invalid kreg: " << this->_kreg << endl;
+    std::cerr << "RooUnfoldSvdT invalid kreg: " << this->_kreg << std::endl;
     return;
   }
 
   this->_nb= this->_nm > this->_nt ? this->_nm : this->_nt;
  
   if (this->_kreg > this->_nb) {
-    cerr << "RooUnfoldSvdT invalid kreg=" << this->_kreg << " with " << this->_nb << " bins" << endl;
+    std::cerr << "RooUnfoldSvdT invalid kreg=" << this->_kreg << " with " << this->_nb << " bins" << std::endl;
     return;
   }
 
@@ -180,7 +171,7 @@ RooUnfoldSvdT<Hist,Hist2D>::Unfold() const
   
   const TMatrixD& cov(this->GetMeasuredCov());
 
-  if (this->_verbose>=1) cout << "SVD init " << nBins(this->_reshist,X) << " x " << nBins(this->_reshist,Y) << " bins, kreg=" << this->_kreg << endl;
+  if (this->_verbose>=1) std::cout << "SVD init " << nBins(this->_reshist,X) << " x " << nBins(this->_reshist,Y) << " bins, kreg=" << this->_kreg << std::endl;
   if(!this->_meas1d) throw std::runtime_error("no meas1d given!");
   if(!this->_train1d) throw std::runtime_error("no train1d given!");
   if(!this->_truth1d) throw std::runtime_error("no truth1d given!");
@@ -192,7 +183,7 @@ RooUnfoldSvdT<Hist,Hist2D>::Unfold() const
   this->_cache._rec = this->_svd->UnfoldV (this->_kreg);
 
   if (this->_verbose>=2) {
-    printTable (cout, h2v(this->_truth1d), h2v(this->_train1d), h2v(this->_meas1d), this->_cache._rec);
+    printTable (std::cout, h2v(this->_truth1d), h2v(this->_train1d), h2v(this->_meas1d), this->_cache._rec);
     TMatrixD resmat(h2m(this->_reshist));
     printMatrix(resmat,"SVDUnfold response matrix");
   }
