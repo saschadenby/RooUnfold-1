@@ -111,10 +111,11 @@ RooUnfoldInvertT<Hist,Hist2D>::Unfold() const
 template<class Hist, class Hist2D> void
 RooUnfoldInvertT<Hist,Hist2D>::GetCov() const
 {
-    if (!InvertResponse()) return;
-    this->_cache._cov.ResizeTo(this->_nt,this->_nt);
-    ABAT (*_resinv, this->GetMeasuredCov(), this->_cache._cov);
-    this->_cache._haveCov= true;
+  //! Get covariance matrix
+  if (!InvertResponse()) return;
+  this->_cache._cov.ResizeTo(this->_nt,this->_nt);
+  ABAT (*_resinv, this->GetMeasuredCov(), this->_cache._cov);
+  this->_cache._haveCov= true;
 }
 
 template<class Hist, class Hist2D> Bool_t

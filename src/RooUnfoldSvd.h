@@ -1,6 +1,6 @@
 //=====================================================================-*-C++-*-
 //! \class RooUnfoldSvdT
-//! \brief SVD unfolding. Just an interface to RooUnfHistoSvd.
+//! \brief SVD unfolding. Just an interface to SVDUnfold.
 //! \author Tim Adye <T.J.Adye@rl.ac.uk>
 //==============================================================================
 

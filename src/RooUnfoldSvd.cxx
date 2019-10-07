@@ -58,6 +58,7 @@ RooUnfoldSvdT<Hist,Hist2D>::RooUnfoldSvdT (const RooUnfoldResponseT<Hist,Hist2D>
 template<class Hist,class Hist2D> void
 RooUnfoldSvdT<Hist,Hist2D>::Reset()
 {
+  // destroy and re-initialize this object
   Destroy();
   Init();
   RooUnfoldT<Hist,Hist2D>::Reset();
@@ -66,6 +67,7 @@ RooUnfoldSvdT<Hist,Hist2D>::Reset()
 template<class Hist,class Hist2D> void
 RooUnfoldSvdT<Hist,Hist2D>::Destroy()
 {
+  //! delete all members of this object
   delete this->_svd;
   delete this->_meas1d;
   delete this->_train1d;
@@ -76,6 +78,7 @@ RooUnfoldSvdT<Hist,Hist2D>::Destroy()
 template<class Hist,class Hist2D> void
 RooUnfoldSvdT<Hist,Hist2D>::Init()
 {
+  //! initialize this object with zero values
   this->_svd= 0;
   this->_meas1d= this->_train1d= this->_truth1d= 0;
   this->_reshist= this->_meascov= 0;
@@ -85,6 +88,7 @@ RooUnfoldSvdT<Hist,Hist2D>::Init()
 template<class Hist,class Hist2D> void
 RooUnfoldSvdT<Hist,Hist2D>::Assign (const RooUnfoldSvdT<Hist,Hist2D>& rhs)
 {
+  //! assign data from another instance
   RooUnfoldT<Hist,Hist2D>::Assign (rhs);
   CopyData (rhs);
 }
@@ -92,17 +96,20 @@ RooUnfoldSvdT<Hist,Hist2D>::Assign (const RooUnfoldSvdT<Hist,Hist2D>& rhs)
 template<class Hist,class Hist2D> void
 RooUnfoldSvdT<Hist,Hist2D>::CopyData (const RooUnfoldSvdT<Hist,Hist2D>& rhs)
 {
+  //! copy data from another instance
   this->_kreg= rhs._kreg;
 }
 
 template<class Hist,class Hist2D> typename RooUnfoldSvdT<Hist,Hist2D>::SVDUnfold*
 RooUnfoldSvdT<Hist,Hist2D>::Impl()
 {
+  //! retrieve the SVDUnfold object
   return this->_svd;
 }
 
 
 template<class Hist,class Hist2D> void RooUnfoldSvdT<Hist,Hist2D>::PrepareHistograms() const{
+  //! fill all the histogram members
   this->_meas1d = this->_meas;
   this->_train1d= this->_res->Hmeasured();
   this->_truth1d= this->_res->Htruth();
@@ -120,6 +127,7 @@ namespace{
   }
 }
 template<> void RooUnfoldSvdT<TH1,TH2>::PrepareHistograms() const {
+  //! fill all the histogram members
   TH1* meas1d = ::histNoOverflow (this->_meas,             this->_overflow);
   TH1* train1d= ::histNoOverflow (this->_res->Hmeasured(), this->_overflow);
   TH1* truth1d= ::histNoOverflow (this->_res->Htruth(),    this->_overflow);
@@ -152,6 +160,7 @@ template<> void RooUnfoldSvdT<TH1,TH2>::PrepareHistograms() const {
 template<class Hist,class Hist2D> void
 RooUnfoldSvdT<Hist,Hist2D>::Unfold() const
 {
+  //! perform the unfolding
   if (this->_res->GetDimensionTruth() != 1 || this->_res->GetDimensionMeasured() != 1) {
     std::cerr << "RooUnfoldSvdT may not work very well for multi-dimensional distributions" << std::endl;
   }
@@ -195,6 +204,7 @@ RooUnfoldSvdT<Hist,Hist2D>::Unfold() const
 template<class Hist,class Hist2D> void
 RooUnfoldSvdT<Hist,Hist2D>::GetCov() const
 {
+  //! Get covariance matrix
   if (!this->_svd) return;
   this->_cache._cov.ResizeTo(this->_nb,this->_nb);
   //Get the covariance matrix for statistical uncertainties on the measured distribution

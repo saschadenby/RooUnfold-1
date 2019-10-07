@@ -191,7 +191,7 @@ RooUnfoldIdsT<Hist,Hist2D>::Unfold() const
 template<class Hist,class Hist2D>void
 RooUnfoldIdsT<Hist,Hist2D>::GetCov() const
 {
-
+  //! Get covariance matrix
    Bool_t oldstat = TH1::AddDirectoryStatus();
    TH1::AddDirectory(kFALSE);
 

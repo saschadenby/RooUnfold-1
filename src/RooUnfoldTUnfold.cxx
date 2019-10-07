@@ -278,7 +278,7 @@ RooUnfoldTUnfoldT<Hist,Hist2D>::Unfold() const
 template<class Hist,class Hist2D>void
 RooUnfoldTUnfoldT<Hist,Hist2D>::GetCov() const
 {
-  //Gets Covariance matrix
+  //! Get covariance matrix
   if (!_unf) return;
   TH2* ematrix= new TH2D ("ematrix","error matrix", this->_nt, 0.0, this->_nt, this->_nt, 0.0, this->_nt);
   if (this->_dosys!=2) _unf->GetEmatrix (ematrix);

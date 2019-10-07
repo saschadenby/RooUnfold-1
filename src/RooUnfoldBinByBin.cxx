@@ -79,6 +79,7 @@ RooUnfoldBinByBinT<Hist,Hist2D>::Unfold() const
 template<class Hist,class Hist2D> void
 RooUnfoldBinByBinT<Hist,Hist2D>::GetCov() const
 {
+  //! Get covariance matrix
   const TMatrixD& covmeas(this->GetMeasuredCov());
     this->_cache._cov.ResizeTo(this->_nt,this->_nt);
     Int_t nb= std::min(this->_nm,this->_nt);
