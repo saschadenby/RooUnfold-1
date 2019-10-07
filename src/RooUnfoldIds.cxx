@@ -1,3 +1,6 @@
+/* \class RooUnfoldIds
+   Inspired by Tim Adye code for RooUnfoldSvd. For support, contact: chris.meyer@cern.ch
+*/
 #include "RooUnfoldIds.h"
 #include "RooUnfoldTH1Helpers.h"
 #ifndef NOROOFIT

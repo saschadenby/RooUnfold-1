@@ -38,6 +38,7 @@ namespace {
 }
 
 template<class Base>RooUnfolding::RooFitWrapper<Base>::RooFitWrapper(const char* name, const char* title, const RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>* unf) : Base(name,title){
+  //! constructor
   auto unfolding = RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>::New(unf->GetAlgorithm(),unf->response(),unf->Hmeasured(),unf->GetRegParm(),unf->GetName(),unf->GetTitle());
   this->_unfolding = dynamic_cast<RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>*>(unfolding);
   this->_unfolding->SetVerbose(0);
@@ -81,14 +82,21 @@ template<class Base>RooUnfolding::RooFitWrapper<Base>::RooFitWrapper(const char*
     }
   }
 }
-RooUnfoldFunc::RooUnfoldFunc(const char* name, const char* title, const RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>* unf) : RooFitWrapper(name,title,unf) {}
-RooUnfoldPdf::RooUnfoldPdf(const char* name, const char* title, const RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>* unf) : RooFitWrapper(name,title,unf) {}
-template<class Base>RooUnfolding::RooFitWrapper<Base>::RooFitWrapper() : _unfolding(NULL) {}
+RooUnfoldFunc::RooUnfoldFunc(const char* name, const char* title, const RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>* unf) : RooFitWrapper(name,title,unf) {
+  //! constructor
+}
+RooUnfoldPdf::RooUnfoldPdf(const char* name, const char* title, const RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>* unf) : RooFitWrapper(name,title,unf) {
+  //! constructor
+}
+template<class Base>RooUnfolding::RooFitWrapper<Base>::RooFitWrapper() : _unfolding(NULL) {
+  //! constructor
+}
 template<class Base>RooUnfolding::RooFitWrapper<Base>::~RooFitWrapper(){
-  
+  //! destructor
   delete _unfolding;
 }
 template<class Base> Bool_t RooUnfolding::RooFitWrapper<Base>::redirectServersHook(const RooAbsCollection& newServerList, Bool_t mustReplaceAll, Bool_t nameChange, Bool_t isRecursive){
+  //! redirect servers
   RooUnfoldResponseT<RooFitHist,RooFitHist>* res = this->_unfolding->response();
   if(res){
     RooFitHist* htruth = res->Htruth();
@@ -120,6 +128,7 @@ template<class Base> Bool_t RooUnfolding::RooFitWrapper<Base>::redirectServersHo
 
 
 template<class Base>const RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>* RooUnfolding::RooFitWrapper<Base>::unfolding() const { 
+  //! retrieve the unfolding object
   return this->_unfolding;
 }
 
@@ -138,6 +147,7 @@ std::list<Double_t>* RooUnfolding::RooFitWrapper<Base>::plotSamplingHint(RooAbsR
 template <class Base>
 Double_t RooUnfolding::RooFitWrapper<Base>::getValV(const RooArgSet* set) const
 {
+  //! return the value
   this->_curNormSet = set ;
   return Base::getValV(set) ;
 }
@@ -166,21 +176,25 @@ Bool_t  RooUnfolding::RooFitWrapper<Base>::isBinnedDistribution(const RooArgSet&
 
 template<class Base>
 Bool_t RooUnfolding::RooFitWrapper<Base>::checkObservables(const RooArgSet *nset) const {
+  //! call checkOvservables on the response
   return this->_unfolding->response()->Hresponse()->func()->checkObservables(nset);
 }
 
 template<class Base>
 Bool_t RooUnfolding::RooFitWrapper<Base>::forceAnalyticalInt(const RooAbsArg &arg) const {
+  //! force the analytical integral
   return this->_unfolding->response()->Htruth()->func()->forceAnalyticalInt(arg);
 }
 
 template<class Base>
 Int_t RooUnfolding::RooFitWrapper<Base>::getAnalyticalIntegralWN(RooArgSet &allVars, RooArgSet &numVars, const RooArgSet *normSet, const char *rangeName) const {
+  //! retrieve the analytical integral status
   return this->_unfolding->response()->Htruth()->func()->getAnalyticalIntegralWN(allVars,numVars,normSet,rangeName);
 }
 
 template<class Base>
 Double_t RooUnfolding::RooFitWrapper<Base>::analyticalIntegralWN(Int_t code, const RooArgSet *normSet, const char *rangeName) const {
+  //! retrieve the analytical integral status
   double val = 0;
   auto vec = this->_unfolding->Vunfold();
   for(int i=0; i<vec.GetNrows(); ++i){
@@ -192,6 +206,7 @@ Double_t RooUnfolding::RooFitWrapper<Base>::analyticalIntegralWN(Int_t code, con
 
 template<class Base>
 void RooUnfolding::RooFitWrapper<Base>::printMetaArgs(std::ostream &os) const {
+  //! printing helper function
   return this->_unfolding->response()->Htruth()->func()->printMetaArgs(os);
 }
 
@@ -204,6 +219,7 @@ void RooUnfolding::RooFitWrapper<Base>::setCacheAndTrackHints(RooArgSet& arg) {
   this->_unfolding->response()->Htruth()->func()->setCacheAndTrackHints(arg);
 }
 template<class Base> TObject* RooUnfolding::RooFitWrapper<Base>::clone(const char* newname) const {
+  //! produce a clone (deep copy) of this object
   return new RooUnfolding::RooFitWrapper<Base>(newname ? newname : this->GetName(),this->GetTitle(),this->_unfolding);
 }
 
@@ -213,26 +229,31 @@ template class RooUnfolding::RooFitWrapper<RooAbsReal>;
 template class RooUnfolding::RooFitWrapper<RooAbsPdf>;
 
 RooUnfoldFunc::RooUnfoldFunc() : RooFitWrapper() {
+  //! constructor
 }
 RooUnfoldFunc::~RooUnfoldFunc() {
+  //! destructor
 }
 TObject* RooUnfoldFunc::clone(const char* newname) const {
+  //! produce a clone (deep copy) of this object
   return new RooUnfoldFunc(newname ? newname : this->GetName(),this->GetTitle(),this->_unfolding);
 }
 ClassImp (RooUnfoldFunc)
 RooUnfoldPdf::RooUnfoldPdf() : RooFitWrapper() {
+  //! constructor
 }
-RooUnfoldPdf::~RooUnfoldPdf( ) {}
+RooUnfoldPdf::~RooUnfoldPdf( ) {
+  //! destructor
+}
 TObject* RooUnfoldPdf::clone(const char* newname) const {
-
+  //! produce a clone (deep copy) of this object
   RooUnfoldPdf* retval = new RooUnfoldPdf(newname ? newname : this->GetName(),this->GetTitle(),this->_unfolding);
-  
   return retval;
 }
 ClassImp (RooUnfoldPdf)
 
 RooAbsPdf::ExtendMode RooUnfoldPdf::extendMode() const {
-    //! Return extended mode capabilities
+  //! Return extended mode capabilities
   return RooAbsPdf::MustBeExtended;
 }
 Double_t RooUnfoldPdf::expectedEvents(const RooArgSet* nset) const {
@@ -268,8 +289,6 @@ namespace {
     }
   }
 }
-
-
 
 #include <RooAbsCollection.h>
 
@@ -324,6 +343,7 @@ RooUnfoldSpec::RooUnfoldSpec(const char* name, const char* title, const TH1* tru
 RooUnfoldSpec::RooUnfoldSpec(const char* name, const char* title, const TH1* truth, const char* obs_truth, const TH1* reco, const char* obs_reco, const TH2* response, const TH1* bkg, const TH1* data, bool includeUnderflowOverflow, double errorThreshold, bool useDensity) : 
   TNamed(name,title)
 {
+  //! constructor
   int d =dim(truth);
   if(d!=dim(reco)){
     throw std::runtime_error("inconsistent dimensionality between truth and reco histograms!");
@@ -372,12 +392,14 @@ RooUnfoldSpec::RooUnfoldSpec(const char* name, const char* title, const TH1* tru
 RooUnfoldSpec::RooUnfoldSpec(const char* name, const char* title, const TH1* truth_th1, const RooArgList& obs_truth, const TH1* reco_th1, const RooArgList& obs_reco, const TH2* response_th1, const TH1* bkg, const TH1* data, bool includeUnderflowOverflow, double errorThreshold, bool useDensity) : 
   TNamed(name,title)
 {
+  //! constructor
   this->setup(truth_th1,obs_truth,reco_th1,obs_reco,response_th1,bkg,data,includeUnderflowOverflow,errorThreshold,useDensity);
 }
 
 RooUnfoldSpec::RooUnfoldSpec(const char* name, const char* title, const TH1* truth_th1, const RooArgList& obs_truth, const TH1* reco_th1, const RooArgList& obs_reco, const TH2* response_th1, RooAbsReal* bkg, RooDataHist* data, bool includeUnderflowOverflow, double errorThreshold, bool useDensity) :
   TNamed(name,title)
 {
+  //! constructor
   this->_bkg.setNominal(bkg);
   this->_data.setNominal(RooUnfolding::makeHistFunc(data,obs_reco));
   this->setup(truth_th1,obs_truth,reco_th1,obs_reco,response_th1,NULL,NULL,includeUnderflowOverflow,errorThreshold,useDensity);
@@ -386,13 +408,16 @@ RooUnfoldSpec::RooUnfoldSpec(const char* name, const char* title, const TH1* tru
 RooUnfoldSpec::RooUnfoldSpec(const char* name, const char* title, const TH1* truth_th1, const RooArgList& obs_truth, RooAbsReal* reco, const RooArgList& obs_reco, const TH2* response_th1, RooAbsReal* bkg, RooDataHist* data, bool includeUnderflowOverflow, double errorThreshold, bool useDensity) :
   TNamed(name,title)
 {
+  //! constructor
   this->_reco.setNominal(reco);
   this->_bkg.setNominal(bkg);
   this->_data.setNominal(RooUnfolding::makeHistFunc(data,obs_reco));
   this->setup(truth_th1,obs_truth,NULL,obs_reco,response_th1,NULL,NULL,includeUnderflowOverflow,errorThreshold,useDensity);
 }
 
-RooUnfoldSpec::RooUnfoldSpec(const char* name, const char* title, const TH1* truth_th1, RooAbsArg* obs_truth, RooAbsReal* reco, RooAbsArg* obs_reco, const TH2* response_th1, RooAbsReal* bkg, RooDataHist* data, bool includeUnderflowOverflow, double errorThreshold, bool useDensity) : RooUnfoldSpec(name,title,truth_th1,RooArgList(*obs_truth),reco,RooArgList(*obs_reco),response_th1,bkg,data,includeUnderflowOverflow,errorThreshold,useDensity) {}
+RooUnfoldSpec::RooUnfoldSpec(const char* name, const char* title, const TH1* truth_th1, RooAbsArg* obs_truth, RooAbsReal* reco, RooAbsArg* obs_reco, const TH2* response_th1, RooAbsReal* bkg, RooDataHist* data, bool includeUnderflowOverflow, double errorThreshold, bool useDensity) : RooUnfoldSpec(name,title,truth_th1,RooArgList(*obs_truth),reco,RooArgList(*obs_reco),response_th1,bkg,data,includeUnderflowOverflow,errorThreshold,useDensity) {
+  //! constructor
+}
 
 namespace {
   RooAbsReal* makeParamHistFunc(const char* name, const char* title, const RooArgList& observables, const RooArgList& parameters, bool multiplyDensity){
@@ -418,6 +443,7 @@ namespace {
 RooUnfoldSpec::RooUnfoldSpec(const char* name, const char* title, const TH1* truth_th1, RooAbsArg* obs_truth, const RooArgList& reco_bins, RooAbsArg* obs_reco, const TH2* response_th1, const RooArgList& bkg_bins, RooDataHist* data, bool includeUnderflowOverflow, double errorThreshold, bool useDensity) : 
   TNamed(name,title)
 {
+  //! constructor
   RooArgList obs_reco_list(*obs_reco);
   RooArgList obs_truth_list(*obs_truth);
   this->_reco.setNominal(::makeParamHistFunc(TString::Format("signal_reco_%s_differential",obs_reco->GetName()).Data(),obs_reco->GetTitle(),obs_reco_list,reco_bins,useDensity));
@@ -431,6 +457,7 @@ RooUnfoldSpec::RooUnfoldSpec(const char* name, const char* title, const TH1* tru
 RooUnfoldSpec::RooUnfoldSpec(const char* name, const char* title, const TH1* truth_th1, RooAbsArg* obs_truth, const TH1* reco_th1, RooAbsArg* obs_reco, const TH2* response_th1, const RooArgList& bkg_bins, RooDataHist* data, bool includeUnderflowOverflow, double errorThreshold, bool useDensity) : 
   TNamed(name,title)
 {
+  //! constructor
   RooArgList obs_reco_list(*obs_reco);
   RooArgList obs_truth_list(*obs_truth);  
   this->_bkg.setNominal(::makeParamHistFunc(TString::Format("bkg_reco_%s_differential",obs_reco->GetName()),obs_reco->GetTitle(),obs_reco_list,bkg_bins,useDensity));
@@ -440,6 +467,7 @@ RooUnfoldSpec::RooUnfoldSpec(const char* name, const char* title, const TH1* tru
 
 RooUnfoldSpec::RooUnfoldSpec(const char* name, const char* title, const TH1* truth_th1, RooAbsArg* obs_truth, const TH1* reco_th1, RooAbsArg* obs_reco, const TH2* response_th1, RooAbsReal* measured, bool includeUnderflowOverflow, double errorThreshold, bool useDensity) : TNamed(name,title)
 {
+  //! constructor
   RooArgList obs_reco_list(*obs_reco);
   RooArgList obs_truth_list(*obs_truth);
   this->_data.setNominal(measured);
@@ -449,6 +477,7 @@ RooUnfoldSpec::RooUnfoldSpec(const char* name, const char* title, const TH1* tru
 RooUnfoldSpec::RooUnfoldSpec(const char* name, const char* title, const TH1* truth_th1, RooAbsArg* obs_truth, const TH1* reco_th1, RooAbsArg* obs_reco, const TH2* response_th1, const RooArgList& measured_bins, bool includeUnderflowOverflow, double errorThreshold, bool useDensity) : 
   TNamed(name,title)
 {
+  //! constructor
   RooArgList obs_reco_list(*obs_reco);
   RooArgList obs_truth_list(*obs_truth);
   this->_data.setNominal(::makeParamHistFunc(TString::Format("measured_reco_%s_differential",obs_reco->GetName()),obs_reco->GetTitle(),obs_reco_list,measured_bins,useDensity));
@@ -475,6 +504,7 @@ namespace {
 RooUnfoldSpec::RooUnfoldSpec(const char* name, const char* title, const TH1* truth_th1, RooAbsArg* obs_truth, RooAbsReal* reco, RooAbsArg* obs_reco, const TH2* response_th1, const RooArgSet& bkg_contributions, RooDataHist* data, bool includeUnderflowOverflow, double errorThreshold, bool useDensity) :
   TNamed(name,title)
 {
+  //! constructor
   RooArgList obs_reco_list(*obs_reco);
   RooArgList obs_truth_list(*obs_truth);
   this->_reco.setNominal(reco);
@@ -490,6 +520,7 @@ RooUnfoldSpec::RooUnfoldSpec(const char* name, const char* title, const TH1* tru
 RooUnfoldSpec::RooUnfoldSpec(const char* name, const char* title, RooAbsReal* truth, RooAbsArg* obs_truth,  RooAbsReal* reco, RooAbsArg* obs_reco, const TH2* response_th1, const RooArgSet& bkg_contributions, RooDataHist* data, bool includeUnderflowOverflow, double errorThreshold, bool useDensity) :
   TNamed(name,title)
 {
+  //! constructor
   RooArgList obs_reco_list(*obs_reco);
   RooArgList obs_truth_list(*obs_truth);
   this->_truth.setNominal(truth);
@@ -505,6 +536,7 @@ RooUnfoldSpec::RooUnfoldSpec(const char* name, const char* title, RooAbsReal* tr
 
 
 void RooUnfoldSpec::setup(const TH1* truth_th1, const RooArgList& obs_truth, const TH1* reco_th1, const RooArgList& obs_reco, const TH2* response_th1, const TH1* bkg_th1, const TH1* data_th1, bool includeUnderflowOverflow, double errorThreshold, bool useDensity){
+  //! setup helper function
   this->_includeUnderflowOverflow = includeUnderflowOverflow;
   this->_useDensity = useDensity;
   this->_errorThreshold = errorThreshold;
@@ -521,16 +553,18 @@ void RooUnfoldSpec::setup(const TH1* truth_th1, const RooArgList& obs_truth, con
 }
 
 RooUnfoldSpec::~RooUnfoldSpec(){
+  //! destructor
 }
 
 
 RooUnfolding::RooFitHist* RooUnfoldSpec::makeHistogram(const TH1* hist){
-    
+  // convert a TH1 into a RooFitHist
   return new RooUnfolding::RooFitHist(hist, this->_obs_truth, this->_includeUnderflowOverflow, this->_errorThreshold, this->_useDensity);
 }
 
 
 RooUnfolding::RooFitHist* RooUnfoldSpec::makeHistogram(const HistContainer& source, double errorThreshold){
+  // build a new RooFitHist based on the source HistContainer. relative bin errors above errorThreshold will be modelled as gamma parameters.
   RooAbsReal* hf = source._nom;
   RooAbsReal* func = hf;
   if(!hf) return 0;
@@ -618,16 +652,19 @@ RooUnfolding::RooFitHist* RooUnfoldSpec::makeHistogram(const HistContainer& sour
 }
 
 RooHistFunc* RooUnfoldSpec::makeHistFuncTruth(const TH1* hist){
+  //! create a new truth hist func
   if(!hist) return NULL;
   return RooUnfolding::makeHistFunc(hist,this->_obs_truth, this->_includeUnderflowOverflow, this->_useDensity);
 }
 
 RooHistFunc* RooUnfoldSpec::makeHistFuncMeasured(const TH1* hist){
+  //! create a new measured hist func
   if(!hist) return NULL;
   return RooUnfolding::makeHistFunc(hist,this->_obs_reco, this->_includeUnderflowOverflow, this->_useDensity);
 }
 
 RooProdPdf* RooUnfoldSpec::makeConstraints(){
+  //! create all the constraint terms
   RooArgList constraints;
   for(auto a:this->_alphas){
     RooRealVar* p = (RooRealVar*)(a);
@@ -652,25 +689,30 @@ RooProdPdf* RooUnfoldSpec::makeConstraints(){
 }
 
 void RooUnfoldSpec::addGaussNP(RooRealVar* v){
+  //! add a new gaussian NP
   if(v) this->_alphas.add(*v);
 }
-void RooUnfoldSpec::addPoissonNP(RooRealVar* v){
-  if(v) this->_gammas.add(*v);
+void RooUnfoldSpec::addPoissonNP(RooRealVar* v){ 
+  //! add a new poisson NP
+ if(v) this->_gammas.add(*v);
 }
 
 void RooUnfoldSpec::makeBackground(){
+  //! create the background
   this->_locked = true;
   if(!this->_cache._bkg){
     this->_cache._bkg = this->makeHistogram(this->_bkg,this->_errorThreshold);
   }
 }
 void RooUnfoldSpec::makeData(){
+  //! create the data
   this->_locked = true;
   if(!this->_cache._data){
     this->_cache._data = this->makeHistogram(this->_data,0);
   }
 }
 void RooUnfoldSpec::makeResponse(){
+  //! create the response
   this->_locked = true;
   if(!this->_cache._res){
     this->makeReco();
@@ -681,6 +723,7 @@ void RooUnfoldSpec::makeResponse(){
   }
 }
 void RooUnfoldSpec::makeTruth(){
+  //! create the truth
   this->_locked = true;
   if(!this->_cache._truth){
     if(!this->_truth._nom) throw std::runtime_error("no truth input given!");    
@@ -688,6 +731,7 @@ void RooUnfoldSpec::makeTruth(){
   }
 }
 void RooUnfoldSpec::makeReco(){
+  //! create the reconstructed
   this->_locked = true;
   if(!this->_cache._reco){
     if(!this->_reco._nom) throw std::runtime_error("no measured input given!");
@@ -695,6 +739,7 @@ void RooUnfoldSpec::makeReco(){
   }
 }
 void RooUnfoldSpec::makeDataMinusBackground(){
+  //! create the data minus background
   this->_locked = true;
   this->makeData();
   if(!this->_cache._data_minus_bkg){
@@ -711,14 +756,33 @@ void RooUnfoldSpec::makeDataMinusBackground(){
   }
 }
 
-RooAbsReal* RooUnfoldSpec::getBackground(){ this->makeBackground(); if(this->_cache._bkg) return this->_cache._bkg->func(); else return NULL; }
-RooAbsReal* RooUnfoldSpec::getData(){ this->makeData(); return this->_cache._data->func(); }
-RooAbsReal* RooUnfoldSpec::getResponse(){ this->makeResponse(); return this->_cache._res->func(); }
-RooAbsReal* RooUnfoldSpec::getTruth(){ this->makeTruth(); return this->_cache._truth->func(); }
-RooAbsReal* RooUnfoldSpec::getReco(){ this->makeReco(); return this->_cache._reco->func(); }
-RooAbsReal* RooUnfoldSpec::getDataMinusBackground(){ this->makeDataMinusBackground(); return this->_cache._data_minus_bkg->func(); }
+RooAbsReal* RooUnfoldSpec::getBackground(){
+  //! retrieve the background
+  this->makeBackground(); if(this->_cache._bkg) return this->_cache._bkg->func(); else return NULL;
+}
+RooAbsReal* RooUnfoldSpec::getData(){
+  //! retrieve the background
+  this->makeData(); return this->_cache._data->func(); 
+}
+RooAbsReal* RooUnfoldSpec::getResponse(){
+  //! retrieve the response
+  this->makeResponse(); return this->_cache._res->func(); 
+}
+RooAbsReal* RooUnfoldSpec::getTruth(){
+  //! retrieve the truth
+  this->makeTruth(); return this->_cache._truth->func(); 
+}
+RooAbsReal* RooUnfoldSpec::getReco(){
+  //! retrieve the reconstructed
+  this->makeReco(); return this->_cache._reco->func(); 
+}
+RooAbsReal* RooUnfoldSpec::getDataMinusBackground(){
+  //! retrieve the data minus background
+  this->makeDataMinusBackground(); return this->_cache._data_minus_bkg->func(); 
+}
 
 RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>* RooUnfoldSpec::unfold(Algorithm alg, Double_t regparam){
+  //! create the unfolding object
   this->makeResponse();
   this->makeDataMinusBackground();
 
@@ -751,6 +815,7 @@ void RooUnfoldSpec::lockCheck(){
 }
 
 void RooUnfoldSpec::registerSystematic(Contribution c, const char* name, const TH1* up, const TH1* down){
+  //! register a new shape systematic
   this->lockCheck();
   switch(c){
   case kTruth:
@@ -782,6 +847,7 @@ void RooUnfoldSpec::registerSystematic(Contribution c, const char* name, const T
 }
 
 void RooUnfoldSpec::registerSystematic(Contribution c, const char* name, double up, double down){
+  //! register a new normalization systematic
   this->lockCheck();
   switch(c){
   case kTruth:
@@ -806,7 +872,7 @@ void RooUnfoldSpec::registerSystematic(Contribution c, const char* name, double 
 
 
 RooAbsPdf* RooUnfoldSpec::makePdf(Algorithm alg, Double_t regparam){
-
+  //! create an unfolding pdf
   RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>* unfold = this->unfold(alg, regparam);
 
   RooUnfoldPdf* pdf = new RooUnfoldPdf(this->GetName(),this->GetTitle(),unfold);
@@ -820,6 +886,7 @@ RooAbsPdf* RooUnfoldSpec::makePdf(Algorithm alg, Double_t regparam){
 
 
 RooAbsReal* RooUnfoldSpec::makeFunc(Algorithm alg, Double_t regparam){
+  //! create an unfolding function
   RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>* unfold = this->unfold(alg, regparam);
 
   RooUnfoldFunc* func = new RooUnfoldFunc(this->GetName(),this->GetTitle(),this->unfold(alg, regparam));

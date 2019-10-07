@@ -30,7 +30,7 @@ template<class Hist,class Hist2D>
 RooUnfoldSvdT<Hist,Hist2D>::RooUnfoldSvdT (const RooUnfoldSvdT<Hist,Hist2D>& rhs)
   : RooUnfoldT<Hist,Hist2D> (rhs)
 {
-  // Copy constructor.
+  //! Copy constructor.
   Init();
   CopyData (rhs);
 }
@@ -40,8 +40,8 @@ RooUnfoldSvdT<Hist,Hist2D>::RooUnfoldSvdT (const RooUnfoldResponseT<Hist,Hist2D>
                             const char* name, const char* title)
   : RooUnfoldT<Hist,Hist2D> (res, meas, name, title), _kreg(kreg ? kreg : res->GetNbinsTruth()/2)
 {
-  // Constructor with response matrix object and measured unfolding input histogram.
-  // The regularisation parameter is kreg.
+  //! Constructor with response matrix object and measured unfolding input histogram.
+  //! The regularisation parameter is kreg.
   Init();
 }
 
@@ -50,7 +50,7 @@ RooUnfoldSvdT<Hist,Hist2D>::RooUnfoldSvdT (const RooUnfoldResponseT<Hist,Hist2D>
                             const char* name, const char* title)
   : RooUnfoldT<Hist,Hist2D> (res, meas, name, title), _kreg(kreg ? kreg : res->GetNbinsTruth()/2)
 {
-  // Constructor with old ntoyssvd argument. No longer required.
+  //! Constructor with old ntoyssvd argument. No longer required.
   Init();
   this->_NToys = ntoyssvd;
 }
@@ -211,7 +211,7 @@ RooUnfoldSvdT<Hist,Hist2D>::GetCov() const
 template<class Hist,class Hist2D> void
 RooUnfoldSvdT<Hist,Hist2D>::GetWgt() const
 {
-  // Get weight matrix
+  //! Get weight matrix
   if (this->_dosys) RooUnfoldT<Hist,Hist2D>::GetWgt();   // can't add sys errors to weight, so calculate weight from covariance
   if (!this->_svd) return;
 
@@ -229,27 +229,11 @@ RooUnfoldSvdT<Hist,Hist2D>::GetSettings() const {
     this->_cache._defaultparm=this->_cache._maxparm/2;
 }
 
-template<class Hist,class Hist2D> void
-RooUnfoldSvdT<Hist,Hist2D>::Streamer (TBuffer &R__b)
-{
-  // Stream an object of class RooUnfoldSvdT.
-  if (R__b.IsReading()) {
-    // Don't add our histograms to the currect directory.
-    // We own them and we don't want them to disappear when the file is closed.
-    Bool_t oldstat= TH1::AddDirectoryStatus();
-    TH1::AddDirectory (kFALSE);
-    RooUnfoldSvdT<Hist,Hist2D>::Class()->ReadBuffer  (R__b, this);
-    TH1::AddDirectory (oldstat);
-  } else {
-    RooUnfoldSvdT<Hist,Hist2D>::Class()->WriteBuffer (R__b, this);
-  }
-}
-
 template<class Hist,class Hist2D>
 RooUnfoldSvdT<Hist,Hist2D>::RooUnfoldSvdT()
   : RooUnfoldT<Hist,Hist2D>()
 {
-  // Default constructor. Use Setup() to prepare for unfolding.
+  //! Default constructor. Use Setup() to prepare for unfolding.
   Init();
 }
 
@@ -257,7 +241,7 @@ template<class Hist,class Hist2D>
 RooUnfoldSvdT<Hist,Hist2D>::RooUnfoldSvdT (const char* name, const char* title)
   : RooUnfoldT<Hist,Hist2D>(name,title)
 {
-  // Basic named constructor. Use Setup() to prepare for unfolding.
+  //! Basic named constructor. Use Setup() to prepare for unfolding.
   Init();
 }
 
@@ -265,14 +249,14 @@ template<class Hist,class Hist2D>
 RooUnfoldSvdT<Hist,Hist2D>::RooUnfoldSvdT (const TString& name, const TString& title)
   : RooUnfoldT<Hist,Hist2D>(name,title)
 {
-  // Basic named constructor. Use Setup() to prepare for unfolding.
+  //! Basic named constructor. Use Setup() to prepare for unfolding.
   Init();
 }
 
 template<class Hist,class Hist2D>
 RooUnfoldSvdT<Hist,Hist2D>& RooUnfoldSvdT<Hist,Hist2D>::operator= (const RooUnfoldSvdT<Hist,Hist2D>& rhs)
 {
-  // Assignment operator for copying RooUnfoldSvdT settings.
+  //! Assignment operator for copying RooUnfoldSvdT settings.
   Assign(rhs);
   return *this;
 }
@@ -287,7 +271,7 @@ RooUnfoldSvdT<Hist,Hist2D>::~RooUnfoldSvdT()
 template<class Hist,class Hist2D> void
 RooUnfoldSvdT<Hist,Hist2D>::SetKterm (Int_t kreg)
 {
-  // Set regularisation parameter
+  //! Set regularisation parameter
   this->_kreg= kreg;
 }
 
@@ -295,21 +279,21 @@ RooUnfoldSvdT<Hist,Hist2D>::SetKterm (Int_t kreg)
 template<class Hist,class Hist2D> Int_t
 RooUnfoldSvdT<Hist,Hist2D>::GetKterm() const
 {
-  // Return regularisation parameter
+  //! Return regularisation parameter
   return this->_kreg;
 }
 
 template<class Hist,class Hist2D> void
 RooUnfoldSvdT<Hist,Hist2D>::SetRegParm (Double_t parm)
 {
-  // Set regularisation parameter
+  //! Set regularisation parameter
   SetKterm(Int_t(parm+0.5));
 }
 
 template<class Hist,class Hist2D> Double_t
 RooUnfoldSvdT<Hist,Hist2D>::GetRegParm() const
 {
-  // Return regularisation parameter
+  //! Return regularisation parameter
   return GetKterm();
 }
 
