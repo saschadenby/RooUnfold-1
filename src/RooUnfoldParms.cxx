@@ -164,10 +164,10 @@ RooUnfoldParms::DoMath()
           RooUnfold* unf = (RooUnfold*)unfold->Clone("unfold_toy");
             unf->SetRegParm(k);
             Double_t sq_err_tot=0;
-            TH1* hReco=unf->Hreco(doerror); 
+            TH1* hUnfold=unf->Hunfold(doerror); 
             for (Int_t i= 0; i < nt; i++)
             {
-              sq_err_tot += RooUnfolding::binError (hReco, i, _overflow);
+              sq_err_tot += RooUnfolding::binError (hUnfold, i, _overflow);
             }
             herr->Fill(k,sq_err_tot/nt);
             if (hTrue)
@@ -175,10 +175,10 @@ RooUnfoldParms::DoMath()
                 Double_t rsqt=0;    
                 Double_t res_tot=0;
                 for (int i=0;i<nt;i++){
-                  Int_t j= RooUnfolding::bin (hReco, i, _overflow);
-                    if (hReco->GetBinContent(j)!=0.0 || (hReco->GetBinError(j)>0.0)) 
+                  Int_t j= RooUnfolding::bin (hUnfold, i, _overflow);
+                    if (hUnfold->GetBinContent(j)!=0.0 || (hUnfold->GetBinError(j)>0.0)) 
                     {
-                        Double_t res=hReco->GetBinContent(j) - hTrue->GetBinContent(j);
+                        Double_t res=hUnfold->GetBinContent(j) - hTrue->GetBinContent(j);
                         //cout <<"res="<<res<<endl;
                         Double_t rsq=res*res;
                         rsqt+=rsq;

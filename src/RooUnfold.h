@@ -74,18 +74,18 @@ public:
   virtual RooUnfoldResponseT<Hist,Hist2D>* response();
   virtual const Hist* Hmeasured() const;
   virtual Hist* Hmeasured();
-  virtual Hist* Hreco (RooUnfolding::ErrorTreatment withError=RooUnfolding::kErrors);
-  virtual TH1* TH1reco ();
+  virtual Hist* Hunfold (RooUnfolding::ErrorTreatment withError=RooUnfolding::kErrors);
+  virtual TH1* TH1unfold ();
   virtual TH1* TH1bias ();
 
   const    TVectorD& Vmeasured() const;   // Measured distribution as a TVectorD
   const    TVectorD& Emeasured() const;   // Measured distribution errors as a TVectorD
   const    TMatrixD& GetMeasuredCov() const;   // Measured distribution covariance matrix
 
-  virtual const TVectorD&  Vreco() const;
-  virtual TMatrixD   Ereco  (RooUnfolding::ErrorTreatment witherror=RooUnfolding::kCovariance) const;
-  virtual TVectorD   ErecoV (RooUnfolding::ErrorTreatment witherror=RooUnfolding::kErrors) const;
-  virtual TMatrixD   Wreco  (RooUnfolding::ErrorTreatment witherror=RooUnfolding::kCovariance) const;
+  virtual const TVectorD&  Vunfold() const;
+  virtual TMatrixD   Eunfold  (RooUnfolding::ErrorTreatment witherror=RooUnfolding::kCovariance) const;
+  virtual TVectorD   EunfoldV (RooUnfolding::ErrorTreatment witherror=RooUnfolding::kErrors) const;
+  virtual TMatrixD   Wunfold  (RooUnfolding::ErrorTreatment witherror=RooUnfolding::kCovariance) const;
   
   virtual Int_t      verbose() const;
   virtual void       SetVerbose (Int_t level);

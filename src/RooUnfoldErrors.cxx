@@ -132,8 +132,8 @@ RooUnfoldErrors::CreatePlots()
     TH1::AddDirectory (oldstat);
 
     unfold->SetNToys(toys);
-    const TVectorD errunf= unfold->ErecoV(RooUnfold::kErrors);
-    const TVectorD errtoy= unfold->ErecoV(RooUnfold::kCovToy);
+    const TVectorD errunf= unfold->EunfoldV(RooUnfold::kErrors);
+    const TVectorD errtoy= unfold->EunfoldV(RooUnfold::kCovToy);
     for (int i= 0; i<ntx; i++) {
       h_err    ->SetBinContent(i+1,errunf[i]);
       h_err_res->SetBinContent(i+1,errtoy[i]);
@@ -169,10 +169,10 @@ RooUnfoldErrors::CreatePlotsWithChi2()
     for (int k=0; k<toys;k++){  
         RooUnfold* toy= unfold->RunToy();
         Double_t chi2=       toy->Chi2 (hTrue);
-        const TVectorD reco= toy->Vreco();
-        const TVectorD err=  toy->ErecoV();
+        const TVectorD unfold= toy->Vunfold();
+        const TVectorD err=  toy->EunfoldV();
         for (int i=0; i<ntx; i++) {    
-            graph_vector[i]->Fill(reco[i]);
+            graph_vector[i]->Fill(unfold[i]);
             h_err->Fill(h_err->GetBinCenter(i+1),err[i]);
         } 
         if (hTrue){

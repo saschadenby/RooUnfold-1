@@ -30,8 +30,8 @@ public:
   Double_t effzlo, effzhi, fakezlo, fakezhi, rotxz, rotyz, zbias, zsmear;
 
   // Data
-  TH1D *hTrainZ, *hTrainTrueZ, *hTrainFakeZ, *hTrueZ, *hMeasZ, *hRecoZ, *hFakeZ, *hPullsZ, *hPDFz, *hTestPDFz;
-  TH2D *hTrueXY, *hTrueYZ, *hTrueXZ, *hMeasXY, *hMeasYZ, *hMeasXZ, *hRecoXY, *hRecoYZ, *hRecoXZ;
+  TH1D *hTrainZ, *hTrainTrueZ, *hTrainFakeZ, *hTrueZ, *hMeasZ, *hUnfoldZ, *hFakeZ, *hPullsZ, *hPDFz, *hTestPDFz;
+  TH2D *hTrueXY, *hTrueYZ, *hTrueXZ, *hMeasXY, *hMeasYZ, *hMeasXZ, *hUnfoldXY, *hUnfoldYZ, *hUnfoldXZ;
 
   // Constructors
   RooUnfoldTestHarness3D (const char* name= "RooUnfoldTest3D");

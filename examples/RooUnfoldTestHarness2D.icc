@@ -229,13 +229,13 @@ void RooUnfoldTestHarness2D::Results()
   setmax (hTrueX, hTestPDFx, hMeasX, hFakeX);
   setmax (hTrueY, hTestPDFy, hMeasY, hFakeY);
 
-  if (hReco) {
-    hRecoX= ProjectionX (hReco, "hRecoX", "Reconstructed X", "E");
-    hRecoY= ProjectionY (hReco, "hRecoY", "Reconstructed Y", "E");
-    hRecoX->SetMarkerStyle(kFullDotLarge);
-    hRecoY->SetMarkerStyle(kFullDotLarge);
-    setmax (hTrueX, hRecoX);
-    setmax (hTrueY, hRecoY);
+  if (hUnfold) {
+    hUnfoldX= ProjectionX (hUnfold, "hUnfoldX", "Unfolded X", "E");
+    hUnfoldY= ProjectionY (hUnfold, "hUnfoldY", "Unfolded Y", "E");
+    hUnfoldX->SetMarkerStyle(kFullDotLarge);
+    hUnfoldY->SetMarkerStyle(kFullDotLarge);
+    setmax (hTrueX, hUnfoldX);
+    setmax (hTrueY, hUnfoldY);
   }
 
   if (onepage && ipad>=onepage) return;
@@ -244,8 +244,8 @@ void RooUnfoldTestHarness2D::Results()
   hTestPDFx->Draw("LSAME");
   hMeasX   ->Draw("SAME");
   if (hFakeX) hFakeX->Draw("SAME");
-  if (hRecoX) hRecoX->Draw("SAME");
-  Legend (lTest, hTestPDFx, hTrueX, hFakeX, hMeasX, hRecoX);
+  if (hUnfoldX) hUnfoldX->Draw("SAME");
+  Legend (lTest, hTestPDFx, hTrueX, hFakeX, hMeasX, hUnfoldX);
   canvas->Update();
 
   if (onepage && ipad>=onepage) return;
@@ -254,7 +254,7 @@ void RooUnfoldTestHarness2D::Results()
   hTestPDFy->Draw("LSAME");
   hMeasY   ->Draw("SAME");
   if (hFakeY) hFakeY->Draw("SAME");
-  if (hRecoY) hRecoY->Draw("SAME");
+  if (hUnfoldY) hUnfoldY->Draw("SAME");
   
   lTest->Draw();
   canvas->Update();
@@ -269,11 +269,11 @@ void RooUnfoldTestHarness2D::Results()
   hMeas->Draw();
   canvas->Update();
 
-  if (!hReco) return;
+  if (!hUnfold) return;
 
   if (onepage && ipad>=onepage) return;
   if (onepage) canvas->cd(++ipad);
-  hReco->Draw();
+  hUnfold->Draw();
   canvas->Update();
 
   if (onepage && ipad>=onepage) return;
@@ -287,9 +287,9 @@ void RooUnfoldTestHarness2D::Results()
     Double_t minpull= 0.0, maxpull= 0.0;
     for (Int_t ix= 2; ix<=ntx-1; ix++) {
       for (Int_t iy= 2; iy<=nty-1; iy++) {
-        if ( hReco->GetBinContent(ix,iy)!=0.0             && hReco->GetBinError(ix,iy)>0.0 &&
+        if ( hUnfold->GetBinContent(ix,iy)!=0.0             && hUnfold->GetBinError(ix,iy)>0.0 &&
             (hTrue->GetBinContent(ix,iy)!=0.0 || (doerror && hTrue->GetBinError(ix,iy)>0.0))) {
-          Double_t pull= (hReco->GetBinContent(ix,iy) - hTrue->GetBinContent(ix,iy)) / hReco->GetBinError(ix,iy);
+          Double_t pull= (hUnfold->GetBinContent(ix,iy) - hTrue->GetBinContent(ix,iy)) / hUnfold->GetBinError(ix,iy);
           if (!kilroy || pull < minpull) minpull= pull;
           if (!kilroy || pull > maxpull) maxpull= pull;
           kilroy++;
@@ -315,11 +315,11 @@ void RooUnfoldTestHarness2D::Results()
   hPullsY= new TProfile ("hPullsY", "Pulls Y", nty, ylo, yhi);
   for (Int_t ix= 1; ix<=ntx; ix++) {
     for (Int_t iy= 1; iy<=nty; iy++) {
-      if ( hReco->GetBinContent(ix,iy)!=0.0             && hReco->GetBinError(ix,iy)>0.0 &&
+      if ( hUnfold->GetBinContent(ix,iy)!=0.0             && hUnfold->GetBinError(ix,iy)>0.0 &&
           (hTrue->GetBinContent(ix,iy)!=0.0 || (doerror && hTrue->GetBinError(ix,iy)>0.0))) {
-        Double_t pull= (hReco->GetBinContent(ix,iy) - hTrue->GetBinContent(ix,iy)) / hReco->GetBinError(ix,iy);
-        hPullsX->Fill (hReco->GetXaxis()->GetBinCenter(ix), pull);
-        hPullsY->Fill (hReco->GetYaxis()->GetBinCenter(iy), pull);
+        Double_t pull= (hUnfold->GetBinContent(ix,iy) - hTrue->GetBinContent(ix,iy)) / hUnfold->GetBinError(ix,iy);
+        hPullsX->Fill (hUnfold->GetXaxis()->GetBinCenter(ix), pull);
+        hPullsY->Fill (hUnfold->GetYaxis()->GetBinCenter(iy), pull);
       }
     }
   }
@@ -413,8 +413,8 @@ RooUnfoldTestHarness2D::RooUnfoldTestHarness2D (const char* name, const char* ar
 void RooUnfoldTestHarness2D::Reset()
 {
   RooUnfoldTestHarness::Reset();
-  hTrainX= hTrainTrueX= hTrueX= hTrainFakeX= hFakeX= hMeasX= hRecoX= hPullsX=
-  hTrainY= hTrainTrueY= hTrueY= hTrainFakeY= hFakeY= hMeasY= hRecoY= hPullsY= hPDFy= hTestPDFy= 0;
+  hTrainX= hTrainTrueX= hTrueX= hTrainFakeX= hFakeX= hMeasX= hUnfoldX= hPullsX=
+  hTrainY= hTrainTrueY= hTrueY= hTrainFakeY= hFakeY= hMeasY= hUnfoldY= hPullsY= hPDFy= hTestPDFy= 0;
   dim= 2;
 }
 
