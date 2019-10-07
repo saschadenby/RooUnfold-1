@@ -94,6 +94,13 @@ RooUnfoldSvdT<Hist,Hist2D>::SVDUnfold::SVDUnfold( const Hist *bdat, const Hist *
     fToyMode    (kFALSE),
     fMatToyMode (kFALSE)
 {
+   //! Constructor
+   //! Initialisation of unfolding
+   //! "bdat" - measured data distribution (number of events)
+   //! "Bcov" - covariance matrix for measured data distribution
+   //! "bini" - reconstructed MC distribution (number of events)
+   //! "xini" - truth MC distribution (number of events)
+   //! "Adet" - detector response matrix (number of events)
 
   if(sumW2N(Adet)){
     h2me<Hist2D>(Adet,fAdet);

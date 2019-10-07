@@ -1,12 +1,7 @@
 //=====================================================================-*-C++-*-
-// File and Version Information:
-//      $Id$
-//
-// Description:
-//      Bayesian unfolding. Just an interface to RooUnfoldBayesImpl.
-//
-// Author: Tim Adye <T.J.Adye@rl.ac.uk>
-//
+//! \class RooUnfoldBayesT
+//! \brief Bayesian unfolding. Just an interface to RooUnfoldBayesImpl.
+//! \author Tim Adye <T.J.Adye@rl.ac.uk>
 //==============================================================================
 
 #ifndef ROOUNFOLDBAYES_HH
@@ -49,7 +44,6 @@ public:
   virtual double GetRegParm() const;
   virtual void Reset();
   virtual void Print (Option_t* option= "") const;
-  virtual RooUnfolding::Algorithm GetMethod() const override;
 
 protected:
   void Assign (const RooUnfoldBayesT<Hist,Hist2D>& rhs); // implementation of assignment operator
@@ -99,8 +93,12 @@ public:
 };
 
 
+//! \class RooUnfoldBayes 
+//! \brief specialization of RooUnfoldBayes for TH1/TH2 objects
 typedef RooUnfoldBayesT<TH1,TH2> RooUnfoldBayes;
 #ifndef NOROOFIT
+//! \class RooFitUnfoldBayes
+//! \brief specialization of RooUnfoldBayesT for RooAbsReal objects
 typedef RooUnfoldBayesT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist> RooFitUnfoldBayes;
 #endif
 

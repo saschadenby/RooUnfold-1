@@ -154,11 +154,6 @@ RooUnfoldT<Hist,Hist2D>::RooUnfoldT (const RooUnfoldResponseT<Hist,Hist2D>* res,
   Setup (res, meas);
 }
 
-template<class Hist,class Hist2D> Algorithm
-RooUnfoldT<Hist,Hist2D>::GetMethod() const {
-  return kNone;
-}
-
 template<class Hist,class Hist2D> RooUnfoldT<Hist,Hist2D>*
 RooUnfoldT<Hist,Hist2D>::New (RooUnfolding::Algorithm alg, const RooUnfoldResponseT<Hist,Hist2D>* res, const Hist* meas,Double_t regparm,
                            const char* name, const char* title)
@@ -560,7 +555,7 @@ RooUnfoldT<Hist,Hist2D>::GetErrMat() const
 template<class Hist,class Hist2D> void
 RooUnfoldT<Hist,Hist2D>::CalculateBias(Int_t ntoys, const Hist* hTrue) const
 {
-
+  //! TODO: document
   if (ntoys<=1) return;
   _cache._bias.ResizeTo(_nt);
   _cache._sigbias.ResizeTo(_nt);
@@ -667,7 +662,7 @@ RooUnfoldT<Hist,Hist2D>::UnfoldWithErrors (ErrorTreatment withError, bool getWei
 
 template<class Hist,class Hist2D> Double_t
 RooUnfoldT<Hist,Hist2D>::Chi2(const Hist* hTrue,ErrorTreatment DoChi2) const {
-    /*Calculates Chi squared. Method depends on value of DoChi2
+    /*!Calculates Chi squared. Method depends on value of DoChi2
     0: sum of (residuals/error)squared
     1: use errors propagated through the unfolding
     2: use covariance matrix returned from unfolding
@@ -758,7 +753,7 @@ RooUnfoldT<Hist,Hist2D>::SetNameTitleDefault()
 template<class Hist,class Hist2D> Hist*
 RooUnfoldT<Hist,Hist2D>::Hunfold (ErrorTreatment withError)
 {
-    /*Creates unfolded distribution. Error calculation varies by withError:
+    /*!Creates unfolded distribution. Error calculation varies by withError:
     0: No errors
     1: Errors from the square root of the diagonals of the covariance matrix given by the unfolding
     2: Errors from the square root of of the covariance matrix given by the unfolding
@@ -778,7 +773,7 @@ RooUnfoldT<Hist,Hist2D>::Hunfold (ErrorTreatment withError)
 
 template<class Hist,class Hist2D> TH1*
 RooUnfoldT<Hist,Hist2D>::TH1unfold() {
-
+  //! TODO: document
   Double_t min = RooUnfolding::min(this->response()->Htruth(),RooUnfolding::X);
   Double_t max = RooUnfolding::max(this->response()->Htruth(),RooUnfolding::X);
   Int_t nbins;
@@ -807,7 +802,7 @@ RooUnfoldT<Hist,Hist2D>::TH1unfold() {
 
 template<class Hist, class Hist2D> TH1*
 RooUnfoldT<Hist,Hist2D>::TH1bias() {
-
+  //! TODO: document
   Double_t min = RooUnfolding::min(this->response()->Hmeasured(),RooUnfolding::X);
   Double_t max = RooUnfolding::max(this->response()->Hmeasured(),RooUnfolding::X);
 
@@ -924,6 +919,7 @@ RooUnfoldT<Hist,Hist2D>::RunToy() const
 template<class Hist,class Hist2D> void
 RooUnfoldT<Hist,Hist2D>::Print(Option_t* /*opt*/) const
 {
+  //! print a summary of the configuration
   cout << ClassName() << "::" << GetName() << " \"" << GetTitle()
        << "\"," << " regularisation parameter=" << GetRegParm() << ", ";
   if (_covMes) cout << "with measurement covariance, ";
@@ -953,6 +949,7 @@ RooUnfoldT<Hist,Hist2D>::Print(Option_t* /*opt*/) const
 
 template<class Hist,class Hist2D> void
 RooUnfoldT<Hist,Hist2D>::Dump() const {
+  //! dump the contents of the member variables
   std::cout << "covMes=" <<  _covMes << std::endl;
   std::cout << "verbose=" <<  _verbose << std::endl;
   std::cout << "nm=" <<  _nm << std::endl;
@@ -1002,7 +999,7 @@ RooUnfoldT<Hist,Hist2D>::CutZeros(const TMatrixD& ereco)
 template<class Hist,class Hist2D> TMatrixD
 RooUnfoldT<Hist,Hist2D>::Eunfold(ErrorTreatment withError) const
 {
-    /*Returns covariance matrices for error calculation of type withError
+    /*!Returns covariance matrices for error calculation of type withError
     0: Errors are the square root of the bin content
     1: Errors from the diagonals of the covariance matrix given by the unfolding
     2: Errors from the covariance matrix given by the unfolding
@@ -1040,7 +1037,7 @@ RooUnfoldT<Hist,Hist2D>::Eunfold(ErrorTreatment withError) const
 template<class Hist,class Hist2D> TVectorD
 RooUnfoldT<Hist,Hist2D>::EunfoldV(ErrorTreatment withError) const
 {
-    /*Returns vector of unfolding errors computed according to the withError flag:
+    /*!Returns vector of unfolding errors computed according to the withError flag:
     0: Errors are the square root of the bin content
     1: Errors from the diagonals of the covariance matrix given by the unfolding
     2: Errors from the covariance matrix given by the unfolding
@@ -1080,6 +1077,7 @@ RooUnfoldT<Hist,Hist2D>::EunfoldV(ErrorTreatment withError) const
 template<class Hist,class Hist2D> TMatrixD
 RooUnfoldT<Hist,Hist2D>::Wunfold(ErrorTreatment withError) const
 {
+  //! TODO: document
     TMatrixD Wunfold_m(_nt,_nt);
     if (!UnfoldWithErrors (withError, true)) return Wunfold_m;
 
@@ -1348,15 +1346,15 @@ void  RooUnfoldT<Hist,Hist2D>::SetRegParm (Double_t regparm)
 template<class Hist,class Hist2D> 
 Double_t RooUnfoldT<Hist,Hist2D>::GetRegParm() const
 {
-  // Get regularisation parameter.
+  //! Get regularisation parameter.
   return -1;
 }
 
 template<class Hist,class Hist2D> 
 void RooUnfoldT<Hist,Hist2D>::IncludeSystematics (Int_t dosys)
 {
-  // Include systematic errors from response matrix?
-  // Use dosys=2 to exclude measurement errors.
+  //! Include systematic errors from response matrix?
+  //! Use dosys=2 to exclude measurement errors.
   if (dosys!=_dosys){
     _cache = Cache();
     _dosys= dosys;
@@ -1366,7 +1364,7 @@ void RooUnfoldT<Hist,Hist2D>::IncludeSystematics (Int_t dosys)
 template<class Hist,class Hist2D> 
 Int_t RooUnfoldT<Hist,Hist2D>::SystematicsIncluded() const
 {
-  // return setting for whether to include systematic errors from response matrix
+  //! return setting for whether to include systematic errors from response matrix
   return _dosys;
 }
 

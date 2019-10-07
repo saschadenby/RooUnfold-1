@@ -1,24 +1,10 @@
-//=====================================================================-*-C++-*-
-// File and Version Information:
-//      $Id$
-//
-// Description:
-//      SVD unfolding. Just an interface to TSVDUnfold.
-//
-// Author: Tim Adye <T.J.Adye@rl.ac.uk>
-//
-//==============================================================================
-
-//____________________________________________________________
-/* BEGIN_HTML
-<p>Links to TSVDUnfold class which unfolds using Singular Value Decomposition (SVD).</p>
-<p>Regularisation parameter defines the level at which values are deemed to be due to statistical fluctuations and are cut out. (Default= number of bins/2)
-<p>Returns errors as a full matrix of covariances
-<p>Can only handle 1 dimensional distributions
-<p>Can account for both smearing and biasing
-END_HTML */
-
-/////////////////////////////////////////////////////////////
+/*! \class RooUnfoldSvdT
+Links to TSVDUnfold class which unfolds using Singular Value Decomposition (SVD).
+Regularisation parameter defines the level at which values are deemed to be due to statistical fluctuations and are cut out. (Default= number of bins/2)
+Returns errors as a full matrix of covariances
+Can only handle 1 dimensional distributions
+Can account for both smearing and biasing
+*/
 
 #include "RooUnfoldSvd.h"
 

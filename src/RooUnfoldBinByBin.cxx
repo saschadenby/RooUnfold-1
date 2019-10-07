@@ -1,25 +1,9 @@
-//=====================================================================-*-C++-*-
-// File and Version Information:
-//      $Id$
-//
-// Description:
-//      Unfolding class using the bin by bin method of conversion factors. 
-//
-// Authors: Richard Claridge <richard.claridge@stfc.ac.uk> & Tim Adye <T.J.Adye@rl.ac.uk>
-//
-//==============================================================================
-
-//____________________________________________________________
-/* BEGIN_HTML
-<p> Uses the correction factor method to unfold the distribution by looking at each bin individually.</p>
-<p> This method cannot account for bin migration and as such cannot unfold reliably if a bias/smearing effects are applied.</p>
-<p>Can only handle 1 dimensional distributions
-<p>True and measured distributions must have the same binning
-END_HTML */
-
-/////////////////////////////////////////////////////////////
-
-//Comment
+/*! \class RooUnfoldBinByBinT
+Uses the correction factor method to unfold the distribution by looking at each bin individually.
+This method cannot account for bin migration and as such cannot unfold reliably if a bias/smearing effects are applied.
+Can only handle 1 dimensional distributions
+True and measured distributions must have the same binning
+*/
 
 #include "RooUnfoldBinByBin.h"
 #include "RooUnfoldHelpers.h"
