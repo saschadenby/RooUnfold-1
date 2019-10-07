@@ -97,8 +97,6 @@ public:
   virtual Int_t      Overflow() const;
   virtual void       PrintTable (std::ostream& o, const Hist* hTrue= 0, RooUnfolding::ErrorTreatment withError=RooUnfolding::kDefault) const;
   virtual void       SetRegParm (Double_t parm);
-  virtual void       SetRangeReco(Int_t obs, Double_t min, Double_t max);
-  virtual void       SetRangeTruth(Int_t obs, Double_t min, Double_t max);
   virtual Double_t   GetRegParm() const; // Get Regularisation Parameter
   Double_t Chi2 (const Hist* hTrue,RooUnfolding::ErrorTreatment DoChi2=RooUnfolding::kCovariance) const;
   virtual void CalculateBias(Int_t ntoys = 50, const Hist* hTrue = 0) const; // Estimate bias by throwing toys.
@@ -172,10 +170,6 @@ protected:
   Int_t    _verbose;                       // Debug print level
   Int_t    _nm;                            // Total number of measured bins (including under/overflows if _overflow set)
   Int_t    _nt;                            // Total number of truth    bins (including under/overflows if _overflow set
-  std::vector<Double_t> _truth_min;
-  std::vector<Double_t> _truth_max;
-  std::vector<Double_t> _reco_min;
-  std::vector<Double_t> _reco_max;
   Int_t    _overflow;                      // Use histogram under/overflows if 1 (set from RooUnfoldResponse)
   Int_t    _NToys;                         // Number of toys to be used
   Int_t    _dosys;                         // include systematic errors from response matrix? use _dosys=2 to exclude measurement errors

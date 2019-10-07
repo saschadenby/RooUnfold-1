@@ -1,6 +1,4 @@
 //=====================================================================-*-C++-*-
-// File and Version Information:
-//      $Id$
 //
 // Description:
 //      Bayesian unfolding.
@@ -10,7 +8,7 @@
 //==============================================================================
 
 //____________________________________________________________
-/* BEGIN_HTML
+/*!
 <p>Links to the RooUnfoldBayesImpl class which uses Bayesian unfolding to reconstruct the truth distribution.</p>
 <p>Works for 2 and 3 dimensional distributions
 <p>Returned errors can be either as a diagonal matrix or as a full matrix of covariances
@@ -18,7 +16,7 @@
 <p>Is able to account for bin migration and smearing
 <p>Can unfold if test and measured distributions have different binning.
 <p>Returns covariance matrices with conditions approximately that of the machine precision. This occasionally leads to very large chi squared values
-END_HTML */
+*/
 
 /////////////////////////////////////////////////////////////
 
