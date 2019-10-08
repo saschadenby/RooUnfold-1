@@ -31,7 +31,6 @@ public:
   virtual Double_t GetRegParm() const;
 
   virtual void Reset();
-  virtual RooUnfolding::Algorithm GetMethod() const override;
 
 protected:
   void Assign (const RooUnfoldDagostini& rhs); // implementation of assignment operator
