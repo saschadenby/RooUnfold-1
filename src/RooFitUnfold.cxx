@@ -16,6 +16,7 @@
 #include "RooStats/HistFactory/FlexibleInterpVar.h"
 #include "RooStats/HistFactory/ParamHistFunc.h"
 #include "RooProduct.h"
+#include "RooWrapperPdf.h"
 #include "RooBinning.h"
 
 
@@ -37,7 +38,7 @@ namespace {
   }
 }
 
-template<class Base>RooUnfolding::RooFitWrapper<Base>::RooFitWrapper(const char* name, const char* title, const RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>* unf) : Base(name,title){
+RooUnfoldFitWrapper::RooUnfoldFitWrapper(const char* name, const char* title, const RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>* unf) : RooAbsReal(name,title){
   //! constructor
   auto unfolding = RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>::New(unf->GetAlgorithm(),unf->response(),unf->Hmeasured(),unf->GetRegParm(),unf->GetName(),unf->GetTitle());
   this->_unfolding = dynamic_cast<RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>*>(unfolding);
@@ -82,20 +83,22 @@ template<class Base>RooUnfolding::RooFitWrapper<Base>::RooFitWrapper(const char*
     }
   }
 }
-RooUnfoldFunc::RooUnfoldFunc(const char* name, const char* title, const RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>* unf) : RooFitWrapper(name,title,unf) {
+//RooUnfoldFunc::RooUnfoldFunc(const char* name, const char* title, const RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>* unf) : RooUnfoldFitWrapper(name,title,unf) {
+//  //! constructor
+//}
+//RooUnfoldPdf::RooUnfoldPdf(const char* name, const char* title, const RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>* unf) : RooUnfoldFitWrapper(name,title,unf) {
+//  //! constructor
+//}
+RooUnfoldFitWrapper::RooUnfoldFitWrapper() : _unfolding(NULL) {
   //! constructor
 }
-RooUnfoldPdf::RooUnfoldPdf(const char* name, const char* title, const RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>* unf) : RooFitWrapper(name,title,unf) {
-  //! constructor
-}
-template<class Base>RooUnfolding::RooFitWrapper<Base>::RooFitWrapper() : _unfolding(NULL) {
-  //! constructor
-}
-template<class Base>RooUnfolding::RooFitWrapper<Base>::~RooFitWrapper(){
+RooUnfoldFitWrapper::~RooUnfoldFitWrapper(){
   //! destructor
   delete _unfolding;
 }
-template<class Base> Bool_t RooUnfolding::RooFitWrapper<Base>::redirectServersHook(const RooAbsCollection& newServerList, Bool_t mustReplaceAll, Bool_t nameChange, Bool_t isRecursive){
+
+
+Bool_t RooUnfoldFitWrapper::redirectServersHook(const RooAbsCollection& newServerList, Bool_t mustReplaceAll, Bool_t nameChange, Bool_t isRecursive){
   //! redirect servers
   RooUnfoldResponseT<RooFitHist,RooFitHist>* res = this->_unfolding->response();
   if(res){
@@ -120,40 +123,36 @@ template<class Base> Bool_t RooUnfolding::RooFitWrapper<Base>::redirectServersHo
   if(hmeasured){
     hmeasured->replace(newServerList);
   }
-  return Base::redirectServersHook(newServerList,mustReplaceAll,nameChange,isRecursive);
+  return RooAbsReal::redirectServersHook(newServerList,mustReplaceAll,nameChange,isRecursive);
 }
  
 
 
 
 
-template<class Base>const RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>* RooUnfolding::RooFitWrapper<Base>::unfolding() const { 
+const RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>* RooUnfoldFitWrapper::unfolding() const { 
   //! retrieve the unfolding object
   return this->_unfolding;
 }
 
-template <class Base>
-std::list<Double_t>* RooUnfolding::RooFitWrapper<Base>::binBoundaries(RooAbsRealLValue& obs, Double_t xlo, Double_t xhi) const {
+std::list<Double_t>* RooUnfoldFitWrapper::binBoundaries(RooAbsRealLValue& obs, Double_t xlo, Double_t xhi) const {
   //! retrieve the list of bin boundaries
   return this->_unfolding->response()->Htruth()->func()->binBoundaries(obs,xlo,xhi);
 }
 
-template <class Base>
-std::list<Double_t>* RooUnfolding::RooFitWrapper<Base>::plotSamplingHint(RooAbsRealLValue& obs, Double_t xlo, Double_t xhi) const {
+std::list<Double_t>* RooUnfoldFitWrapper::plotSamplingHint(RooAbsRealLValue& obs, Double_t xlo, Double_t xhi) const {
   //! retrieve the sampling hint
   return this->_unfolding->response()->Htruth()->func()->plotSamplingHint(obs,xlo,xhi);
 }
 
-template <class Base>
-Double_t RooUnfolding::RooFitWrapper<Base>::getValV(const RooArgSet* set) const
+Double_t RooUnfoldFitWrapper::getValV(const RooArgSet* set) const
 {
   //! return the value
   this->_curNormSet = set ;
-  return Base::getValV(set) ;
+  return RooAbsReal::getValV(set) ;
 }
 
-template <class Base>
-Double_t RooUnfolding::RooFitWrapper<Base>::evaluate() const {
+Double_t RooUnfoldFitWrapper::evaluate() const {
   //! call getVal on the internal function
   std::map<std::string,double> snapshot;
   this->_unfolding->response()->Hresponse()->saveSnapshot(snapshot);
@@ -168,32 +167,31 @@ Double_t RooUnfolding::RooFitWrapper<Base>::evaluate() const {
   return v;  
 }
 
-template <class Base>
-Bool_t  RooUnfolding::RooFitWrapper<Base>::isBinnedDistribution(const RooArgSet& obs) const {
+Bool_t  RooUnfoldFitWrapper::isBinnedDistribution(const RooArgSet& obs) const {
   //! check if this PDF is a binned distribution in the given observable
   return this->_unfolding->response()->Hresponse()->func()->isBinnedDistribution(obs);
 }
 
-template<class Base>
-Bool_t RooUnfolding::RooFitWrapper<Base>::checkObservables(const RooArgSet *nset) const {
+
+Bool_t RooUnfoldFitWrapper::checkObservables(const RooArgSet *nset) const {
   //! call checkOvservables on the response
   return this->_unfolding->response()->Hresponse()->func()->checkObservables(nset);
 }
 
-template<class Base>
-Bool_t RooUnfolding::RooFitWrapper<Base>::forceAnalyticalInt(const RooAbsArg &arg) const {
+
+Bool_t RooUnfoldFitWrapper::forceAnalyticalInt(const RooAbsArg &arg) const {
   //! force the analytical integral
   return this->_unfolding->response()->Htruth()->func()->forceAnalyticalInt(arg);
 }
 
-template<class Base>
-Int_t RooUnfolding::RooFitWrapper<Base>::getAnalyticalIntegralWN(RooArgSet &allVars, RooArgSet &numVars, const RooArgSet *normSet, const char *rangeName) const {
+
+Int_t RooUnfoldFitWrapper::getAnalyticalIntegralWN(RooArgSet &allVars, RooArgSet &numVars, const RooArgSet *normSet, const char *rangeName) const {
   //! retrieve the analytical integral status
   return this->_unfolding->response()->Htruth()->func()->getAnalyticalIntegralWN(allVars,numVars,normSet,rangeName);
 }
 
-template<class Base>
-Double_t RooUnfolding::RooFitWrapper<Base>::analyticalIntegralWN(Int_t code, const RooArgSet *normSet, const char *rangeName) const {
+
+Double_t RooUnfoldFitWrapper::analyticalIntegralWN(Int_t code, const RooArgSet *normSet, const char *rangeName) const {
   //! retrieve the analytical integral status
   double val = 0;
   auto vec = this->_unfolding->Vunfold();
@@ -204,77 +202,77 @@ Double_t RooUnfolding::RooFitWrapper<Base>::analyticalIntegralWN(Int_t code, con
   return val;
 }
 
-template<class Base>
-void RooUnfolding::RooFitWrapper<Base>::printMetaArgs(std::ostream &os) const {
+
+void RooUnfoldFitWrapper::printMetaArgs(std::ostream &os) const {
   //! printing helper function
   return this->_unfolding->response()->Htruth()->func()->printMetaArgs(os);
 }
 
-template<class Base>
-RooAbsArg::CacheMode RooUnfolding::RooFitWrapper<Base>::canNodeBeCached() const {
+
+RooAbsArg::CacheMode RooUnfoldFitWrapper::canNodeBeCached() const {
   return this->_unfolding->response()->Htruth()->func()->canNodeBeCached();
 }
-template<class Base>
-void RooUnfolding::RooFitWrapper<Base>::setCacheAndTrackHints(RooArgSet& arg) {
+
+void RooUnfoldFitWrapper::setCacheAndTrackHints(RooArgSet& arg) {
   this->_unfolding->response()->Htruth()->func()->setCacheAndTrackHints(arg);
 }
-template<class Base> TObject* RooUnfolding::RooFitWrapper<Base>::clone(const char* newname) const {
+TObject* RooUnfoldFitWrapper::clone(const char* newname) const {
   //! produce a clone (deep copy) of this object
-  return new RooUnfolding::RooFitWrapper<Base>(newname ? newname : this->GetName(),this->GetTitle(),this->_unfolding);
+  return new RooUnfoldFitWrapper(newname ? newname : this->GetName(),this->GetTitle(),this->_unfolding);
 }
 
 
 
-template class RooUnfolding::RooFitWrapper<RooAbsReal>;
-template class RooUnfolding::RooFitWrapper<RooAbsPdf>;
-
-RooUnfoldFunc::RooUnfoldFunc() : RooFitWrapper() {
-  //! constructor
-}
-RooUnfoldFunc::~RooUnfoldFunc() {
-  //! destructor
-}
-TObject* RooUnfoldFunc::clone(const char* newname) const {
-  //! produce a clone (deep copy) of this object
-  return new RooUnfoldFunc(newname ? newname : this->GetName(),this->GetTitle(),this->_unfolding);
-}
-ClassImp (RooUnfoldFunc)
-RooUnfoldPdf::RooUnfoldPdf() : RooFitWrapper() {
-  //! constructor
-}
-RooUnfoldPdf::~RooUnfoldPdf( ) {
-  //! destructor
-}
-TObject* RooUnfoldPdf::clone(const char* newname) const {
-  //! produce a clone (deep copy) of this object
-  RooUnfoldPdf* retval = new RooUnfoldPdf(newname ? newname : this->GetName(),this->GetTitle(),this->_unfolding);
-  return retval;
-}
-ClassImp (RooUnfoldPdf)
-
-RooAbsPdf::ExtendMode RooUnfoldPdf::extendMode() const {
-  //! Return extended mode capabilities
-  return RooAbsPdf::MustBeExtended;
-}
-Double_t RooUnfoldPdf::expectedEvents(const RooArgSet* nset) const {
-  //! Return expected number of events for extended likelihood calculation
-  //! which is the sum of all coefficients
-  std::map<std::string,double> snapshot;
-  this->_unfolding->response()->Hresponse()->saveSnapshot(snapshot);
-  this->_unfolding->ForceRecalculation();
-  this->_unfolding->response()->Htruth()->checkValidity();
-  double events = 0;
-  const auto vec(this->_unfolding->Vunfold());
-  for(int bin = 0; bin<vec.GetNrows(); ++bin){
-    events += vec[bin];
-  }
-  this->_unfolding->response()->Hresponse()->loadSnapshot(snapshot);
-  return events;
-}
-Bool_t RooUnfoldPdf::selfNormalized() const {
-  //! P.d.f is self normalized
-  return kTRUE ;
-}
+//template class RooUnfolding::RooUnfoldFitWrapper<RooAbsReal>;
+//template class RooUnfolding::RooUnfoldFitWrapper<RooAbsPdf>;
+//
+//RooUnfoldFunc::RooUnfoldFunc() : RooUnfoldFitWrapper() {
+//  //! constructor
+//}
+//RooUnfoldFunc::~RooUnfoldFunc() {
+//  //! destructor
+//}
+//TObject* RooUnfoldFunc::clone(const char* newname) const {
+//  //! produce a clone (deep copy) of this object
+//  return new RooUnfoldFunc(newname ? newname : this->GetName(),this->GetTitle(),this->_unfolding);
+//}
+//ClassImp (RooUnfoldFunc)
+//RooUnfoldPdf::RooUnfoldPdf() : RooUnfoldFitWrapper() {
+//  //! constructor
+//}
+//RooUnfoldPdf::~RooUnfoldPdf( ) {
+//  //! destructor
+//}
+//TObject* RooUnfoldPdf::clone(const char* newname) const {
+//  //! produce a clone (deep copy) of this object
+//  RooUnfoldPdf* retval = new RooUnfoldPdf(newname ? newname : this->GetName(),this->GetTitle(),this->_unfolding);
+//  return retval;
+//}
+//ClassImp (RooUnfoldPdf)
+//
+//RooAbsPdf::ExtendMode RooUnfoldPdf::extendMode() const {
+//  //! Return extended mode capabilities
+//  return RooAbsPdf::MustBeExtended;
+//}
+//Double_t RooUnfoldPdf::expectedEvents(const RooArgSet* nset) const {
+//  //! Return expected number of events for extended likelihood calculation
+//  //! which is the sum of all coefficients
+//  std::map<std::string,double> snapshot;
+//  this->_unfolding->response()->Hresponse()->saveSnapshot(snapshot);
+//  this->_unfolding->ForceRecalculation();
+//  this->_unfolding->response()->Htruth()->checkValidity();
+//  double events = 0;
+//  const auto vec(this->_unfolding->Vunfold());
+//  for(int bin = 0; bin<vec.GetNrows(); ++bin){
+//    events += vec[bin];
+//  }
+//  this->_unfolding->response()->Hresponse()->loadSnapshot(snapshot);
+//  return events;
+//}
+//Bool_t RooUnfoldPdf::selfNormalized() const {
+//  //! P.d.f is self normalized
+//  return kTRUE ;
+//}
 
 namespace {
   bool readToken(TString& instr, std::vector<TString>& tokens){
@@ -873,14 +871,11 @@ void RooUnfoldSpec::registerSystematic(Contribution c, const char* name, double 
 
 RooAbsPdf* RooUnfoldSpec::makePdf(Algorithm alg, Double_t regparam){
   //! create an unfolding pdf
-  RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>* unfold = this->unfold(alg, regparam);
-
-  RooUnfoldPdf* pdf = new RooUnfoldPdf(this->GetName(),this->GetTitle(),unfold);
+  RooAbsReal* func = this->makeFunc(alg,regparam);
+  RooWrapperPdf* pdf = new RooWrapperPdf(TString::Format("%s_pdf",func->GetName()),TString::Format("%s Pdf",func->GetTitle()),*func);
   RooProdPdf* constraints = this->makeConstraints();
   RooArgList comps(*pdf,*constraints);
   RooProdPdf* prod = new RooProdPdf(TString::Format("%s_x_constraints",this->GetName()),"Unfolding pdf, including constraints",comps);
-  
-  delete unfold;
   return prod;
 }
 
@@ -888,9 +883,7 @@ RooAbsPdf* RooUnfoldSpec::makePdf(Algorithm alg, Double_t regparam){
 RooAbsReal* RooUnfoldSpec::makeFunc(Algorithm alg, Double_t regparam){
   //! create an unfolding function
   RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>* unfold = this->unfold(alg, regparam);
-
-  RooUnfoldFunc* func = new RooUnfoldFunc(this->GetName(),this->GetTitle(),this->unfold(alg, regparam));
-
+  RooAbsReal* func = new RooUnfoldFitWrapper(this->GetName(),this->GetTitle(),this->unfold(alg, regparam));
   delete unfold;
   return func;
 }

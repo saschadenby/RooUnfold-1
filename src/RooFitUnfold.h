@@ -120,72 +120,70 @@ protected:
   ClassDef(RooUnfoldSpec,0)
 };
 
-//! \class RooFitWrapper
+//! \class RooUnfoldFitWrapper
 //! \brief Wrapper object for RooUnfold
 //! \author Carsten Burgard <cburgard@cern.ch>
-namespace RooUnfolding {
-  template<class Base> class RooFitWrapper : public Base {
-  protected:
-    RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>* _unfolding;
-    double _minVal = 1e-12;
-    mutable const RooArgSet* _curNormSet ; //! 
-       
-  public:
-
-    const RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>* unfolding() const ;
-
-    virtual std::list<Double_t>* binBoundaries(RooAbsRealLValue& /*obs*/, Double_t /*xlo*/, Double_t /*xhi*/) const override;
-    virtual std::list<Double_t>* plotSamplingHint(RooAbsRealLValue& /*obs*/, Double_t /*xlo*/, Double_t /*xhi*/) const override;
-    virtual Bool_t isBinnedDistribution(const RooArgSet& obs) const override;
-    virtual Double_t evaluate() const override;
-    virtual TObject* clone(const char* newname = 0) const override;
-    virtual Double_t getValV(const RooArgSet* set=0) const override;
-    
-    virtual Bool_t checkObservables(const RooArgSet *nset) const override;
-    virtual Bool_t forceAnalyticalInt(const RooAbsArg &arg) const override;
-    virtual Int_t getAnalyticalIntegralWN(RooArgSet &allVars, RooArgSet &numVars, const RooArgSet *normSet, const char *rangeName = 0) const override;
-    virtual Double_t analyticalIntegralWN(Int_t code, const RooArgSet *normSet, const char *rangeName = 0) const override;
-    virtual void printMetaArgs(std::ostream &os) const override;
-    virtual RooAbsArg::CacheMode canNodeBeCached() const override;
-    virtual void setCacheAndTrackHints(RooArgSet &) override;
-
-    virtual Bool_t redirectServersHook(const RooAbsCollection& newServerList, Bool_t mustReplaceAll, Bool_t nameChange, Bool_t isRecursive);
-
-    RooFitWrapper();    
-    RooFitWrapper(const char* name, const char* title, const RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>* unf);
-    RooFitWrapper(const RooUnfolding::RooFitWrapper<Base>& other);
-    RooFitWrapper(const RooUnfolding::RooFitWrapper<Base>* other);    
-    virtual ~RooFitWrapper();
-    ClassDefT(RooFitWrapper,1)
-  };
-}
-
-//! \class RooUnfoldFunc
-//! \brief Wrapper function for RooUnfold
-//! \author Carsten Burgard <cburgard@cern.ch>
-class RooUnfoldFunc : public RooUnfolding::RooFitWrapper<RooAbsReal> {
+class RooUnfoldFitWrapper : public RooAbsReal {
+protected:
+  RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>* _unfolding;
+  double _minVal = 1e-12;
+  mutable const RooArgSet* _curNormSet ; //! 
+  
 public:
-  RooUnfoldFunc();
-  RooUnfoldFunc(const char* name, const char* title, const RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>* unf);
-  virtual ~RooUnfoldFunc();  
+  
+  const RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>* unfolding() const ;
+  
+  virtual std::list<Double_t>* binBoundaries(RooAbsRealLValue& /*obs*/, Double_t /*xlo*/, Double_t /*xhi*/) const override;
+  virtual std::list<Double_t>* plotSamplingHint(RooAbsRealLValue& /*obs*/, Double_t /*xlo*/, Double_t /*xhi*/) const override;
+  virtual Bool_t isBinnedDistribution(const RooArgSet& obs) const override;
+  virtual Double_t evaluate() const override;
   virtual TObject* clone(const char* newname = 0) const override;
-  ClassDefOverride(RooUnfoldFunc,1)
+  virtual Double_t getValV(const RooArgSet* set=0) const override;
+  
+  virtual Bool_t checkObservables(const RooArgSet *nset) const override;
+  virtual Bool_t forceAnalyticalInt(const RooAbsArg &arg) const override;
+  virtual Int_t getAnalyticalIntegralWN(RooArgSet &allVars, RooArgSet &numVars, const RooArgSet *normSet, const char *rangeName = 0) const override;
+  virtual Double_t analyticalIntegralWN(Int_t code, const RooArgSet *normSet, const char *rangeName = 0) const override;
+  virtual void printMetaArgs(std::ostream &os) const override;
+  virtual RooAbsArg::CacheMode canNodeBeCached() const override;
+  virtual void setCacheAndTrackHints(RooArgSet &) override;
+  
+  virtual Bool_t redirectServersHook(const RooAbsCollection& newServerList, Bool_t mustReplaceAll, Bool_t nameChange, Bool_t isRecursive);
+  
+  RooUnfoldFitWrapper();    
+  RooUnfoldFitWrapper(const char* name, const char* title, const RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>* unf);
+  RooUnfoldFitWrapper(const RooUnfoldFitWrapper& other);
+  RooUnfoldFitWrapper(const RooUnfoldFitWrapper* other);    
+  virtual ~RooUnfoldFitWrapper();
+  ClassDef(RooUnfoldFitWrapper,1)
 };
-//! \class RooUnfoldPdf
-//! \brief Wrapper pdf for RooUnfold
-//! \author Carsten Burgard <cburgard@cern.ch>
-class RooUnfoldPdf : public RooUnfolding::RooFitWrapper<RooAbsPdf> {
-public:
-  RooUnfoldPdf();
-  RooUnfoldPdf(const char* name, const char* title, const RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>* unf);    
-  virtual RooAbsPdf::ExtendMode extendMode() const override;
-  using RooAbsPdf::expectedEvents;
-  virtual Double_t expectedEvents(const RooArgSet* nset) const override;
-  virtual Bool_t selfNormalized() const override;
-  virtual ~RooUnfoldPdf();    
-  virtual TObject* clone(const char* newname = 0) const override;
-  ClassDefOverride(RooUnfoldPdf,1)
-};
+
+////! \class RooUnfoldFunc
+////! \brief Wrapper function for RooUnfold
+////! \author Carsten Burgard <cburgard@cern.ch>
+//class RooUnfoldFunc : public RooUnfolding::RooFitWrapper<RooAbsReal> {
+//public:
+//  RooUnfoldFunc();
+//  RooUnfoldFunc(const char* name, const char* title, const RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>* unf);
+//  virtual ~RooUnfoldFunc();  
+//  virtual TObject* clone(const char* newname = 0) const override;
+//  ClassDefOverride(RooUnfoldFunc,1)
+//};
+////! \class RooUnfoldPdf
+////! \brief Wrapper pdf for RooUnfold
+////! \author Carsten Burgard <cburgard@cern.ch>
+//class RooUnfoldPdf : public RooUnfolding::RooFitWrapper<RooAbsPdf> {
+//public:
+//  RooUnfoldPdf();
+//  RooUnfoldPdf(const char* name, const char* title, const RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>* unf);    
+//  virtual RooAbsPdf::ExtendMode extendMode() const override;
+//  using RooAbsPdf::expectedEvents;
+//  virtual Double_t expectedEvents(const RooArgSet* nset) const override;
+//  virtual Bool_t selfNormalized() const override;
+//  virtual ~RooUnfoldPdf();    
+//  virtual TObject* clone(const char* newname = 0) const override;
+//  ClassDefOverride(RooUnfoldPdf,1)
+//};
 
 #endif
 #endif
