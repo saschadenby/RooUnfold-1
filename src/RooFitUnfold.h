@@ -1,7 +1,7 @@
 //=====================================================================-*-C++-*-
 #ifndef ROOFitUNFOLD_HH
 #define ROOFitUNFOLD_HH
-#include <RooUnfold.h>
+#include "RooUnfold.h"
 
 #ifndef NOROOFIT
 #include <RooAbsPdf.h>
