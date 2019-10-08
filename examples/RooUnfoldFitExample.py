@@ -512,31 +512,27 @@ def main(args):
     
     # This line instantiates one of the subclasses specific to the unfolding algorithm.
     if args.regparm:
-      func = spec.makeFunc(algorithm(args.method),args.regparm)
+      unfolding = spec.makeFunc(algorithm(args.method),args.regparm)
     else:
-      func = spec.makeFunc(algorithm(args.method))
-
-    theory = func.unfolding().response().makeHistFuncTruth(histograms["sig_theory"])
+      unfolding = spec.makeFunc(algorithm(args.method))
 
     # required to avoid python garbage collector messing up the RooDataHists added to gDirectory
     ROOT.gDirectory.Clear()
     
     test_truth = spec.makeHistogram(histograms["sig_theory"])
 
-    # Here the first unfolding is performed.
-    func.unfolding().PrintTable(ROOT.cout, test_truth)
-
     ws = ROOT.RooWorkspace("workspace","workspace")
 
-    getattr(ws,"import")(func)
+    getattr(ws,"import")(unfolding)
 
-    getattr(ws,"import")(theory)
+    # Here the first unfolding is performed.
+    src = str(unfolding.getStringAttribute("source"))
+    func = ws.function(src)
+    func.unfolding().PrintTable(ROOT.cout, test_truth)
 
     ws.Print("t")
-
-    # Explicitly free the memory that was allocated. 
-    func.Delete()
-    theory.Delete()
+   
+    unfolding.Delete()
 
   return
 

@@ -120,10 +120,10 @@ protected:
   ClassDef(RooUnfoldSpec,0)
 };
 
-//! \class RooUnfoldFitWrapper
-//! \brief Wrapper object for RooUnfold
+//! \class RooUnfoldFunc
+//! \brief RooAbsReal Wrapper object for RooUnfold
 //! \author Carsten Burgard <cburgard@cern.ch>
-class RooUnfoldFitWrapper : public RooAbsReal {
+class RooUnfoldFunc : public RooAbsReal {
 protected:
   RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>* _unfolding;
   double _minVal = 1e-12;
@@ -150,40 +150,13 @@ public:
   
   virtual Bool_t redirectServersHook(const RooAbsCollection& newServerList, Bool_t mustReplaceAll, Bool_t nameChange, Bool_t isRecursive);
   
-  RooUnfoldFitWrapper();    
-  RooUnfoldFitWrapper(const char* name, const char* title, const RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>* unf);
-  RooUnfoldFitWrapper(const RooUnfoldFitWrapper& other);
-  RooUnfoldFitWrapper(const RooUnfoldFitWrapper* other);    
-  virtual ~RooUnfoldFitWrapper();
-  ClassDef(RooUnfoldFitWrapper,1)
+  RooUnfoldFunc();    
+  RooUnfoldFunc(const char* name, const char* title, const RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>* unf);
+  RooUnfoldFunc(const RooUnfoldFunc& other);
+  RooUnfoldFunc(const RooUnfoldFunc* other);    
+  virtual ~RooUnfoldFunc();
+  ClassDef(RooUnfoldFunc,1)
 };
-
-////! \class RooUnfoldFunc
-////! \brief Wrapper function for RooUnfold
-////! \author Carsten Burgard <cburgard@cern.ch>
-//class RooUnfoldFunc : public RooUnfolding::RooFitWrapper<RooAbsReal> {
-//public:
-//  RooUnfoldFunc();
-//  RooUnfoldFunc(const char* name, const char* title, const RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>* unf);
-//  virtual ~RooUnfoldFunc();  
-//  virtual TObject* clone(const char* newname = 0) const override;
-//  ClassDefOverride(RooUnfoldFunc,1)
-//};
-////! \class RooUnfoldPdf
-////! \brief Wrapper pdf for RooUnfold
-////! \author Carsten Burgard <cburgard@cern.ch>
-//class RooUnfoldPdf : public RooUnfolding::RooFitWrapper<RooAbsPdf> {
-//public:
-//  RooUnfoldPdf();
-//  RooUnfoldPdf(const char* name, const char* title, const RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>* unf);    
-//  virtual RooAbsPdf::ExtendMode extendMode() const override;
-//  using RooAbsPdf::expectedEvents;
-//  virtual Double_t expectedEvents(const RooArgSet* nset) const override;
-//  virtual Bool_t selfNormalized() const override;
-//  virtual ~RooUnfoldPdf();    
-//  virtual TObject* clone(const char* newname = 0) const override;
-//  ClassDefOverride(RooUnfoldPdf,1)
-//};
 
 #endif
 #endif
