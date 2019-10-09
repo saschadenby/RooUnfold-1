@@ -15,9 +15,12 @@ stages:
   stage: doc
   image: blang/latex:ubuntu
 
+.standalone: &standalone    
+  image: castleard/rootnightly-ubuntu18-test1
+
 .doxygen: &doxygen
+  <<: *standalone
   stage: doc
-  image: rootproject/root-ubuntu16  
   before_script:
     - sudo apt-get update
     - sudo apt-get install -y doxygen texlive-font-utils
@@ -26,9 +29,6 @@ stages:
   image: atlas/analysisbase:21.2.64
   before_script:
     - source /home/atlas/release_setup.sh
-
-.standalone: &standalone    
-  image: rootproject/root-ubuntu16  
 
 .ctest: &ctest  
   stage: test
@@ -111,9 +111,9 @@ stages:
 ## building
 ############################################     
     
-compile_atlas:
-  <<: *atlas
-  <<: *atlascmake
+#compile_atlas:
+#  <<: *atlas
+#  <<: *atlascmake
 
 compile_cmake:
   <<: *standalone
@@ -136,11 +136,11 @@ compile_GNUmake_dAgostini:
 ## testing      
 ############################################
 
-test_atlas:
-  <<: *atlas
-  <<: *atlasctest  
-  dependencies:
-    - compile_atlas    
+#test_atlas:
+#  <<: *atlas
+#  <<: *atlasctest  
+#  dependencies:
+#    - compile_atlas    
 
 test_cmake:
   <<: *standalone
