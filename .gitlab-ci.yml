@@ -22,11 +22,11 @@ stages:
   <<: *standalone
   stage: doc
   before_script:
-    - sudo apt-get update
-    - sudo apt-get install -y doxygen texlive-font-utils
+    - apt-get update
+    - apt-get install -y doxygen texlive-font-utils
 
 .atlas: &atlas
-  image: atlas/analysisbase:21.2.64
+  image: atlas/analysisbase:21.2.93
   before_script:
     - source /home/atlas/release_setup.sh
 
