@@ -16,14 +16,11 @@ stages:
   image: blang/latex:ubuntu
 
 .standalone: &standalone    
-  image: castleard/rootnightly-ubuntu18-test1
+  image: castleard/rootnightly-ubuntu18-test2
 
 .doxygen: &doxygen
   <<: *standalone
   stage: doc
-  before_script:
-    - apt-get update
-    - apt-get install -y doxygen texlive-font-utils
 
 .atlas: &atlas
   image: atlas/analysisbase:21.2.93
