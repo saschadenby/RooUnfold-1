@@ -55,7 +55,7 @@ execute_process( COMMAND ln -sf ${RooUnfoldHeaders} -t ${CMAKE_CURRENT_BINARY_DI
 
 file(GLOB Tests "test/*.sh")
 
-SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${EXTRA_FLAGS} -g -lRooFit")
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${EXTRA_FLAGS} -g -lRooFitCore")
 
 if(${foundAnalysisRelease})
   atlas_subdir( RooUnfold )
