@@ -16,7 +16,7 @@ stages:
   image: blang/latex:ubuntu
 
 .standalone: &standalone    
-  image: castleard/rootnightly-ubuntu18:2019-10-10.1
+  image: castleard/rootnightly-ubuntu18:2019-10-10.2
 
 .doxygen: &doxygen
   <<: *standalone
