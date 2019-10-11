@@ -9,6 +9,7 @@
 #include "RooRealSumFunc.h"
 #include "RooPrintable.h"
 #include "RooHistPdf.h"
+#include "RooExtendPdf.h"
 #include "RooProdPdf.h"
 #include "RooGaussian.h"
 #include "RooPoisson.h"
@@ -820,8 +821,11 @@ RooAbsPdf* RooUnfoldSpec::makePdf(Algorithm alg, Double_t regparam){
   //! create an unfolding pdf
   RooAbsReal* func = this->makeFunc(alg,regparam);
   RooWrapperPdf* pdf = new RooWrapperPdf(TString::Format("%s_pdf",func->GetName()),TString::Format("%s Pdf",func->GetTitle()),*func);
+  RooAbsReal* integral = func->createIntegral(this->_obs_truth);
+  RooExtendPdf* extpdf = new RooExtendPdf(TString::Format("%s_extpdf",func->GetName()),TString::Format("%s Extended Pdf",func->GetTitle()),*pdf,*integral);
+  
   RooProdPdf* constraints = this->makeConstraints();
-  RooArgList comps(*pdf,*constraints);
+  RooArgList comps(*extpdf,*constraints);
   RooProdPdf* prod = new RooProdPdf(TString::Format("%s_x_constraints",this->GetName()),"Unfolding pdf, including constraints",comps);
   prod->setStringAttribute("source",func->GetName());
   return prod;
