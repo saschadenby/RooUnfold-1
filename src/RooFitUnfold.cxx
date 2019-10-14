@@ -160,7 +160,7 @@ Double_t RooUnfoldFunc::evaluate() const {
   int bin = this->_unfolding->response()->Htruth()->bin();
   this->_unfolding->ForceRecalculation();
   this->_unfolding->response()->Htruth()->checkValidity();
-  double v = std::max(this->_unfolding->Vunfold()[bin],this->_minVal);
+  double v = this->_unfolding->Vunfold()[bin];
   if(this->_unfolding->response()->UseDensityStatus()){
     v /= binVolume(this->_unfolding->response()->Htruth(),bin,false);
   }
@@ -488,10 +488,10 @@ void RooUnfoldSpec::setup(const TH1* truth_th1, const RooArgList& obs_truth, con
   this->_errorThreshold = errorThreshold;
   if(truth_th1) this->_truth.setNominal(RooUnfolding::makeHistFunc(truth_th1,obs_truth,includeUnderflowOverflow,this->_useDensity));
   if(reco_th1)  this->_reco.setNominal(RooUnfolding::makeHistFunc(reco_th1,obs_reco,includeUnderflowOverflow,this->_useDensity));
-  this->_obs_truth.add(obs_truth);  
-  this->_obs_all.add(obs_truth);
   this->_obs_reco.add(obs_reco);
   this->_obs_all.add(obs_reco);  
+  this->_obs_truth.add(obs_truth);  
+  this->_obs_all.add(obs_truth);
   if(response_th1) this->_res.setNominal(RooUnfolding::makeHistFunc(response_th1,this->_obs_all,includeUnderflowOverflow,this->_useDensity));
   if(bkg_th1)  this->_bkg.setNominal(RooUnfolding::makeHistFunc(bkg_th1,obs_reco,includeUnderflowOverflow,this->_useDensity));
   

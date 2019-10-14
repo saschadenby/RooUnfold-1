@@ -126,7 +126,6 @@ protected:
 class RooUnfoldFunc : public RooAbsReal {
 protected:
   RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>* _unfolding;
-  double _minVal = 1e-12;
   mutable const RooArgSet* _curNormSet ; //! 
   
 public:
