@@ -25,10 +25,7 @@
 #pragma link C++ class RooUnfolding::RooFitHist+;
 #pragma link C++ class RooUnfoldResponseT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>-;
 #pragma link C++ class RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>-;
-#pragma link C++ class RooUnfolding::RooFitWrapper<RooAbsReal>+;
-#pragma link C++ class RooUnfolding::RooFitWrapper<RooAbsPdf>+;
 #pragma link C++ class RooUnfoldFunc+;
-#pragma link C++ class RooUnfoldPdf+;
 #pragma link C++ class RooUnfoldSpec+;
 #pragma link C++ class RooUnfoldInvertT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>+;
 #pragma link C++ class RooUnfoldGPT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>+;
