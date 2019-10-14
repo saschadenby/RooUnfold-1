@@ -1,12 +1,7 @@
 //=====================================================================-*-C++-*-
-// File and Version Information:
-//      $Id$
-//
-// Description:
-//      SVD unfolding. Just an interface to RooUnfHistoSvd.
-//
-// Author: Tim Adye <T.J.Adye@rl.ac.uk>
-//
+//! \class RooUnfoldSvdT
+//! \brief SVD unfolding. Just an interface to SVDUnfold.
+//! \author Tim Adye <T.J.Adye@rl.ac.uk>
 //==============================================================================
 
 #ifndef ROOUNFOLDSVD_HH
@@ -22,13 +17,6 @@ public:
 
 public:
 
-   // Constructor
-   // Initialisation of unfolding
-   // "bdat" - measured data distribution (number of events)
-   // "Bcov" - covariance matrix for measured data distribution
-   // "bini" - reconstructed MC distribution (number of events)
-   // "xini" - truth MC distribution (number of events)
-   // "Adet" - detector response matrix (number of events)
    SVDUnfold( const Hist* bdat, const Hist* bini, const Hist* xini, const Hist2D* Adet );
    SVDUnfold( const Hist* bdat, const TMatrixD& Bcov, const Hist* bini, const Hist* xini, const Hist2D* Adet );
    SVDUnfold( const SVDUnfold& other );
@@ -142,7 +130,6 @@ public:
   virtual Double_t GetRegParm() const;
   virtual void Reset();
   SVDUnfold* Impl();
-  virtual RooUnfolding::Algorithm GetMethod() const override;
 
 protected:
   void Assign (const RooUnfoldSvdT<Hist,Hist2D>& rhs); // implementation of assignment operator
@@ -170,8 +157,12 @@ public:
   ClassDefT (RooUnfoldSvdT, 1) // SVD Unfolding (interface to TSVDUnfold)
 };
 
+//! \class RooUnfoldSvd 
+//! \brief specialization of RooUnfoldSvdT for TH1/TH2 objects
 typedef RooUnfoldSvdT<TH1,TH2> RooUnfoldSvd;
 #ifndef NOROOFIT
+//! \class RooFitUnfoldSvd
+//! \brief specialization of RooUnfoldSvdT for RooAbsReal objects
 typedef RooUnfoldSvdT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist> RooFitUnfoldSvd;
 #endif
 

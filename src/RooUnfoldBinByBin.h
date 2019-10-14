@@ -1,12 +1,7 @@
 //=====================================================================-*-C++-*-
-// File and Version Information:
-//      $Id$
-//
-// Description:
-//      Unfolding class using the bin by bin method of conversion factors.
-//
-// Authors: Richard Claridge <richard.claridge@stfc.ac.uk> & Tim Adye <T.J.Adye@rl.ac.uk>
-//
+//! \class  RooUnfoldBinByBinT
+//! \brief  Unfolding class using the bin by bin method of conversion factors.
+//! \author Richard Claridge <richard.claridge@stfc.ac.uk> & Tim Adye <T.J.Adye@rl.ac.uk>
 //==============================================================================
 
 #ifndef ROOUNFOLDBINBYBIN_H_
@@ -30,7 +25,6 @@ public:
   RooUnfoldBinByBinT<Hist,Hist2D>& operator= (const RooUnfoldBinByBinT<Hist,Hist2D>& rhs); // assignment operator
   RooUnfoldBinByBinT (const RooUnfoldResponseT<Hist,Hist2D>* res, const Hist* meas, const char* name=0, const char* title=0);
 
-  virtual RooUnfolding::Algorithm GetMethod() const override;
   TVectorD* Impl();
 
 protected:
@@ -49,8 +43,12 @@ public:
   ClassDefT (RooUnfoldBinByBinT, 1)  // Bin-by-bin unfolding
 };
 
+//! \class RooUnfoldBinByBin 
+//! \brief specialization of RooUnfoldBinByBinT for TH1/TH2 objects
 typedef RooUnfoldBinByBinT<TH1,TH2> RooUnfoldBinByBin;
 #ifndef NOROOFIT
+//! \class RooFitUnfoldBinByBin
+//! \brief specialization of RooUnfoldBinByBinT for RooAbsReal objects
 typedef RooUnfoldBinByBinT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist> RooFitUnfoldBinByBin;
 #endif
 

@@ -6,8 +6,8 @@
 
 #pragma link C++ class RooUnfold-;
 #pragma link C++ class RooUnfoldBayes+;
-#pragma link C++ class RooUnfoldSvd-;
-#pragma link C++ class RooUnfoldSvd::SVDUnfold-;
+#pragma link C++ class RooUnfoldSvd+;
+#pragma link C++ class RooUnfoldSvd::SVDUnfold+;
 #pragma link C++ class RooUnfoldBinByBin+;
 #pragma link C++ class RooUnfoldIds+;
 #pragma link C++ class RooUnfoldGP+;
@@ -33,8 +33,8 @@
 #pragma link C++ class RooUnfoldInvertT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>+;
 #pragma link C++ class RooUnfoldGPT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>+;
 #pragma link C++ class RooUnfoldBayesT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>+;
-#pragma link C++ class RooUnfoldSvdT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>-;
-#pragma link C++ class RooUnfoldSvdT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>::SVDUnfold-;
+#pragma link C++ class RooUnfoldSvdT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>+;
+#pragma link C++ class RooUnfoldSvdT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>::SVDUnfold+;
 #pragma link C++ class RooUnfoldBinByBinT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>+;
 #pragma link C++ class RooUnfoldIdsT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>+;
 #pragma link C++ class RooUnfoldTUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>+;

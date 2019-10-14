@@ -1,24 +1,8 @@
-//=====================================================================-*-C++-*-
-// File and Version Information:
-//      $Id$
-//
-// Description:
-//      Unfolding class using inversion of the response matrix. This does not produce
-//      good results and is designed to illustrate the need for more sophisticated
-//      unfolding techniques
-//
-// Authors: Richard Claridge <richard.claridge@stfc.ac.uk> & Tim Adye <T.J.Adye@rl.ac.uk>
-//
-//==============================================================================
-
-//____________________________________________________________
-/* BEGIN_HTML
+/* \class RooUnfoldInvertT
 <p>The simplest method of unfolding works by simply inverting the response matrix.</p> 
 <p>This is not accurate for small matrices and produces inaccurate unfolded distributions.</p>
 <p>The inversion method is included largely to illustrate the necessity of a more effective method of unfolding</p>
-END_HTML */
-
-/////////////////////////////////////////////////////////////
+*/
 
 #include "RooUnfoldInvert.h"
 
@@ -34,15 +18,6 @@ END_HTML */
 #include "RooUnfoldHelpers.h"
 
 using namespace RooUnfolding;
-
-using std::cout;
-using std::cerr;
-using std::endl;
-
-template<class Hist,class Hist2D> RooUnfolding::Algorithm
-RooUnfoldInvertT<Hist,Hist2D>::GetMethod() const {
-  return RooUnfolding::kInvert;
-}
 
 template<class Hist, class Hist2D>
 RooUnfoldInvertT<Hist,Hist2D>::RooUnfoldInvertT(const RooUnfoldInvertT<Hist,Hist2D>& rhs)
@@ -102,7 +77,7 @@ RooUnfoldInvertT<Hist,Hist2D>::Unfold() const
   } else
     _svd= new TDecompSVD (res);
   double c = _svd->Condition();
-  if (c<0) cout << "WARNING: Response matrix is ill-conditioned. TDecompSVD condition number = " << c << endl;
+  if (c<0) std::cout << "WARNING: Response matrix is ill-conditioned. TDecompSVD condition number = " << c << std::endl;
 
   this->_cache._rec.ResizeTo(this->_nm);
   this->_cache._rec= this->Vmeasured();
@@ -111,7 +86,7 @@ RooUnfoldInvertT<Hist,Hist2D>::Unfold() const
     TVectorD fakes= this->_res->Vfakes();
     Double_t fac= this->_res->Vmeasured().Sum();
     if (fac!=0.0) fac=  this->Vmeasured().Sum() / fac;
-    if (this->_verbose>=1) cout << "Subtract " << fac*fakes.Sum() << " fakes from measured distribution" << endl;
+    if (this->_verbose>=1) std::cout << "Subtract " << fac*fakes.Sum() << " fakes from measured distribution" << std::endl;
     fakes *= fac;
     this->_cache._rec -= fakes;
   }
@@ -125,7 +100,7 @@ RooUnfoldInvertT<Hist,Hist2D>::Unfold() const
 
   this->_cache._rec.ResizeTo(this->_nt);
   if (!ok) {
-    cerr << "Response matrix Solve failed" << endl;
+    std::cerr << "Response matrix Solve failed" << std::endl;
     return;
   }
 
@@ -136,10 +111,11 @@ RooUnfoldInvertT<Hist,Hist2D>::Unfold() const
 template<class Hist, class Hist2D> void
 RooUnfoldInvertT<Hist,Hist2D>::GetCov() const
 {
-    if (!InvertResponse()) return;
-    this->_cache._cov.ResizeTo(this->_nt,this->_nt);
-    ABAT (*_resinv, this->GetMeasuredCov(), this->_cache._cov);
-    this->_cache._haveCov= true;
+  //! Get covariance matrix
+  if (!InvertResponse()) return;
+  this->_cache._cov.ResizeTo(this->_nt,this->_nt);
+  ABAT (*_resinv, this->GetMeasuredCov(), this->_cache._cov);
+  this->_cache._haveCov= true;
 }
 
 template<class Hist, class Hist2D> Bool_t
@@ -153,7 +129,7 @@ RooUnfoldInvertT<Hist,Hist2D>::InvertResponse() const
     Bool_t ok;
     *_resinv=_svd->Invert(ok);
     if (!ok) {
-      cerr << "response matrix inversion failed" << endl;
+      std::cerr << "response matrix inversion failed" << std::endl;
       return false;
     }
 #else

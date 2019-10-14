@@ -65,7 +65,7 @@ public:
   TCanvas*           canvas;
   TPostScript*       ps;
   TLegend            *lTrain, *lTest, *lErrors;
-  TH1                *hTrain, *hTrainTrue, *hTrainFake, *hTrue, *hMeas, *hReco, *hFake, *hRes, *hPulls;
+  TH1                *hTrain, *hTrainTrue, *hTrainFake, *hTrue, *hMeas, *hUnfold, *hFake, *hRes, *hPulls;
   TH1                *hUnfErr, *hToyErr, *hParmChi2, *hParmErr, *hParmRes, *hParmRms;
   TH1D               *hPDFx, *hTestPDFx;
   TH2D               *hResmat, *hCorr, *hMeasCorr;
@@ -110,7 +110,7 @@ public:
   virtual void     PrintParms (std::ostream& o) const;
   static  void     setmax   (TH1* h, const TH1* h1= 0, const TH1* h2= 0, const TH1* h3= 0,
                              const TH1* h4= 0, const TH1* h5= 0, const TH1* h6= 0);
-  static  void     Legend (TLegend*& legend, TH1* pdf, TH1* truth, TH1* fake, TH1* meas, TH1* reco= 0, TF1* ff=0, TF1* tf=0);
+  static  void     Legend (TLegend*& legend, TH1* pdf, TH1* truth, TH1* fake, TH1* meas, TH1* unfold= 0, TF1* ff=0, TF1* tf=0);
   static  TH2D*    CorrelationHist (const TMatrixD& cov,
                                     const char* name="rho", const char* title="Correlation matrix",
                                     Double_t lo=0.0, Double_t hi=1.0);

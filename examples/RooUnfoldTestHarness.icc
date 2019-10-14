@@ -150,7 +150,7 @@ Int_t RooUnfoldTestHarness::Run()
   }
   TFile f (rootfile, "update");
   const TNamed* objs[] = { unfold, hTrain, hTrainTrue, hTrainFake, hTrue, hMeas, hFake,
-                           hReco, hRes, hPulls, hPDFx, hTestPDFx,
+                           hUnfold, hRes, hPulls, hPDFx, hTestPDFx,
                            hResmat, hCorr, hMeasCorr, hUnfErr, hToyErr, fitFunc, trueFunc, ntChi2,
                            hParmChi2, hParmErr, hParmRes, hParmRms };
   for (size_t i= 0; i<sizeof(objs)/sizeof(objs[0]); i++) {
@@ -402,13 +402,13 @@ Int_t RooUnfoldTestHarness::Unfold ()
   if (method == RooUnfold::kTUnfold) (dynamic_cast<RooUnfoldTUnfold*>(unfold))->SetRegMethod((TUnfold::ERegMode)regmethod);
 #endif
   if (verbose>=0) {cout << "Created "; unfold->Print();}
-  hReco= unfold->Hreco((RooUnfold::ErrorTreatment)doerror);
-  if (!hReco) return 0;
-  hReco->SetName("reco");
-  hReco->SetLineColor(kBlack);  // otherwise inherits style from hTrainTrue
+  hUnfold= unfold->Hunfold((RooUnfold::ErrorTreatment)doerror);
+  if (!hUnfold) return 0;
+  hUnfold->SetName("unfold");
+  hUnfold->SetLineColor(kBlack);  // otherwise inherits style from hTrainTrue
   if (verbose>=0) unfold->PrintTable (cout, hTrue, (RooUnfold::ErrorTreatment)doerror);
   if (verbose>=2 && doerror>=RooUnfold::kCovariance) {
-    TMatrixD covmat= unfold->Ereco((RooUnfold::ErrorTreatment)doerror);
+    TMatrixD covmat= unfold->Eunfold((RooUnfold::ErrorTreatment)doerror);
     TMatrixD errmat(ntbins,ntbins);
     for (Int_t i=0; i<ntbins; i++)
       for (Int_t j=0; j<ntbins; j++)
@@ -417,18 +417,18 @@ Int_t RooUnfoldTestHarness::Unfold ()
   }
 
   // Calculate pulls and residuals
-  hRes=   dynamic_cast<TH1*>(hReco->Clone ("res"));   
+  hRes=   dynamic_cast<TH1*>(hUnfold->Clone ("res"));   
   hRes  ->Reset();
   hRes  ->SetTitle ("Residuals");
-  hPulls= dynamic_cast<TH1*>(hReco->Clone ("pulls"));
+  hPulls= dynamic_cast<TH1*>(hUnfold->Clone ("pulls"));
   hPulls->Reset();
   hPulls->SetTitle ("Pulls");
 
   for (Int_t i= 1; i<=ntbins; i++) {
-    if ((hReco->GetBinContent(i)!=0.0 || (doerror && hReco->GetBinError(i)>0.0)) &&
+    if ((hUnfold->GetBinContent(i)!=0.0 || (doerror && hUnfold->GetBinError(i)>0.0)) &&
         (hTrue->GetBinContent(i)!=0.0 || (doerror && hTrue->GetBinError(i)>0.0))) {
-      Double_t res= hReco->GetBinContent(i) - hTrue->GetBinContent(i);
-      Double_t err= hReco->GetBinError  (i);
+      Double_t res= hUnfold->GetBinContent(i) - hTrue->GetBinContent(i);
+      Double_t err= hUnfold->GetBinError  (i);
       hRes->SetBinContent (i, res);
       hRes->SetBinError   (i, err);
       if (err>0.0) {
@@ -438,7 +438,7 @@ Int_t RooUnfoldTestHarness::Unfold ()
     }
   }
 
-  hCorr= CorrelationHist (unfold->Ereco((RooUnfold::ErrorTreatment)doerror),
+  hCorr= CorrelationHist (unfold->Eunfold((RooUnfold::ErrorTreatment)doerror),
                           "corr", "Unfolded correlation matrix",
                           response->Hresponse()->GetYaxis()->GetXmin(),
                           response->Hresponse()->GetYaxis()->GetXmax());
@@ -458,9 +458,9 @@ void RooUnfoldTestHarness::Results()
     if (fitFunc) fitFunc->GetHistogram()->Scale(mscalex,"nosw2");
   }
   setmax (hTrue, hTestPDFx, hMeas, hFake);
-  if (hReco) {
-    hReco->SetMarkerStyle(kFullDotLarge);
-    setmax (hTrue, hReco);
+  if (hUnfold) {
+    hUnfold->SetMarkerStyle(kFullDotLarge);
+    setmax (hTrue, hUnfold);
   }
 
   if (onepage && ipad>=onepage) return;
@@ -471,11 +471,11 @@ void RooUnfoldTestHarness::Results()
   if (trueFunc) trueFunc->Draw("LSAME");
   hMeas    ->Draw("SAME");
   if (hFake) hFake->Draw("SAME");
-  if (hReco) hReco->Draw("SAME P");
-  Legend (lTest, hTestPDFx, hTrue, hFake, hMeas, hReco, fitFunc, trueFunc);
+  if (hUnfold) hUnfold->Draw("SAME P");
+  Legend (lTest, hTestPDFx, hTrue, hFake, hMeas, hUnfold, fitFunc, trueFunc);
   canvas->Update();
 
-  if (!hReco)        return;
+  if (!hUnfold)        return;
   if (ploterrors>=2) return;
 
   if (onepage && ipad>=onepage) return;
@@ -918,7 +918,7 @@ void RooUnfoldTestHarness::Reset()
   canvas= 0;
   ps= 0;
   hPDFx= hTestPDFx= 0;
-  hTrain= hTrainTrue= hTrainFake= hTrue= hMeas= hFake= hReco= hRes= hPulls=
+  hTrain= hTrainTrue= hTrainFake= hTrue= hMeas= hFake= hUnfold= hRes= hPulls=
     hUnfErr= hToyErr= hParmChi2= hParmErr= hParmRes= hParmRms= 0;
   hResmat= hCorr= hMeasCorr= 0;
   fitFunc= trueFunc= 0;
@@ -1017,9 +1017,9 @@ TH2D* RooUnfoldTestHarness::CorrelationHist (const TMatrixD& cov,
   return h;
 }
 
-void RooUnfoldTestHarness::Legend (TLegend*& legend, TH1* pdf, TH1* truth, TH1* fake, TH1* meas, TH1* reco, TF1* ff, TF1* tf)
+void RooUnfoldTestHarness::Legend (TLegend*& legend, TH1* pdf, TH1* truth, TH1* fake, TH1* meas, TH1* unfold, TF1* ff, TF1* tf)
 {
-  legend= new TLegend (0.79, (tf ? 0.62 : reco ? 0.72 : 0.75), 0.894, 0.89);
+  legend= new TLegend (0.79, (tf ? 0.62 : unfold ? 0.72 : 0.75), 0.894, 0.89);
   legend->SetTextSize(0.035);
   legend->SetTextFont(42);
   legend->AddEntry (pdf,   "PDF",           "L");
@@ -1027,8 +1027,8 @@ void RooUnfoldTestHarness::Legend (TLegend*& legend, TH1* pdf, TH1* truth, TH1* 
   if (fake)
   legend->AddEntry (fake,  "fakes",         "L");
   legend->AddEntry (meas,  "measured",      "L");
-  if (reco)
-  legend->AddEntry (reco,  "reconstructed", "P");
+  if (unfold)
+  legend->AddEntry (unfold,  "unfolded", "P");
   if (ff)
   legend->AddEntry (ff->GetHistogram(), "measured fit", "L");
   if (tf)

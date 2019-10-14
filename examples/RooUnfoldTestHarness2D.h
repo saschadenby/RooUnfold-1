@@ -28,8 +28,8 @@ public:
   Double_t effylo, effyhi, fakeylo, fakeyhi, rotxy, ybias, ysmear;
 
   // Data
-  TH1D *hTrainX, *hTrainTrueX, *hTrainFakeX, *hTrueX, *hMeasX, *hRecoX, *hFakeX, *hPullsX;
-  TH1D *hTrainY, *hTrainTrueY, *hTrainFakeY, *hTrueY, *hMeasY, *hRecoY, *hFakeY, *hPullsY, *hPDFy, *hTestPDFy;
+  TH1D *hTrainX, *hTrainTrueX, *hTrainFakeX, *hTrueX, *hMeasX, *hUnfoldX, *hFakeX, *hPullsX;
+  TH1D *hTrainY, *hTrainTrueY, *hTrainFakeY, *hTrueY, *hMeasY, *hUnfoldY, *hFakeY, *hPullsY, *hPDFy, *hTestPDFy;
 
   // Constructors
   RooUnfoldTestHarness2D (const char* name= "RooUnfoldTest2D");

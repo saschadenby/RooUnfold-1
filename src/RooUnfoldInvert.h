@@ -1,14 +1,9 @@
 //=====================================================================-*-C++-*-
-// File and Version Information:
-//      $Id$
-//
-// Description:
-//      Unfolding class using inversion of the response matrix. This does not produce
-//      good results and is designed to illustrate the need for more sophisticated
-//      unfolding techniques
-//
-// Authors: Richard Claridge <richard.claridge@stfc.ac.uk> & Tim Adye <T.J.Adye@rl.ac.uk>
-//
+//! \class RooUnfoldInvertT
+//! \brief Unfolding class using inversion of the response matrix. This does not produce
+//!      good results and is designed to illustrate the need for more sophisticated
+//!      unfolding techniques
+//! \author Richard Claridge <richard.claridge@stfc.ac.uk> & Tim Adye <T.J.Adye@rl.ac.uk>
 //==============================================================================
 
 #ifndef ROOUNFOLDINVERT_H_
@@ -33,7 +28,6 @@ public:
 
   virtual void Reset() override;
   TDecompSVD* Impl();
-  virtual RooUnfolding::Algorithm GetMethod() const override;
   
 protected:
   virtual void Unfold() const override;
@@ -52,8 +46,12 @@ public:
   ClassDefT (RooUnfoldInvertT, 1)  // Unregularised unfolding
 };
 
+//! \class RooUnfoldInvert 
+//! \brief specialization of RooUnfoldInvertT for TH1/TH2 objects
 typedef RooUnfoldInvertT<TH1,TH2> RooUnfoldInvert;
 #ifndef NOROOFIT
+//! \class RooFitUnfoldInvert
+//! \brief specialization of RooUnfoldInvertT for RooAbsReal objects
 typedef RooUnfoldInvertT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist> RooFitUnfoldInvert;
 #endif
 

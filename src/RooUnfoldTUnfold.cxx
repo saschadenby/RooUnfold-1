@@ -1,16 +1,4 @@
-//=====================================================================-*-C++-*-
-// File and Version Information:
-//      $Id$
-//
-// Description:
-//      Unfolding class using TUnfold from ROOT to do the actual unfolding.
-//
-// Authors: Richard Claridge <richard.claridge@stfc.ac.uk> & Tim Adye <T.J.Adye@rl.ac.uk>
-//
-//==============================================================================
-
-//____________________________________________________________
-/* BEGIN_HTML
+/*! \class RooUnfoldTUnfold
 <p>Uses the unfolding method implemented in ROOT's <a href="http://root.cern.ch/root/html/TUnfold.html">TUnfold</a> class
 <p>Only included in ROOT versions 5.22 and higher
 <p>Only able to reconstruct 1 dimensional distributions
@@ -20,9 +8,7 @@
 <p>Regularisation parameter can be either optimised internally by plotting log10(chi2 squared) against log10(tau). The 'kink' in this curve is deemed the optimum tau value. This value can also be set manually (FixTau)
 <p>The latest version (TUnfold 15 in ROOT 2.27.04) will not handle plots with an additional underflow bin. As a result overflows must be turned off
 if v15 of TUnfold is used. ROOT versions 5.26 or below use v13 and so should be safe to use overflows.</ul>
-END_HTML */
-
-/////////////////////////////////////////////////////////////
+ */
 
 #include "RooUnfoldTUnfold.h"
 #include "RooUnfoldTH1Helpers.h"
@@ -51,21 +37,6 @@ END_HTML */
 #include "RooUnfoldResponse.h"
 
 using namespace RooUnfolding;
-
-// namespace{
-//   TH1* histNoOverflow(const TH1* hist, bool overflow){
-//     return createHist<TH1>(h2v<TH1>(hist,overflow),h2ve<TH1>(hist,overflow),hist->GetName(),hist->GetTitle(),vars(hist),overflow);
-//   }
-// }
-
-using std::cout;
-using std::cerr;
-using std::endl;
-
-template<class Hist,class Hist2D> RooUnfolding::Algorithm
-RooUnfoldTUnfoldT<Hist,Hist2D>::GetMethod() const {
-  return RooUnfolding::kTUnfold;
-}
 
 template<class Hist,class Hist2D>
 RooUnfoldTUnfoldT<Hist,Hist2D>::RooUnfoldTUnfoldT (const RooUnfoldTUnfoldT& rhs)
@@ -188,8 +159,8 @@ template<class Hist,class Hist2D>void
 RooUnfoldTUnfoldT<Hist,Hist2D>::Unfold() const
 {
   // Does the unfolding. Uses the optimal value of the unfolding parameter unless a value has already been set using FixTau
-  if (this->_nm<this->_nt)     cerr << "Warning: fewer measured bins than truth bins. TUnfold may not work correctly." << endl;
-  if (this->_covMes) cerr << "Warning: TUnfold does not account for bin-bin correlations on measured input"    << endl;
+  if (this->_nm<this->_nt)     std::cerr << "Warning: fewer measured bins than truth bins. TUnfold may not work correctly." << std::endl;
+  if (this->_covMes) std::cerr << "Warning: TUnfold does not account for bin-bin correlations on measured input"    << std::endl;
 
   Bool_t oldstat= TH1::AddDirectoryStatus();
   TH1::AddDirectory (kFALSE);
@@ -221,7 +192,7 @@ RooUnfoldTUnfoldT<Hist,Hist2D>::Unfold() const
     TVectorD fakes= this->_res->Vfakes();
     Double_t fac= this->_res->Vmeasured().Sum();
     if (fac!=0.0) fac=  this->Vmeasured().Sum() / fac;
-    if (this->_verbose>=1) cout << "Subtract " << fac*fakes.Sum() << " fakes from measured distribution" << endl;
+    if (this->_verbose>=1) std::cout << "Subtract " << fac*fakes.Sum() << " fakes from measured distribution" << std::endl;
     for (Int_t i = 1; i<=this->_nm; i++){
       vmeas[i] = vmeas[i] - (fac*fakes[i - 1]);
     }
@@ -270,7 +241,7 @@ RooUnfoldTUnfoldT<Hist,Hist2D>::Unfold() const
 
   Int_t stat= _unf->SetInput(&vmeas,&verr);
   if(stat>=10000) {
-    cerr<<"Unfolding result may be wrong: " << stat/10000 << " unconstrained output bins\n";
+    std::cerr<<"Unfolding result may be wrong: " << stat/10000 << " unconstrained output bins\n";
   }
 #else
   _unf->SetInput(&vmeas,&verr);
@@ -283,7 +254,7 @@ RooUnfoldTUnfoldT<Hist,Hist2D>::Unfold() const
     delete _logTauY; _logTauY = 0;
     Int_t bestPoint = _unf->ScanLcurve(nScan,tauMin,tauMax,&_lCurve,&_logTauX,&_logTauY);
     _tau=_unf->GetTau();  // save value, even if we don't use it unless tau_set
-    cout <<"Lcurve scan chose tau= "<<_tau<<endl<<" at point "<<bestPoint<<endl;
+    std::cout <<"Lcurve scan chose tau= "<<_tau<<std::endl<<" at point "<<bestPoint<<std::endl;
   } else {
     _unf->DoUnfold(_tau);
   }
@@ -297,7 +268,7 @@ RooUnfoldTUnfoldT<Hist,Hist2D>::Unfold() const
   if (this->_verbose>=2) {
     const Hist* train1d = this->_res->Hmeasured();
     const Hist* truth1d = this->_res->Htruth();
-    printTable (cout, h2v(this->_meas), h2v(train1d), h2v(truth1d), this->_cache._rec);
+    printTable (std::cout, h2v(this->_meas), h2v(train1d), h2v(truth1d), this->_cache._rec);
   }
 
   this->_cache._unfolded= true;
@@ -307,7 +278,7 @@ RooUnfoldTUnfoldT<Hist,Hist2D>::Unfold() const
 template<class Hist,class Hist2D>void
 RooUnfoldTUnfoldT<Hist,Hist2D>::GetCov() const
 {
-  //Gets Covariance matrix
+  //! Get covariance matrix
   if (!_unf) return;
   TH2* ematrix= new TH2D ("ematrix","error matrix", this->_nt, 0.0, this->_nt, this->_nt, 0.0, this->_nt);
   if (this->_dosys!=2) _unf->GetEmatrix (ematrix);
@@ -318,7 +289,7 @@ RooUnfoldTUnfoldT<Hist,Hist2D>::GetCov() const
       unfsys->GetEmatrixSysUncorr (ematrix,0,kFALSE);
     else
 #endif
-      cerr << "Did not use TUnfoldSys, so cannot calculate systematic errors" << endl;
+      std::cerr << "Did not use TUnfoldSys, so cannot calculate systematic errors" << std::endl;
   }
   this->_cache._cov.ResizeTo (this->_nt,this->_nt);
   for (Int_t i= 0; i<this->_nt; i++) {

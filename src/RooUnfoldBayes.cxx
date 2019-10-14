@@ -1,26 +1,12 @@
-//=====================================================================-*-C++-*-
-// File and Version Information:
-//      $Id$
-//
-// Description:
-//      Bayesian unfolding.
-//
-// Author: Tim Adye <T.J.Adye@rl.ac.uk>
-//
-//==============================================================================
-
-//____________________________________________________________
-/* BEGIN_HTML
-<p>Links to the RooUnfoldBayesImpl class which uses Bayesian unfolding to reconstruct the truth distribution.</p>
-<p>Works for 2 and 3 dimensional distributions
-<p>Returned errors can be either as a diagonal matrix or as a full matrix of covariances
-<p>Regularisation parameter sets the number of iterations used in the unfolding (default=4)
-<p>Is able to account for bin migration and smearing
-<p>Can unfold if test and measured distributions have different binning.
-<p>Returns covariance matrices with conditions approximately that of the machine precision. This occasionally leads to very large chi squared values
-END_HTML */
-
-/////////////////////////////////////////////////////////////
+/*! \class RooUnfoldBayesT
+Links to the RooUnfoldBayesImpl class which uses Bayesian unfolding to reconstruct the truth distribution.
+Works for 2 and 3 dimensional distributions
+Returned errors can be either as a diagonal matrix or as a full matrix of covariances
+Regularisation parameter sets the number of iterations used in the unfolding (default=4)
+Is able to account for bin migration and smearing
+Can unfold if test and measured distributions have different binning.
+Returns covariance matrices with conditions approximately that of the machine precision. This occasionally leads to very large chi squared values
+*/
 
 //#define OLDERRS   // restore old (incorrect) error calculation
 //#define OLDERRS2  // restore old (incorrect) systematic error calculation
@@ -45,24 +31,11 @@ END_HTML */
 
 using namespace RooUnfolding;
 
-using std::min;
-using std::cerr;
-using std::endl;
-using std::cout;
-using std::setw;
-using std::left;
-using std::right;
-
-template<class Hist,class Hist2D> RooUnfolding::Algorithm
-RooUnfoldBayesT<Hist,Hist2D>::GetMethod() const {
-  return RooUnfolding::kBayes;
-}
-
 template<class Hist,class Hist2D>
 RooUnfoldBayesT<Hist,Hist2D>::RooUnfoldBayesT (const RooUnfoldBayesT<Hist,Hist2D>& rhs)
   : RooUnfoldT<Hist,Hist2D> (rhs)
 {
-  // Copy constructor.
+  //! Copy constructor.
   Init();
   CopyData (rhs);
 }
@@ -73,8 +46,8 @@ RooUnfoldBayesT<Hist,Hist2D>::RooUnfoldBayesT (const RooUnfoldResponseT<Hist,His
   : _niter(niter), _smoothit(smoothit), RooUnfoldT<Hist,Hist2D> (res, meas, name, title)
 {
 
-  // Constructor with response matrix object and measured unfolding input histogram.
-  // The regularisation parameter is niter (number of iterations).
+  //! Constructor with response matrix object and measured unfolding input histogram.
+  //! The regularisation parameter is niter (number of iterations).
   Init();
 }
 
@@ -117,7 +90,7 @@ RooUnfoldBayesT<Hist,Hist2D>::Unfold() const
     Print();
     printMatrix(this->_Nji,"RooUnfoldBayesT<Hist,Hist2D> response matrix (Nji)");
   }
-  if (this->verbose() >= 1) cout << "Now unfolding..." << endl;
+  if (this->verbose() >= 1) std::cout << "Now unfolding..." << std::endl;
   unfold();
   if (this->verbose() >= 2) Print();
   this->_cache._rec.ResizeTo(this->_nc);
@@ -164,7 +137,7 @@ RooUnfoldBayesT<Hist,Hist2D>::setup() const
   if (this->_res->HasFakes()) {
     TVectorD fakes= this->_res->Vfakes();
     double nfakes= fakes.Sum();
-    if (this->verbose()>=0) cout << "Add truth bin for " << nfakes << " fakes" << endl;
+    if (this->verbose()>=0) std::cout << "Add truth bin for " << nfakes << " fakes" << std::endl;
     this->_nc++;
     this->_nCi.ResizeTo(this->_nc);
     this->_nCi[this->_nc-1]= nfakes;
@@ -194,9 +167,9 @@ RooUnfoldBayesT<Hist,Hist2D>::setup() const
 template<class Hist,class Hist2D> void
 RooUnfoldBayesT<Hist,Hist2D>::unfold() const
 {
-  // Calculate the unfolding matrix.
-  // _niter = number of iterations to perform (3 by default).
-  // _smoothit = smooth the matrix in between iterations (default false).
+  //! Calculate the unfolding matrix.
+  //! _niter = number of iterations to perform (3 by default).
+  //! _smoothit = smooth the matrix in between iterations (default false).
 
   if (this->_niter < 0){
     std::cerr << "RooUnfoldBayes invalid number of iterations: " << this->_niter << std::endl;
@@ -222,7 +195,7 @@ RooUnfoldBayesT<Hist,Hist2D>::unfold() const
 
   for (int kiter = 0 ; kiter < this->_niter; kiter++) {
 
-    if (this->verbose()>=1) cout << "Iteration : " << kiter << endl;
+    if (this->verbose()>=1) std::cout << "Iteration : " << kiter << std::endl;
 
     // update prior from previous iteration
     if (kiter>0) {
@@ -342,7 +315,7 @@ RooUnfoldBayesT<Hist,Hist2D>::unfold() const
 
     // Chi2 based on Poisson errors
     double chi2 = getChi2(PbarCi, this->_P0C, this->_nbartrue);
-    if (this->verbose()>=1) cout << "Chi^2 of change " << chi2 << endl;
+    if (this->verbose()>=1) std::cout << "Chi^2 of change " << chi2 << std::endl;
 
     // and repeat
   }
@@ -353,9 +326,9 @@ template<class Hist,class Hist2D> void
 RooUnfoldBayesT<Hist,Hist2D>::getCovariance() const
 {
   if (this->_dosys!=2) {
-    if (this->verbose()>=1) cout << "Calculating covariances due to number of measured events" << endl;
+    if (this->verbose()>=1) std::cout << "Calculating covariances due to number of measured events" << std::endl;
 
-    // Create the covariance matrix of result from that of the measured distribution
+    //! Create the covariance matrix of result from that of the measured distribution
     this->_cache._cov.ResizeTo (this->_nc, this->_nc);
 #ifdef OLDERRS
     const TMatrixD& Dprop= this->_Mij;
@@ -372,7 +345,7 @@ RooUnfoldBayesT<Hist,Hist2D>::getCovariance() const
   }
 
   if (this->_dosys) {
-    if (this->verbose()>=1) cout << "Calculating covariance due to unfolding matrix..." << endl;
+    if (this->verbose()>=1) std::cout << "Calculating covariance due to unfolding matrix..." << std::endl;
 
     const TMatrixD& Eres= this->_res->Eresponse();
     TVectorD Vjk(this->_ne*this->_nc);           // vec(Var(j,k))
@@ -399,16 +372,16 @@ RooUnfoldBayesT<Hist,Hist2D>::getCovariance() const
 template<class Hist,class Hist2D> void
 RooUnfoldBayesT<Hist,Hist2D>::smooth(TVectorD& PbarCi) const
 {
-  // Smooth unfolding distribution. PbarCi is the array of proababilities
-  // to be smoothed PbarCi; nevts is the numbers of events
-  // (needed to calculate suitable errors for the smearing).
-  // PbarCi is returned with the smoothed distribution.
+  //! Smooth unfolding distribution. PbarCi is the array of proababilities
+  //! to be smoothed PbarCi; nevts is the numbers of events
+  //! (needed to calculate suitable errors for the smearing).
+  //! PbarCi is returned with the smoothed distribution.
 
   if (this->_res->GetDimensionTruth() != 1) {
-    cerr << "Smoothing only implemented for 1-D distributions" << endl;
+    std::cerr << "Smoothing only implemented for 1-D distributions" << std::endl;
     return;
   }
-  if (this->verbose()>=1) cout << "Smoothing." << endl;
+  if (this->verbose()>=1) std::cout << "Smoothing." << std::endl;
   TH1::SmoothArray (this->_nc, PbarCi.GetMatrixArray(), 1);
   return;
 }
@@ -419,11 +392,11 @@ RooUnfoldBayesT<Hist,Hist2D>::getChi2(const TVectorD& prob1,
                                  const TVectorD& prob2,
                                  double nevents) const
 {
-  // calculate the chi^2. prob1 and prob2 are the probabilities
-  // and nevents is the number of events used to calculate the probabilities
+  //! calculate the chi^2. prob1 and prob2 are the probabilities
+  //! and nevents is the number of events used to calculate the probabilities
   double chi2= 0.0;
   int n= prob1.GetNrows();
-  if (this->verbose()>=2) cout << "chi2 " << n << " " << nevents << endl;
+  if (this->verbose()>=2) std::cout << "chi2 " << n << " " << nevents << std::endl;
   for (int i = 0 ; i < n ; i++) {
     double psum  = (prob1[i] + prob2[i])*nevents;
     double pdiff = (prob1[i] - prob2[i])*nevents;
@@ -445,45 +418,45 @@ RooUnfoldBayesT<Hist,Hist2D>::Print(Option_t* option) const
 
   // Print out some useful info of progress so far
 
-  cout << "-------------------------------------------" << endl;
-  cout << "Unfolding Algorithm" << endl;
-  cout << "Generated (Training):" << endl;
-  cout << "  Total Number of bins   : " << this->_nc << endl;
-  cout << "  Total Number of events : " << this->_nCi.Sum() << endl;
+  std::cout << "-------------------------------------------" << std::endl;
+  std::cout << "Unfolding Algorithm" << std::endl;
+  std::cout << "Generated (Training):" << std::endl;
+  std::cout << "  Total Number of bins   : " << this->_nc << std::endl;
+  std::cout << "  Total Number of events : " << this->_nCi.Sum() << std::endl;
 
-  cout << "Measured (Training):" << endl;
-  cout << "  Total Number of bins   : " << this->_ne << endl;
+  std::cout << "Measured (Training):" << std::endl;
+  std::cout << "  Total Number of bins   : " << this->_ne << std::endl;
 
-  cout << "Input (for unfolding):" << endl;
-  cout << "  Total Number of events : " << this->_nEstj.Sum() << endl;
+  std::cout << "Input (for unfolding):" << std::endl;
+  std::cout << "  Total Number of events : " << this->_nEstj.Sum() << std::endl;
 
-  cout << "Output (unfolded):" << endl;
-  cout << "  Total Number of events : " << this->_nbarCi.Sum() <<endl;
+  std::cout << "Output (unfolded):" << std::endl;
+  std::cout << "  Total Number of events : " << this->_nbarCi.Sum() <<std::endl;
 
-  cout << "-------------------------------------------\n" << endl;
+  std::cout << "-------------------------------------------\n" << std::endl;
 
   if (((this->_nEstj.Sum())!=0) || ((this->_nCi.Sum())!=0)) {
-    int iend = min(this->_nCi.GetNrows(),this->_nEstj.GetNrows());
-    cout << "    \tTrain \tTest\tUnfolded"<< endl;
-    cout << "Bin \tTruth \tInput\tOutput"<< endl;
+    int iend = std::min(this->_nCi.GetNrows(),this->_nEstj.GetNrows());
+    std::cout << "    \tTrain \tTest\tUnfolded"<< std::endl;
+    std::cout << "Bin \tTruth \tInput\tOutput"<< std::endl;
     for (int i=0; i < iend ; i++) {
       if ((this->_nCi[i] == 0) && (this->_nEstj[i] == 0) &&
           (this->_nEstj[i] == 0) && (this->_nbarCi[i]==0)) continue;
-      cout << i << "\t" << this->_nCi[i]                                      \
-           << "\t " << this->_nEstj[i] << "\t " << this->_nbarCi[i] << endl;
+      std::cout << i << "\t" << this->_nCi[i]                                      \
+           << "\t " << this->_nEstj[i] << "\t " << this->_nbarCi[i] << std::endl;
     }
 
     // if the number of bins is different
     if (this->_nCi.GetNrows() > this->_nEstj.GetNrows() ) {
       for (int i=iend; i < this->_nCi.GetNrows() ; i++) {
-        cout << i << "\t " << this->_nCi[i] << endl;
+        std::cout << i << "\t " << this->_nCi[i] << std::endl;
       }
     }
 
-    cout << "--------------------------------------------------------" << endl;
-    cout << " \t" << (this->_nCi.Sum())
-         << "\t " << (this->_nEstj.Sum()) << "\t " << (this->_nbarCi.Sum()) << endl;
-    cout << "--------------------------------------------------------\n" << endl;
+    std::cout << "--------------------------------------------------------" << std::endl;
+    std::cout << " \t" << (this->_nCi.Sum())
+         << "\t " << (this->_nEstj.Sum()) << "\t " << (this->_nbarCi.Sum()) << std::endl;
+    std::cout << "--------------------------------------------------------\n" << std::endl;
   }
 }
 
@@ -492,7 +465,7 @@ RooUnfoldBayesT<Hist,Hist2D>::RooUnfoldBayesT()
   : RooUnfoldT<Hist,Hist2D>()
 {
 
-  // Default constructor. Use Setup() to prepare for unfolding.]
+  //! Default constructor. Use Setup() to prepare for unfolding.]
   Init();
 }
 
@@ -500,7 +473,7 @@ template<class Hist,class Hist2D>
 RooUnfoldBayesT<Hist,Hist2D>::RooUnfoldBayesT (const char* name, const char* title)
   : RooUnfoldT<Hist,Hist2D>(name,title)
 {
-  // Basic named constructor. Use Setup() to prepare for unfolding.
+  //! Basic named constructor. Use Setup() to prepare for unfolding.
   Init();
 }
 
@@ -508,14 +481,14 @@ template<class Hist,class Hist2D>
 RooUnfoldBayesT<Hist,Hist2D>::RooUnfoldBayesT (const TString& name, const TString& title)
   : RooUnfoldT<Hist,Hist2D>(name,title)
 {
-  // Basic named constructor. Use Setup() to prepare for unfolding.
+  //! Basic named constructor. Use Setup() to prepare for unfolding.
   Init();
 }
 
 template<class Hist,class Hist2D>RooUnfoldBayesT<Hist,Hist2D>& 
 RooUnfoldBayesT<Hist,Hist2D>::operator= (const RooUnfoldBayesT<Hist,Hist2D>& rhs)
 {
-  // Assignment operator for copying RooUnfoldBayes settings.
+  //! Assignment operator for copying RooUnfoldBayes settings.
   Assign(rhs);
   return *this;
 }
@@ -524,49 +497,49 @@ RooUnfoldBayesT<Hist,Hist2D>::operator= (const RooUnfoldBayesT<Hist,Hist2D>& rhs
 template<class Hist,class Hist2D>
 void RooUnfoldBayesT<Hist,Hist2D>::SetIterations (int niter)
 {
-  // Set regularisation parameter (number of iterations)
+  //! Set regularisation parameter (number of iterations)
   this->_niter= niter;
 }
 
 template<class Hist,class Hist2D>
 void RooUnfoldBayesT<Hist,Hist2D>::SetSmoothing (Bool_t smoothit)
 {
-  // Enable smoothing
+  //! Enable smoothing
   this->_smoothit= smoothit;
 }
 
 template<class Hist,class Hist2D>
 int RooUnfoldBayesT<Hist,Hist2D>::GetIterations() const
 {
-  // Return regularisation parameter (number of iterations)
+  //! Return regularisation parameter (number of iterations)
   return this->_niter;
 }
 
 template<class Hist,class Hist2D>
 int RooUnfoldBayesT<Hist,Hist2D>::GetSmoothing()  const
 {
-  // Return smoothing setting
+  //! Return smoothing setting
   return this->_smoothit;
 }
 
 template<class Hist,class Hist2D>
 const TMatrixD& RooUnfoldBayesT<Hist,Hist2D>::UnfoldingMatrix() const
 {
-  // Access unfolding matrix (Mij)
+  //! Access unfolding matrix (Mij)
   return this->_Mij;
 }
 
 template<class Hist,class Hist2D>
 void  RooUnfoldBayesT<Hist,Hist2D>::SetRegParm (Double_t parm)
 {
-  // Set regularisation parameter (number of iterations)
+  //! Set regularisation parameter (number of iterations)
   SetIterations(int(parm+0.5));
 }
 
 template<class Hist,class Hist2D>
 double RooUnfoldBayesT<Hist,Hist2D>::GetRegParm() const
 {
-  // Return regularisation parameter (number of iterations)
+  //! Return regularisation parameter (number of iterations)
   return GetIterations();
 }
 

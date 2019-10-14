@@ -1,10 +1,7 @@
 //=====================================================================-*-C++-*-
-// File and Version Information:
-//      $Id$
-//      Response Matrix
-//
-// Author: Tim Adye <T.J.Adye@rl.ac.uk>
-//
+//! \class RooUnfoldResponseT
+//! \brief Response Matrix
+//! \author Tim Adye <T.J.Adye@rl.ac.uk>
 //==============================================================================
 
 #ifndef ROOUNFOLDRESPONSE_HH
@@ -126,6 +123,10 @@ public:
   ClassDefT (RooUnfoldResponseT, 1) // Respose Matrix
 };
 
+//=====================================================================-*-C++-*-
+//! \class RooUnfoldResponse
+//! \brief specialization of RooUnfoldResponseT for TH1/TH2 objects
+//==============================================================================
 class RooUnfoldResponse : public RooUnfoldResponseT<TH1,TH2> {
 public:
 
@@ -192,6 +193,10 @@ private:
 class RooHistFunc;
 class RooHistPdf;
 
+//=====================================================================-*-C++-*-
+//! \class RooFitUnfoldResponse
+//! \brief specialization of RooUnfoldResponseT for RooAbsReal objects
+//==============================================================================
 class RooFitUnfoldResponse : public RooUnfoldResponseT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist> {
 public:
 

@@ -1,9 +1,6 @@
-// Author: Bogdan Malaescu <bogdan.malaescu@cern.ch>
-// Author: Christopher Meyer <chris.meyer@cern.ch>
-//
-// Inspired by Tim Adye code for RooUnfoldSvd
-// For support, contact: chris.meyer@cern.ch
-
+/* \class RooUnfoldIds
+   Inspired by Tim Adye code for RooUnfoldSvd. For support, contact: chris.meyer@cern.ch
+*/
 #include "RooUnfoldIds.h"
 #include "RooUnfoldTH1Helpers.h"
 #ifndef NOROOFIT
@@ -23,11 +20,6 @@
 #include "RooUnfoldResponse.h"
 
 using namespace RooUnfolding;
-
-template<class Hist,class Hist2D> RooUnfolding::Algorithm
-RooUnfoldIdsT<Hist,Hist2D>::GetMethod() const {
-  return RooUnfolding::kIDS;
-}
 
 //______________________________________________________________________________
 template<class Hist,class Hist2D>
@@ -199,7 +191,7 @@ RooUnfoldIdsT<Hist,Hist2D>::Unfold() const
 template<class Hist,class Hist2D>void
 RooUnfoldIdsT<Hist,Hist2D>::GetCov() const
 {
-
+  //! Get covariance matrix
    Bool_t oldstat = TH1::AddDirectoryStatus();
    TH1::AddDirectory(kFALSE);
 

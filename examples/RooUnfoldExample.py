@@ -66,13 +66,13 @@ elif method == "root":
 elif method == "ids":
   unfold= ROOT.RooUnfoldIds     (response, hMeas, 3);      #  OR
 
-hReco= unfold.Hreco();
+hUnfold= unfold.Hunfold();
 
 unfold.PrintTable (cout, hTrue);
 
 canvas = ROOT.TCanvas("RooUnfold",method)
 
-hReco.Draw();
+hUnfold.Draw();
 hMeas.Draw("SAME");
 hTrue.SetLineColor(8);
 hTrue.Draw("SAME");

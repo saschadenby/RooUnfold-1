@@ -269,22 +269,22 @@ void RooUnfoldTestHarness3D::Results()
   setmax (hTrueY, hTestPDFy, hMeasY, hFakeX);
   setmax (hTrueZ, hTestPDFz, hMeasZ, hFakeZ);
 
-  if (hReco) {
-    hRecoX= ProjectionX (hReco, "hRecoX", "Reconstructed X", "E");
-    hRecoY= ProjectionY (hReco, "hRecoY", "Reconstructed Y", "E");
-    hRecoZ= ProjectionZ (hReco, "hRecoZ", "Reconstructed Z", "E");
-    hRecoXY= Projection2D (hReco, "xy", "hRecoXY", "Reconstructed XY");
-    hRecoYZ= Projection2D (hReco, "yz", "hRecoYZ", "Reconstructed YZ");
-    hRecoXZ= Projection2D (hReco, "xz", "hRecoXZ", "Reconstructed XZ");
-    hRecoXY->SetMarkerColor(kRed);
-    hRecoYZ->SetMarkerColor(kRed);
-    hRecoXZ->SetMarkerColor(kRed);
-    hRecoX->SetMarkerStyle(kFullDotLarge);
-    hRecoY->SetMarkerStyle(kFullDotLarge);
-    hRecoZ->SetMarkerStyle(kFullDotLarge);
-    setmax (hTrueX, hRecoX);
-    setmax (hTrueY, hRecoY);
-    setmax (hTrueZ, hRecoZ);
+  if (hUnfold) {
+    hUnfoldX= ProjectionX (hUnfold, "hUnfoldX", "Unfolded X", "E");
+    hUnfoldY= ProjectionY (hUnfold, "hUnfoldY", "Unfolded Y", "E");
+    hUnfoldZ= ProjectionZ (hUnfold, "hUnfoldZ", "Unfolded Z", "E");
+    hUnfoldXY= Projection2D (hUnfold, "xy", "hUnfoldXY", "Unfolded XY");
+    hUnfoldYZ= Projection2D (hUnfold, "yz", "hUnfoldYZ", "Unfolded YZ");
+    hUnfoldXZ= Projection2D (hUnfold, "xz", "hUnfoldXZ", "Unfolded XZ");
+    hUnfoldXY->SetMarkerColor(kRed);
+    hUnfoldYZ->SetMarkerColor(kRed);
+    hUnfoldXZ->SetMarkerColor(kRed);
+    hUnfoldX->SetMarkerStyle(kFullDotLarge);
+    hUnfoldY->SetMarkerStyle(kFullDotLarge);
+    hUnfoldZ->SetMarkerStyle(kFullDotLarge);
+    setmax (hTrueX, hUnfoldX);
+    setmax (hTrueY, hUnfoldY);
+    setmax (hTrueZ, hUnfoldZ);
   }
 
   if (onepage && ipad>=onepage) return;
@@ -293,8 +293,8 @@ void RooUnfoldTestHarness3D::Results()
   hTestPDFx->Draw("LSAME");
   hMeasX   ->Draw("SAME");
   if (hFakeX) hFakeX->Draw("SAME");
-  if (hRecoX) hRecoX->Draw("SAME");
-  Legend (lTest, hTestPDFx, hTrueX, hFakeX, hMeasX, hRecoX);
+  if (hUnfoldX) hUnfoldX->Draw("SAME");
+  Legend (lTest, hTestPDFx, hTrueX, hFakeX, hMeasX, hUnfoldX);
   canvas->Update();
 
   if (onepage && ipad>=onepage) return;
@@ -303,7 +303,7 @@ void RooUnfoldTestHarness3D::Results()
   hTestPDFy->Draw("LSAME");
   hMeasY   ->Draw("SAME");
   if (hFakeY) hFakeY->Draw("SAME");
-  if (hRecoY) hRecoY->Draw("SAME");
+  if (hUnfoldY) hUnfoldY->Draw("SAME");
   lTest->Draw();
   canvas->Update();
 
@@ -313,11 +313,11 @@ void RooUnfoldTestHarness3D::Results()
   hTestPDFz->Draw("LSAME");
   hMeasZ   ->Draw("SAME");
   if (hFakeZ) hFakeZ->Draw("SAME");
-  if (hRecoZ) hRecoZ->Draw("SAME");
+  if (hUnfoldZ) hUnfoldZ->Draw("SAME");
   lTest->Draw();
   canvas->Update();
 
-  if (!hReco) return;
+  if (!hUnfold) return;
 
   if (onepage && ipad>=onepage) return;
   if (onepage) canvas->cd(++ipad);
@@ -331,12 +331,12 @@ void RooUnfoldTestHarness3D::Results()
   for (Int_t ix= 1; ix<=ntx; ix++) {
     for (Int_t iy= 1; iy<=nty; iy++) {
       for (Int_t iz= 1; iz<=ntz; iz++) {
-        if ( hReco->GetBinContent(ix,iy,iz)!=0.0             && hReco->GetBinError(ix,iy,iz)>0.0 &&
+        if ( hUnfold->GetBinContent(ix,iy,iz)!=0.0             && hUnfold->GetBinError(ix,iy,iz)>0.0 &&
             (hTrue->GetBinContent(ix,iy,iz)!=0.0 || (doerror && hTrue->GetBinError(ix,iy,iz)>0.0))) {
-          Double_t pull= (hReco->GetBinContent(ix,iy,iz) - hTrue->GetBinContent(ix,iy,iz)) / hReco->GetBinError(ix,iy,iz);
-          hPullsX->Fill (hReco->GetXaxis()->GetBinCenter(ix), pull);
-          hPullsY->Fill (hReco->GetYaxis()->GetBinCenter(iy), pull);
-          hPullsZ->Fill (hReco->GetZaxis()->GetBinCenter(iz), pull);
+          Double_t pull= (hUnfold->GetBinContent(ix,iy,iz) - hTrue->GetBinContent(ix,iy,iz)) / hUnfold->GetBinError(ix,iy,iz);
+          hPullsX->Fill (hUnfold->GetXaxis()->GetBinCenter(ix), pull);
+          hPullsY->Fill (hUnfold->GetYaxis()->GetBinCenter(iy), pull);
+          hPullsZ->Fill (hUnfold->GetZaxis()->GetBinCenter(iz), pull);
         }
       }
     }
@@ -366,13 +366,13 @@ void RooUnfoldTestHarness3D::Results()
 
   if (onepage && ipad>=onepage) return;
   if (onepage) canvas->cd(++ipad);
-  hReco->Draw();
+  hUnfold->Draw();
   canvas->Update();
 
   if (onepage && (ipad>=onepage || ploterrors)) return;
   if (onepage) canvas->cd(++ipad);
   hTrueXY->Draw();
-  if (hRecoXY) hRecoXY->Draw("SAME");
+  if (hUnfoldXY) hUnfoldXY->Draw("SAME");
   canvas->Update();
 
   if (onepage && (ipad>=onepage || ploterrors)) return;
@@ -383,7 +383,7 @@ void RooUnfoldTestHarness3D::Results()
   if (onepage && (ipad>=onepage || ploterrors)) return;
   if (onepage) canvas->cd(++ipad);
   hTrueYZ->Draw();
-  if (hRecoYZ) hRecoYZ->Draw("SAME");
+  if (hUnfoldYZ) hUnfoldYZ->Draw("SAME");
   canvas->Update();
 
   if (onepage && (ipad>=onepage || ploterrors)) return;
@@ -394,7 +394,7 @@ void RooUnfoldTestHarness3D::Results()
   if (onepage && (ipad>=onepage || ploterrors)) return;
   if (onepage) canvas->cd(++ipad);
   hTrueXZ->Draw();
-  if (hRecoXZ) hRecoXZ->Draw("SAME");
+  if (hUnfoldXZ) hUnfoldXZ->Draw("SAME");
   canvas->Update();
 
   if (onepage && (ipad>=onepage || ploterrors)) return;
@@ -472,8 +472,8 @@ RooUnfoldTestHarness3D::RooUnfoldTestHarness3D (const char* name, const char* ar
 void RooUnfoldTestHarness3D::Reset()
 {
   RooUnfoldTestHarness2D::Reset();
-  hTrainZ= hTrainTrueZ= hTrueZ= hTrainFakeZ= hFakeZ= hMeasZ= hRecoZ= hPDFz= hTestPDFz= hPullsZ= 0;
-  hTrueXY= hTrueYZ= hTrueXZ= hMeasXY= hMeasYZ= hMeasXZ= hRecoXY= hRecoYZ= hRecoXZ= 0;
+  hTrainZ= hTrainTrueZ= hTrueZ= hTrainFakeZ= hFakeZ= hMeasZ= hUnfoldZ= hPDFz= hTestPDFz= hPullsZ= 0;
+  hTrueXY= hTrueYZ= hTrueXZ= hMeasXY= hMeasYZ= hMeasXZ= hUnfoldXY= hUnfoldYZ= hUnfoldXZ= 0;
   dim= 3;
 }
 

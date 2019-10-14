@@ -1,25 +1,9 @@
-//=====================================================================-*-C++-*-
-// File and Version Information:
-//      $Id$
-//
-// Description:
-//      Unfolding class using the bin by bin method of conversion factors. 
-//
-// Authors: Richard Claridge <richard.claridge@stfc.ac.uk> & Tim Adye <T.J.Adye@rl.ac.uk>
-//
-//==============================================================================
-
-//____________________________________________________________
-/* BEGIN_HTML
-<p> Uses the correction factor method to unfold the distribution by looking at each bin individually.</p>
-<p> This method cannot account for bin migration and as such cannot unfold reliably if a bias/smearing effects are applied.</p>
-<p>Can only handle 1 dimensional distributions
-<p>True and measured distributions must have the same binning
-END_HTML */
-
-/////////////////////////////////////////////////////////////
-
-//Comment
+/*! \class RooUnfoldBinByBinT
+Uses the correction factor method to unfold the distribution by looking at each bin individually.
+This method cannot account for bin migration and as such cannot unfold reliably if a bias/smearing effects are applied.
+Can only handle 1 dimensional distributions
+True and measured distributions must have the same binning
+*/
 
 #include "RooUnfoldBinByBin.h"
 #include "RooUnfoldHelpers.h"
@@ -29,11 +13,6 @@ END_HTML */
 #include "TH2.h"
 
 #include "RooUnfoldResponse.h"
-
-template<class Hist,class Hist2D> RooUnfolding::Algorithm
-RooUnfoldBinByBinT<Hist,Hist2D>::GetMethod() const {
-  return RooUnfolding::kBinByBin;
-}
 
 template<class Hist,class Hist2D> 
 RooUnfoldBinByBinT<Hist,Hist2D>::RooUnfoldBinByBinT (const RooUnfoldBinByBinT<Hist,Hist2D>& rhs)
@@ -100,6 +79,7 @@ RooUnfoldBinByBinT<Hist,Hist2D>::Unfold() const
 template<class Hist,class Hist2D> void
 RooUnfoldBinByBinT<Hist,Hist2D>::GetCov() const
 {
+  //! Get covariance matrix
   const TMatrixD& covmeas(this->GetMeasuredCov());
     this->_cache._cov.ResizeTo(this->_nt,this->_nt);
     Int_t nb= std::min(this->_nm,this->_nt);

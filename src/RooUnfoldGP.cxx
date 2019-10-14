@@ -1,24 +1,6 @@
-//=====================================================================-*-C++-*-
-// File and Version Information:
-//      $Id$
-//
-// Description:
-//      Unfolding class using Gaussian Processes. It uses the inversion class 
-//      to get an initial solution and uses a marginal likelihood minimization 
-//      to find the optimal regularization.
-//
-//      Paper: Unfolding with Gaussian Processes by A. Bozson, G. Cowan and 
-//             F. Spano
-//    
-// Author: Pim Verschuuren <pim.verschuuren@rhul.ac.uk
-//
-//==============================================================================
-
-//____________________________________________________________
-/* BEGIN_HTML
-END_HTML */
-
-/////////////////////////////////////////////////////////////
+/*! \class RooUnfoldGPT
+  Paper: Unfolding with Gaussian Processes by A. Bozson, G. Cowan and F. Spano
+*/
 
 #include "RooUnfoldGP.h"
 
@@ -42,15 +24,11 @@ END_HTML */
 
 using namespace RooUnfolding;
 
-using std::cout;
-using std::cerr;
-using std::endl;
-
 template<class Hist, class Hist2D>
 RooUnfoldGPT<Hist,Hist2D>::RooUnfoldGPT()
   : RooUnfoldT<Hist,Hist2D>()
 {
-  // Default constructor. Use Setup() to prepare for unfolding.
+  //! Default constructor. Use Setup() to prepare for unfolding.
   Init();
 }
 
@@ -58,7 +36,7 @@ template<class Hist, class Hist2D>
 RooUnfoldGPT<Hist,Hist2D>::RooUnfoldGPT(const char* name, const char* title)
   : RooUnfoldT<Hist,Hist2D>(name,title)
 {
-  // Basic named constructor. Use Setup() to prepare for unfolding.
+  //! Basic named constructor. Use Setup() to prepare for unfolding.
   Init();
 }
 
@@ -66,14 +44,14 @@ template<class Hist, class Hist2D>
 RooUnfoldGPT<Hist,Hist2D>::RooUnfoldGPT(const TString& name, const TString& title)
   : RooUnfoldT<Hist,Hist2D>(name,title)
 {
-  // Basic named constructor. Use Setup() to prepare for unfolding.
+  //! Basic named constructor. Use Setup() to prepare for unfolding.
   Init();
 }
 
 template<class Hist, class Hist2D>
 RooUnfoldGPT<Hist,Hist2D>& RooUnfoldGPT<Hist,Hist2D>::operator= (const RooUnfoldGPT<Hist,Hist2D>& rhs)
 {
-  // Assignment operator for copying RooUnfoldInvertTsettings.
+  //! Assignment operator for copying RooUnfoldInvertTsettings.
   this->Assign(rhs);
   return *this;
 }
@@ -83,7 +61,7 @@ template<class Hist, class Hist2D>
 RooUnfoldGPT<Hist,Hist2D>::RooUnfoldGPT(const RooUnfoldGPT<Hist,Hist2D>& rhs)
   : RooUnfoldT<Hist,Hist2D> (rhs)
 {
-  // Copy constructor.
+  //! Copy constructor.
   Init();
 }
 
@@ -92,13 +70,20 @@ RooUnfoldGPT<Hist,Hist2D>::RooUnfoldGPT(const RooUnfoldResponseT<Hist,Hist2D>* r
 						    Int_t kernel,						    const char* name, const char* title)
   : RooUnfoldT<Hist,Hist2D> (res, meas, name, title), _kernel(kernel)
 {
-  // Constructor with response matrix object and measured unfolding input histogram.
+  //! Constructor with response matrix object and measured unfolding input histogram.
   Init();
 }
 
 template<class Hist, class Hist2D>
 RooUnfoldGPT<Hist,Hist2D>::~RooUnfoldGPT()
 {
+  //! destructor
+}
+
+template<class Hist, class Hist2D>
+RooUnfoldGPT<Hist,Hist2D>::Cache::~Cache()
+{
+  //! destructor
   delete _svd;
   delete _resinv;
 }
@@ -106,11 +91,11 @@ RooUnfoldGPT<Hist,Hist2D>::~RooUnfoldGPT()
 template<class Hist, class Hist2D> void
 RooUnfoldGPT<Hist,Hist2D>::Init()
 {
-  _svd= 0;
-  _resinv= 0;
-  _haveMLEst = false;
-  _haveMLCov = false;
-  _MLHConverged = false;
+  _specialcache._svd= 0;
+  _specialcache._resinv= 0;
+  _specialcache._haveMLEst = false;
+  _specialcache._haveMLCov = false;
+  _specialcache._MLHConverged = false;
 
   this->GetSettings();
 }
@@ -119,8 +104,8 @@ RooUnfoldGPT<Hist,Hist2D>::Init()
 template<class Hist, class Hist2D> void
 RooUnfoldGPT<Hist,Hist2D>::Reset()
 {
-  delete _svd;
-  delete _resinv;
+  delete _specialcache._svd;
+  delete _specialcache._resinv;
   Init();
   RooUnfoldT<Hist,Hist2D>::Reset();
 }
@@ -128,7 +113,7 @@ RooUnfoldGPT<Hist,Hist2D>::Reset()
 template<class Hist, class Hist2D> TDecompSVD*
 RooUnfoldGPT<Hist,Hist2D>::Impl()
 {
-  return _svd;
+  return _specialcache._svd;
 }
 
 template<class Hist, class Hist2D> void
@@ -174,14 +159,14 @@ RooUnfoldGPT<Hist,Hist2D>::SetBinCenters() const
   Double_t truBin_0 = - delta_truBins/2.0;
   Double_t obsBin_0 = - delta_obsBins/2.0;
 
-  _truBinCenters.ResizeTo(this->_nt);
-  _obsBinCenters.ResizeTo(this->_nm);
+  _specialcache._truBinCenters.ResizeTo(this->_nt);
+  _specialcache._obsBinCenters.ResizeTo(this->_nm);
   
-  for (int i = 0; i < _truBinCenters.GetNrows(); i++){
-    _truBinCenters[i] = truBin_0 + i * delta_truBins;
+  for (int i = 0; i < _specialcache._truBinCenters.GetNrows(); i++){
+    _specialcache._truBinCenters[i] = truBin_0 + i * delta_truBins;
   }
-  for (int i = 0; i < _obsBinCenters.GetNrows(); i++){
-    _obsBinCenters[i] = obsBin_0 + i * delta_obsBins;
+  for (int i = 0; i < _specialcache._obsBinCenters.GetNrows(); i++){
+    _specialcache._obsBinCenters[i] = obsBin_0 + i * delta_obsBins;
   }
 }
 
@@ -189,17 +174,17 @@ template<class Hist, class Hist2D> void
 RooUnfoldGPT<Hist,Hist2D>::SetFitSettings() const
 {
   if (_kernel == 1){
-    _kernel_init.push_back(13.0);
-    _kernel_init.push_back(0.01);
-    _kernel_step.push_back(0.001);
-    _kernel_step.push_back(0.0001);
+    _specialcache._kernel_init.push_back(13.0);
+    _specialcache._kernel_init.push_back(0.01);
+    _specialcache._kernel_step.push_back(0.001);
+    _specialcache._kernel_step.push_back(0.0001);
   } else {
-    _kernel_init.push_back(10.0);
-    _kernel_init.push_back(1.0);
-    _kernel_init.push_back(1.0);
-    _kernel_step.push_back(0.1);
-    _kernel_step.push_back(0.1);
-    _kernel_step.push_back(0.1);
+    _specialcache._kernel_init.push_back(10.0);
+    _specialcache._kernel_init.push_back(1.0);
+    _specialcache._kernel_init.push_back(1.0);
+    _specialcache._kernel_step.push_back(0.1);
+    _specialcache._kernel_step.push_back(0.1);
+    _specialcache._kernel_step.push_back(0.1);
   }
 }
 
@@ -225,12 +210,12 @@ RooUnfoldGPT<Hist,Hist2D>::Unfold() const
   // kernel parameters.
   MinimizeMLH();
   
-  if (!_MLHConverged){
+  if (!_specialcache._MLHConverged){
     return;
   }
 
   // Evaluate the kernel matrices with the optimal parameters.
-  EvaluateK(_opt_params);
+  EvaluateK(_specialcache._opt_params);
   // EvaluateKstar(_opt_params);
   // EvaluateKstarstar(_opt_params);  
   
@@ -241,9 +226,9 @@ RooUnfoldGPT<Hist,Hist2D>::Unfold() const
 
   // Pass the solutions.
   this->_cache._rec.ResizeTo(this->_nt);
-  this->_cache._rec = _MAPEst;
+  this->_cache._rec = _specialcache._MAPEst;
   this->_cache._cov.ResizeTo(this->_nt,this->_nt);
-  this->_cache._cov = _MAPCov;
+  this->_cache._cov = _specialcache._MAPCov;
 
   this->_cache._unfolded= true;
   this->_cache._haveCov= true;
@@ -256,55 +241,55 @@ RooUnfoldGPT<Hist,Hist2D>::MLEstimator() const
   TMatrixD res(this->_res->Mresponse(true));
   if (this->_nt>this->_nm) {
     TMatrixD resT (TMatrixD::kTransposed, res);
-    _svd= new TDecompSVD (resT);
-    delete _resinv; _resinv= 0;
+    _specialcache._svd= new TDecompSVD (resT);
+    delete _specialcache._resinv; _specialcache._resinv= 0;
   } else
-    _svd= new TDecompSVD (res);
+    _specialcache._svd= new TDecompSVD (res);
 
-  double c = _svd->Condition();
-  if (c<0) cout << "WARNING: Response matrix is ill-conditioned. TDecompSVD condition number = " << c << endl;
+  double c = _specialcache._svd->Condition();
+  if (c<0) std::cout << "WARNING: Response matrix is ill-conditioned. TDecompSVD condition number = " << c << std::endl;
 
-  _MLEst.ResizeTo(this->_nm);
-  _MLEst= this->Vmeasured();
+  _specialcache._MLEst.ResizeTo(this->_nm);
+  _specialcache._MLEst= this->Vmeasured();
 
 
   if (this->_res->HasFakes()) {
     TVectorD fakes= this->_res->Vfakes();
     Double_t fac= this->_res->Vmeasured().Sum();
     if (fac!=0.0) fac=  this->Vmeasured().Sum() / fac;
-    if (this->_verbose>=1) cout << "Subtract " << fac*fakes.Sum() << " fakes from measured distribution" << endl;
+    if (this->_verbose>=1) std::cout << "Subtract " << fac*fakes.Sum() << " fakes from measured distribution" << std::endl;
     fakes *= fac;
-    _MLEst -= fakes;
+    _specialcache._MLEst -= fakes;
   }
 
-  if (!checkGP(_MLEst)) {
+  if (!checkGP(_specialcache._MLEst)) {
     std::cout << "WARNING! Some of the bin counts are very low. The Gaussian bin count assumption might not hold resulting in bad unfolding results" << std::endl;
   }
 
   Bool_t ok;
   if (this->_nt>this->_nm) {
     ok= InvertResponse();
-    if (ok) _MLEst *= *_resinv;
+    if (ok) _specialcache._MLEst *= *_specialcache._resinv;
   } else
-    ok= _svd->Solve (_MLEst);
+    ok= _specialcache._svd->Solve (_specialcache._MLEst);
 
-  _MLEst.ResizeTo(this->_nt);
+  _specialcache._MLEst.ResizeTo(this->_nt);
   if (!ok) {
-    cerr << "Response matrix Solve failed" << endl;
+    std::cerr << "Response matrix Solve failed" << std::endl;
     return;
   }
   
-  _haveMLEst = true;
+  _specialcache._haveMLEst = true;
 }
 
 template<class Hist, class Hist2D> void
 RooUnfoldGPT<Hist,Hist2D>::MLCovariance() const
 {
     if (!InvertResponse()) return;
-    _MLCov.ResizeTo(this->_nt,this->_nt);
-    ABAT (*_resinv, this->GetMeasuredCov(), _MLCov);
+    _specialcache._MLCov.ResizeTo(this->_nt,this->_nt);
+    ABAT (*_specialcache._resinv, this->GetMeasuredCov(), _specialcache._MLCov);
     
-    _haveMLCov = true;
+    _specialcache._haveMLCov = true;
 }
 
 
@@ -312,14 +297,14 @@ template<class Hist, class Hist2D> void
 RooUnfoldGPT<Hist,Hist2D>::MAPEstimator() const
 {
 
-  TMatrixD KUML_INV(_K + _MLCov);
-  TMatrixD KT(_K);
+  TMatrixD KUML_INV(_specialcache._K + _specialcache._MLCov);
+  TMatrixD KT(_specialcache._K);
   KUML_INV.Invert();
   KT.T();
 
-  _MAPEst.ResizeTo(this->_nt);
+  _specialcache._MAPEst.ResizeTo(this->_nt);
 
-  _MAPEst = MultiplyMatrixVector( (KT * KUML_INV) , _MLEst);
+  _specialcache._MAPEst = MultiplyMatrixVector( (KT * KUML_INV) , _specialcache._MLEst);
 }
 
 
@@ -327,35 +312,35 @@ template<class Hist, class Hist2D> void
 RooUnfoldGPT<Hist,Hist2D>::MAPCovariance() const
 {
 
-  TMatrixD KUML_INV(_K + _MLCov);
-  TMatrixD KT(_K);
+  TMatrixD KUML_INV(_specialcache._K + _specialcache._MLCov);
+  TMatrixD KT(_specialcache._K);
   KUML_INV.Invert();
   KT.T();
 
 
-  _MAPCov.ResizeTo(this->_nt,this->_nt);
+  _specialcache._MAPCov.ResizeTo(this->_nt,this->_nt);
 
-  _MAPCov = _K - (KT * KUML_INV) * _K;  
+  _specialcache._MAPCov = _specialcache._K - (KT * KUML_INV) * _specialcache._K;  
 }
 
 template<class Hist, class Hist2D> Bool_t
 RooUnfoldGPT<Hist,Hist2D>::InvertResponse() const
 {
-    if (!_svd)   return false;
-    if (_resinv) return true;
-    if (this->_nt>this->_nm) _resinv= new TMatrixD(this->_nm,this->_nt);
-    else         _resinv= new TMatrixD(this->_nt,this->_nm);
+    if (!_specialcache._svd)   return false;
+    if (_specialcache._resinv) return true;
+    if (this->_nt>this->_nm) _specialcache._resinv= new TMatrixD(this->_nm,this->_nt);
+    else         _specialcache._resinv= new TMatrixD(this->_nt,this->_nm);
 #if ROOT_VERSION_CODE >= ROOT_VERSION(5,13,4)  /* TDecompSVD::Invert() didn't have ok status before 5.13/04. */
     Bool_t ok;
-    *_resinv=_svd->Invert(ok);
+    *_specialcache._resinv=_specialcache._svd->Invert(ok);
     if (!ok) {
-      cerr << "response matrix inversion failed" << endl;
+      std::cerr << "response matrix inversion failed" << std::endl;
       return false;
     }
 #else
-    *_resinv=_svd->Invert();
+    *_specialcache._resinv=_specialcache._svd->Invert();
 #endif
-    if (this->_nt>this->_nm) _resinv->T();
+    if (this->_nt>this->_nm) _specialcache._resinv->T();
     return true;
 }
 
@@ -447,7 +432,7 @@ RooUnfoldGPT<Hist,Hist2D>::SetMinInit(std::vector<Double_t>& init) const
   }
     
   }
-  _kernel_init = init;
+  _specialcache._kernel_init = init;
 }
 
 template<class Hist, class Hist2D> void
@@ -469,7 +454,7 @@ RooUnfoldGPT<Hist,Hist2D>::SetMinStep(std::vector<Double_t>& step) const
     }
   }
   }
-  _kernel_step = step;
+  _specialcache._kernel_step = step;
 }
 
 
@@ -485,14 +470,14 @@ RooUnfoldGPT<Hist,Hist2D>::MinimizeMLH() const
   min->SetTolerance(0.001);
   //min->SetPrintLevel(1);
   
-  ROOT::Math::Functor f(this, &RooUnfoldGPT<Hist,Hist2D>::MarginalLH,_kernel_init.size()); 
+  ROOT::Math::Functor f(this, &RooUnfoldGPT<Hist,Hist2D>::MarginalLH,_specialcache._kernel_init.size()); 
 
   min->SetFunction(f);
  
-  for (int param = 0; param < _kernel_init.size(); param++){
+  for (int param = 0; param < _specialcache._kernel_init.size(); param++){
     TString name;
     name.Form("%d",param);
-    min->SetVariable(param,name.Data(),_kernel_init.at(param), _kernel_step.at(param));
+    min->SetVariable(param,name.Data(),_specialcache._kernel_init.at(param), _specialcache._kernel_step.at(param));
   }
 
   min->Minimize();
@@ -502,11 +487,11 @@ RooUnfoldGPT<Hist,Hist2D>::MinimizeMLH() const
   } else {
     const double* xs = min->X();
     std::cout << "Marginal likelihood minimization converged. Parameter values: " << std::endl;
-    for (int i = 0; i < _kernel_init.size(); i++){
+    for (int i = 0; i < _specialcache._kernel_init.size(); i++){
       std::cout << "Parameter " << i << ": " << xs[i] << std::endl;
-      _opt_params.push_back(xs[i]);
+      _specialcache._opt_params.push_back(xs[i]);
     }
-    _MLHConverged = true;
+    _specialcache._MLHConverged = true;
   }
 
   delete min;
@@ -526,11 +511,11 @@ RooUnfoldGPT<Hist,Hist2D>::MarginalLH(const double *params) const
 
   EvaluateK(params);
 
-  TMatrixD KUML_INV(_K + _MLCov);
+  TMatrixD KUML_INV(_specialcache._K + _specialcache._MLCov);
   Double_t KUML_DET = KUML_INV.Determinant();
   KUML_INV.Invert();
 
-  first_term = 0.5 * _MLEst * MultiplyMatrixVector(KUML_INV, _MLEst);
+  first_term = 0.5 * _specialcache._MLEst * MultiplyMatrixVector(KUML_INV, _specialcache._MLEst);
   
   second_term = 0.5 * log(KUML_DET);
 
@@ -542,9 +527,9 @@ RooUnfoldGPT<Hist,Hist2D>::EvaluateK(const double *params) const
 {
 
   switch (_kernel) {
-  case 1: RadialKernel(params, _truBinCenters, _truBinCenters, _K);
+  case 1: RadialKernel(params, _specialcache._truBinCenters, _specialcache._truBinCenters, _specialcache._K);
      break;
-  case 2: GibbsKernel(params, _truBinCenters, _truBinCenters, _K);
+  case 2: GibbsKernel(params, _specialcache._truBinCenters, _specialcache._truBinCenters, _specialcache._K);
     break;
   default: std::cout << "Unknown kernel not available." << std::endl;
   }  
@@ -554,9 +539,9 @@ template<class Hist, class Hist2D> void
 RooUnfoldGPT<Hist,Hist2D>::EvaluateKstar(const double *params) const 
 {
   switch (_kernel) {
-  case 1: RadialKernel(params, _truBinCenters, _obsBinCenters, _Kstar);
+  case 1: RadialKernel(params, _specialcache._truBinCenters, _specialcache._obsBinCenters, _specialcache._Kstar);
     break;
-  case 2: GibbsKernel(params, _truBinCenters, _truBinCenters, _K);
+  case 2: GibbsKernel(params, _specialcache._truBinCenters, _specialcache._truBinCenters, _specialcache._K);
     break;
   default: std::cout << "Unknown kernel not available." << std::endl;
   }
@@ -566,9 +551,9 @@ template<class Hist, class Hist2D> void
 RooUnfoldGPT<Hist,Hist2D>::EvaluateKstarstar(const double *params) const 
 {
   switch (_kernel) {
-  case 1: RadialKernel(params, _obsBinCenters, _obsBinCenters, _Kstarstar);
+  case 1: RadialKernel(params, _specialcache._obsBinCenters, _specialcache._obsBinCenters, _specialcache._Kstarstar);
     break;
-  case 2: GibbsKernel(params, _truBinCenters, _truBinCenters, _K);
+  case 2: GibbsKernel(params, _specialcache._truBinCenters, _specialcache._truBinCenters, _specialcache._K);
     break;
   default: std::cout << "Unknown kernel not available." << std::endl;
   }
@@ -578,9 +563,9 @@ RooUnfoldGPT<Hist,Hist2D>::EvaluateK(const std::vector<Double_t>& params) const
 {
 
   switch (_kernel) {
-  case 1: RadialKernel(params, _truBinCenters, _truBinCenters, _K);
+  case 1: RadialKernel(params, _specialcache._truBinCenters, _specialcache._truBinCenters, _specialcache._K);
     break;
-  case 2: GibbsKernel(params, _truBinCenters, _truBinCenters, _K);
+  case 2: GibbsKernel(params, _specialcache._truBinCenters, _specialcache._truBinCenters, _specialcache._K);
     break;
   default: std::cout << "Unknown kernel not available." << std::endl;
   }  
@@ -590,9 +575,9 @@ template<class Hist, class Hist2D> void
 RooUnfoldGPT<Hist,Hist2D>::EvaluateKstar(const std::vector<Double_t>& params) const 
 {
   switch (_kernel) {
-  case 1: RadialKernel(params, _truBinCenters, _obsBinCenters, _Kstar);
+  case 1: RadialKernel(params, _specialcache._truBinCenters, _specialcache._obsBinCenters, _specialcache._Kstar);
     break;
-  case 2: GibbsKernel(params, _truBinCenters, _truBinCenters, _K);
+  case 2: GibbsKernel(params, _specialcache._truBinCenters, _specialcache._truBinCenters, _specialcache._K);
     break;
   default: std::cout << "Unknown kernel not available." << std::endl;
   }
@@ -603,9 +588,9 @@ template<class Hist, class Hist2D> void
 RooUnfoldGPT<Hist,Hist2D>::EvaluateKstarstar(const std::vector<Double_t>& params) const
 {
   switch (_kernel) {
-  case 1: RadialKernel(params, _obsBinCenters, _obsBinCenters, _Kstarstar);
+  case 1: RadialKernel(params, _specialcache._obsBinCenters, _specialcache._obsBinCenters, _specialcache._Kstarstar);
     break;
-  case 2: GibbsKernel(params, _truBinCenters, _truBinCenters, _K);
+  case 2: GibbsKernel(params, _specialcache._truBinCenters, _specialcache._truBinCenters, _specialcache._K);
     break;
   default: std::cout << "Unknown kernel not available." << std::endl;
   }
