@@ -650,6 +650,11 @@ namespace RooUnfolding { // section 2: non-trivial helpers
         }
       }
     }
+    bool allzero=true;
+    for(auto g:gammas){
+      if(g) allzero=false;
+    }
+    if(allzero) gammas.clear();
     return gammas;
   }
 
@@ -689,6 +694,7 @@ namespace RooUnfolding { // section 2: non-trivial helpers
             double val = dh->weight();
             double err = sqrt(dh->weightSquared());
             if(val > 0 && err/val>uncThreshold){
+              std::cout << val << " " << err << " " << uncThreshold << std::endl;          
               TString name = TString::Format("gamma_stat_%s_%d",dh->GetName(),(int)gammas.size());
               RooRealVar* g = new RooRealVar(name,name,1.);
               g->setError(err/val);
@@ -712,6 +718,11 @@ namespace RooUnfolding { // section 2: non-trivial helpers
         }
       }
     }
+    bool allzero=true;
+    for(auto g:gammas){
+      if(g) allzero=false;
+    }
+    if(allzero) gammas.clear();    
     return gammas;
   }  
   
@@ -779,8 +790,10 @@ namespace RooUnfolding { // section 2: non-trivial helpers
     this->_gamma = createGammas(dh,obslist,uncThreshold);
     RooArgList components;
     components.add(*hf);
-    RooAbsReal* phf =  makeParamHistFunc(hf->GetName(),hf->GetTitle(),obslist,this->_gamma);
-    components.add(*phf);
+    if(this->_gamma.size()>0){
+      RooAbsReal* phf =  makeParamHistFunc(hf->GetName(),hf->GetTitle(),obslist,this->_gamma);
+      components.add(*phf);
+    }
     RooProduct* prod = new RooProduct(TString::Format("%s_x_Uncertainties",hf->GetName()),hf->GetTitle(),components);
     return prod;
   }

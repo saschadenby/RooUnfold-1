@@ -30,10 +30,14 @@ protected:
   class HistContainer {
     friend RooUnfoldSpec;
     RooAbsReal* _nom = 0;
+    RooAbsReal* _staterror = 0;
+    std::vector<RooRealVar*> _gammas;    
     std::map<const std::string,std::vector<RooAbsReal*> > _shapes;
     std::map<const std::string,std::pair<double,double> > _norms;
     ~HistContainer();
     void setNominal(RooAbsReal* nom);
+    void setNominal(const TH1* nom, const RooArgList& obslist, double errorThreshold = -1, bool includeUnderflowOverflow = false, bool useDensity = false);
+    void setNominal(RooDataHist* data, const RooArgList& obslist);
     void addShape(const char* name, RooAbsReal* up, RooAbsReal* dn);
     void addNorm(const char* name, double up, double dn);
   };

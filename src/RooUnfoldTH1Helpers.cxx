@@ -279,6 +279,7 @@ namespace RooUnfolding {
     } else {
       throw std::runtime_error(TString::Format("invalid dimensionality for ROOT histogram: %d",(int)x.size()).Data());
     }
+    hist->Sumw2();
     TH1::AddDirectory (oldstat);
     return hist;
   }
@@ -291,6 +292,7 @@ namespace RooUnfolding {
     } else {
       throw std::runtime_error(TString::Format("invalid dimensionality for ROOT histogram: %d",(int)x.size()).Data());
     }
+    hist->Sumw2();    
     TH1::AddDirectory (oldstat);
     return hist;
   }  
@@ -328,6 +330,7 @@ namespace RooUnfolding {
     Bool_t oldstat= TH1::AddDirectoryStatus();
     TH1::AddDirectory (kFALSE);
     TH2* hist = new TH2D (name,title, x._nBins, x._min, x._max, y._nBins, y._min, y._max);
+    hist->Sumw2();
     TH1::AddDirectory (oldstat);
     return hist;
   }

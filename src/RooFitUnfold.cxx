@@ -354,7 +354,7 @@ RooUnfoldSpec::RooUnfoldSpec(const char* name, const char* title, const TH1* tru
 {
   //! constructor
   this->_bkg.setNominal(bkg);
-  this->_data.setNominal(RooUnfolding::makeHistFunc(data,obs_reco));
+  this->_data.setNominal(data,obs_reco);
   this->setup(truth_th1,obs_truth,reco_th1,obs_reco,response_th1,NULL,NULL,includeUnderflowOverflow,errorThreshold,useDensity);
 }
 
@@ -364,7 +364,7 @@ RooUnfoldSpec::RooUnfoldSpec(const char* name, const char* title, const TH1* tru
   //! constructor
   this->_reco.setNominal(reco);
   this->_bkg.setNominal(bkg);
-  this->_data.setNominal(RooUnfolding::makeHistFunc(data,obs_reco));
+  this->_data.setNominal(data,obs_reco);
   this->setup(truth_th1,obs_truth,NULL,obs_reco,response_th1,NULL,NULL,includeUnderflowOverflow,errorThreshold,useDensity);
 }
 
@@ -401,7 +401,7 @@ RooUnfoldSpec::RooUnfoldSpec(const char* name, const char* title, const TH1* tru
   RooArgList obs_truth_list(*obs_truth);
   this->_reco.setNominal(::makeParamHistFunc(TString::Format("signal_reco_%s_differential",obs_reco->GetName()).Data(),obs_reco->GetTitle(),obs_reco_list,reco_bins,useDensity));
   this->_bkg.setNominal(::makeParamHistFunc(TString::Format("bkg_reco_%s_differential",obs_reco->GetName()).Data(),obs_reco->GetTitle(),obs_reco_list,bkg_bins,useDensity));
-  this->_data.setNominal(RooUnfolding::makeHistFunc(data,obs_reco_list));
+  this->_data.setNominal(data,obs_reco_list);
   this->setup(truth_th1,obs_truth_list,NULL,obs_reco_list,response_th1,NULL,NULL,includeUnderflowOverflow,errorThreshold,useDensity);
 }
 
@@ -414,7 +414,7 @@ RooUnfoldSpec::RooUnfoldSpec(const char* name, const char* title, const TH1* tru
   RooArgList obs_reco_list(*obs_reco);
   RooArgList obs_truth_list(*obs_truth);  
   this->_bkg.setNominal(::makeParamHistFunc(TString::Format("bkg_reco_%s_differential",obs_reco->GetName()),obs_reco->GetTitle(),obs_reco_list,bkg_bins,useDensity));
-  this->_data.setNominal(RooUnfolding::makeHistFunc(data,obs_reco_list));
+  this->_data.setNominal(data,obs_reco_list);
   this->setup(truth_th1,obs_truth_list,reco_th1,obs_reco_list,response_th1,NULL,NULL,includeUnderflowOverflow,errorThreshold,useDensity);
 }
 
@@ -461,7 +461,7 @@ RooUnfoldSpec::RooUnfoldSpec(const char* name, const char* title, const TH1* tru
   RooArgList obs_reco_list(*obs_reco);
   RooArgList obs_truth_list(*obs_truth);
   this->_reco.setNominal(reco);
-  this->_data.setNominal(RooUnfolding::makeHistFunc(data,obs_reco_list));
+  this->_data.setNominal(data,obs_reco_list);
   double densityCorr = 1;
   if(useDensity && obs_reco->InheritsFrom(RooRealVar::Class())){
     densityCorr = 1./((RooRealVar*)(obs_reco))->getBinning().averageBinWidth();
@@ -478,7 +478,7 @@ RooUnfoldSpec::RooUnfoldSpec(const char* name, const char* title, RooAbsReal* tr
   RooArgList obs_truth_list(*obs_truth);
   this->_truth.setNominal(truth);
   this->_reco.setNominal(reco);
-  this->_data.setNominal(RooUnfolding::makeHistFunc(data,obs_reco_list));
+  this->_data.setNominal(data,obs_reco_list);
   double densityCorr = 1;
   if(useDensity && obs_reco->InheritsFrom(RooRealVar::Class())){
     densityCorr = 1./((RooRealVar*)(obs_reco))->getBinning().averageBinWidth();
@@ -493,16 +493,16 @@ void RooUnfoldSpec::setup(const TH1* truth_th1, const RooArgList& obs_truth, con
   this->_includeUnderflowOverflow = includeUnderflowOverflow;
   this->_useDensity = useDensity;
   this->_errorThreshold = errorThreshold;
-  if(truth_th1) this->_truth.setNominal(RooUnfolding::makeHistFunc(truth_th1,obs_truth,includeUnderflowOverflow,this->_useDensity));
-  if(reco_th1)  this->_reco.setNominal(RooUnfolding::makeHistFunc(reco_th1,obs_reco,includeUnderflowOverflow,this->_useDensity));
+  if(truth_th1) this->_truth.setNominal(truth_th1,obs_truth,errorThreshold,includeUnderflowOverflow,this->_useDensity);
+  if(reco_th1)  this->_reco.setNominal(reco_th1,obs_reco,errorThreshold,includeUnderflowOverflow,this->_useDensity);
   this->_obs_reco.add(obs_reco);
   this->_obs_all.add(obs_reco);  
   this->_obs_truth.add(obs_truth);  
   this->_obs_all.add(obs_truth);
-  if(response_th1) this->_res.setNominal(RooUnfolding::makeHistFunc(response_th1,this->_obs_all,includeUnderflowOverflow,this->_useDensity));
-  if(bkg_th1)  this->_bkg.setNominal(RooUnfolding::makeHistFunc(bkg_th1,obs_reco,includeUnderflowOverflow,this->_useDensity));
+  if(response_th1) this->_res.setNominal(response_th1,this->_obs_all,errorThreshold,includeUnderflowOverflow,this->_useDensity);
+  if(bkg_th1)  this->_bkg.setNominal(bkg_th1,obs_reco,errorThreshold,includeUnderflowOverflow,this->_useDensity);
   
-  if(data_th1) this->_data.setNominal(RooUnfolding::makeHistFunc(data_th1,obs_reco,includeUnderflowOverflow,this->_useDensity));
+  if(data_th1) this->_data.setNominal(data_th1,obs_reco,0.,includeUnderflowOverflow,this->_useDensity);
 }
 
 RooUnfoldSpec::~RooUnfoldSpec(){
@@ -585,23 +585,18 @@ RooUnfolding::RooFitHist* RooUnfoldSpec::makeHistogram(const HistContainer& sour
     }
     TString name = TString::Format("%s_OverallSystematics",hf->GetName());
     components.add(*(new RooStats::HistFactory::FlexibleInterpVar(name.Data(),name.Data(),params,1.,up,dn)));
-  }  
-  std::vector<RooRealVar*> gammas;
-  if(errorThreshold >= 0 && hf->InheritsFrom(RooHistFunc::Class())){
-    gammas = RooUnfolding::createGammas(&(((RooHistFunc*)hf)->dataHist()),obslist,errorThreshold);
-    for(auto g:gammas){
-      this->addPoissonNP(g);
-    }
-    RooAbsReal* phf = RooUnfolding::makeParamHistFunc(hf->GetName(),hf->GetTitle(),obslist,gammas);
-    if(phf) components.add(*phf);
   }
+  for(auto g:source._gammas){
+    this->addPoissonNP(g);
+  }
+  if(source._staterror) components.add(*source._staterror);
   if(components.getSize() > 0){
     components.add(*func);
     TString name(hf->GetName());
     hf->SetName(TString::Format("%s_hist",hf->GetName()));
     func = new RooProduct(name.Data(),hf->GetTitle(),components);  
   }
-  return new RooUnfolding::RooFitHist(func,obs,gammas);
+  return new RooUnfolding::RooFitHist(func,obs,source._gammas);
 }
 
 RooHistFunc* RooUnfoldSpec::makeHistFuncTruth(const TH1* hist){
@@ -750,6 +745,25 @@ RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>* RooUnfoldSpec::un
 void RooUnfoldSpec::HistContainer::setNominal(RooAbsReal* nom){
   this->_nom = nom;
 }
+
+void RooUnfoldSpec::HistContainer::setNominal(RooDataHist* data, const RooArgList& obslist){
+  this->_nom = RooUnfolding::makeHistFunc(data,obslist);  
+  this->_gammas = RooUnfolding::createGammas(data,obslist,0.);
+  if(_gammas.size()>0){
+    this->_staterror = RooUnfolding::makeParamHistFunc(TString::Format("%s_staterrors",_nom->GetName()),_nom->GetTitle(),obslist,_gammas);
+  }
+}
+
+void RooUnfoldSpec::HistContainer::setNominal(const TH1* nom, const RooArgList& obslist,double errorThreshold, bool includeUnderflowOverflow, bool useDensity){
+  this->_nom = RooUnfolding::makeHistFunc(nom,obslist,includeUnderflowOverflow,useDensity);  
+  if(errorThreshold >= 0){
+    this->_gammas = RooUnfolding::createGammas(nom,includeUnderflowOverflow,errorThreshold);
+    if(_gammas.size()>0){    
+      this->_staterror = RooUnfolding::makeParamHistFunc(TString::Format("%s_staterrors",nom->GetName()),nom->GetTitle(),obslist,_gammas);
+    }
+  }
+}
+
 
 void RooUnfoldSpec::HistContainer::addShape(const char* name, RooAbsReal* up, RooAbsReal* dn){
   this->_shapes[name] = {up,dn};
