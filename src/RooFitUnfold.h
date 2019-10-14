@@ -148,6 +148,8 @@ public:
   virtual void setCacheAndTrackHints(RooArgSet &) override;
   
   virtual Bool_t redirectServersHook(const RooAbsCollection& newServerList, Bool_t mustReplaceAll, Bool_t nameChange, Bool_t isRecursive);
+
+  RooArgList* makeParameterList() const;
   
   RooUnfoldFunc();    
   RooUnfoldFunc(const char* name, const char* title, const RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>* unf);

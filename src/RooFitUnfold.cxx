@@ -153,6 +153,13 @@ Double_t RooUnfoldFunc::getValV(const RooArgSet* set) const
   return RooAbsReal::getValV(set) ;
 }
 
+RooArgList* RooUnfoldFunc::makeParameterList() const {
+  RooArgSet* pset = this->getParameters((RooArgSet*)0);
+  RooArgList* list = new RooArgList(*pset);
+  delete pset;
+  return list;
+}
+
 Double_t RooUnfoldFunc::evaluate() const {
   //! call getVal on the internal function
   std::map<std::string,double> snapshot;
