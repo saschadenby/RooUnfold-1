@@ -408,7 +408,7 @@ RooUnfoldFunc::unfold = 168.367
 embedded datasets (in pdfs and functions)
 -----------------------------------------
 RooDataHist::truth_hist(obs_truth)
-RooDataHist::response_hist(obs_truth,obs_reco)
+RooDataHist::response_hist(obs_reco,obs_truth)
 RooDataHist::measured_hist(obs_reco)
 RooDataHist::sigbkg_reco_hist(obs_reco)
 RooDataHist::bkg_hist(obs_reco)
