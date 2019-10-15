@@ -1312,7 +1312,7 @@ template<class Hist,class Hist2D>
 Double_t RooUnfoldT<Hist,Hist2D>::GetRegParm() const
 {
   //! Get regularisation parameter.
-  return -1;
+  return -1e30;
 }
 
 template<class Hist,class Hist2D> 
