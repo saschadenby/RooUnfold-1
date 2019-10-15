@@ -130,6 +130,7 @@ protected:
 class RooUnfoldFunc : public RooAbsReal {
 protected:
   RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>* _unfolding;
+  bool _useDensity = false;
   mutable const RooArgSet* _curNormSet ; //! 
   
 public:
@@ -154,9 +155,11 @@ public:
   virtual Bool_t redirectServersHook(const RooAbsCollection& newServerList, Bool_t mustReplaceAll, Bool_t nameChange, Bool_t isRecursive);
 
   RooArgList* makeParameterList() const;
+  bool isDensity() const;
+  void setDensity(bool d);
   
   RooUnfoldFunc();    
-  RooUnfoldFunc(const char* name, const char* title, const RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>* unf);
+  RooUnfoldFunc(const char* name, const char* title, const RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>* unf,bool useDensity=false);
   RooUnfoldFunc(const RooUnfoldFunc& other);
   RooUnfoldFunc(const RooUnfoldFunc* other);    
   virtual ~RooUnfoldFunc();

@@ -692,7 +692,7 @@ RooUnfoldT<Hist,Hist2D>::PrintTable (std::ostream& o, const Hist* hTrue, ErrorTr
              h2v(hTrainTrue,this->_overflow, this->response()->UseDensityStatus()),
              h2v(hTrain,this->_overflow, this->response()->UseDensityStatus()),
              hTrue ? h2v(hTrue,this->_overflow, this->response()->UseDensityStatus()) : TVectorD(this->_nt) ,             
-             h2v(hMeas,this->_overflow),
+             h2v(hMeas,this->_overflow, this->response()->UseDensityStatus()),
              this->Vunfold(),
              withError,
              hTrue ? h2ve(hTrue,this->_overflow, this->response()->UseDensityStatus()) : TVectorD(this->_nt) ,
