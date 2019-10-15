@@ -39,7 +39,10 @@ namespace {
   }
 }
 
-RooUnfoldFunc::RooUnfoldFunc(const char* name, const char* title, const RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>* unf) : RooAbsReal(name,title){
+RooUnfoldFunc::RooUnfoldFunc(const char* name, const char* title, const RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>* unf, bool useDensity) :
+  RooAbsReal(name,title),
+  _useDensity(useDensity)                                                                                                                                                               
+{
   //! constructor
   auto unfolding = RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>::New(unf->GetAlgorithm(),unf->response(),unf->Hmeasured(),unf->GetRegParm(),unf->GetName(),unf->GetTitle());
   this->_unfolding = dynamic_cast<RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>*>(unfolding);
@@ -84,12 +87,6 @@ RooUnfoldFunc::RooUnfoldFunc(const char* name, const char* title, const RooUnfol
     }
   }
 }
-//RooUnfoldFunc::RooUnfoldFunc(const char* name, const char* title, const RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>* unf) : RooUnfoldFunc(name,title,unf) {
-//  //! constructor
-//}
-//RooUnfoldPdf::RooUnfoldPdf(const char* name, const char* title, const RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>* unf) : RooUnfoldFunc(name,title,unf) {
-//  //! constructor
-//}
 RooUnfoldFunc::RooUnfoldFunc() : _unfolding(NULL) {
   //! constructor
 }
@@ -154,11 +151,22 @@ Double_t RooUnfoldFunc::getValV(const RooArgSet* set) const
 }
 
 RooArgList* RooUnfoldFunc::makeParameterList() const {
+  //! return a list of all parameters in this function
   RooArgSet* pset = this->getParameters((RooArgSet*)0);
   RooArgList* list = new RooArgList(*pset);
   delete pset;
   return list;
 }
+
+bool RooUnfoldFunc::isDensity() const {
+  //! return true if the return value is density-corrected, false otherwise
+  return this->_useDensity;
+}
+void RooUnfoldFunc::setDensity(bool d){
+  //! set if the return value should be density-corrected
+  this->_useDensity = d;
+}
+
 
 Double_t RooUnfoldFunc::evaluate() const {
   //! call getVal on the internal function
@@ -168,7 +176,7 @@ Double_t RooUnfoldFunc::evaluate() const {
   this->_unfolding->ForceRecalculation();
   this->_unfolding->response()->Htruth()->checkValidity();
   double v = this->_unfolding->Vunfold()[bin];
-  if(this->_unfolding->response()->UseDensityStatus()){
+  if(this->_useDensity){
     v /= binVolume(this->_unfolding->response()->Htruth(),bin,false);
   }
   this->_unfolding->response()->Hresponse()->loadSnapshot(snapshot);
@@ -226,7 +234,7 @@ void RooUnfoldFunc::setCacheAndTrackHints(RooArgSet& arg) {
 }
 TObject* RooUnfoldFunc::clone(const char* newname) const {
   //! produce a clone (deep copy) of this object
-  return new RooUnfoldFunc(newname ? newname : this->GetName(),this->GetTitle(),this->_unfolding);
+  return new RooUnfoldFunc(newname ? newname : this->GetName(),this->GetTitle(),this->_unfolding,this->_useDensity);
 }
 
 namespace {
@@ -840,7 +848,8 @@ void RooUnfoldSpec::registerSystematic(Contribution c, const char* name, double 
 
 RooAbsPdf* RooUnfoldSpec::makePdf(Algorithm alg, Double_t regparam){
   //! create an unfolding pdf
-  RooAbsReal* func = this->makeFunc(alg,regparam);
+  RooUnfoldFunc* func = static_cast<RooUnfoldFunc*>(this->makeFunc(alg,regparam));
+  func->setDensity(true);
   RooWrapperPdf* pdf = new RooWrapperPdf(TString::Format("%s_pdf",func->GetName()),TString::Format("%s Pdf",func->GetTitle()),*func);
   RooAbsReal* integral = func->createIntegral(this->_obs_truth);
   RooExtendPdf* extpdf = new RooExtendPdf(TString::Format("%s_extpdf",func->GetName()),TString::Format("%s Extended Pdf",func->GetTitle()),*pdf,*integral);
@@ -856,7 +865,7 @@ RooAbsPdf* RooUnfoldSpec::makePdf(Algorithm alg, Double_t regparam){
 RooAbsReal* RooUnfoldSpec::makeFunc(Algorithm alg, Double_t regparam){
   //! create an unfolding function
   RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>* unfold = this->unfold(alg, regparam);
-  RooAbsReal* func = new RooUnfoldFunc(this->GetName(),this->GetTitle(),this->unfold(alg, regparam));
+  RooAbsReal* func = new RooUnfoldFunc(this->GetName(),this->GetTitle(),this->unfold(alg, regparam),false);
   func->setStringAttribute("source",func->GetName());
   delete unfold;
   return func;
