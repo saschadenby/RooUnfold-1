@@ -346,7 +346,7 @@ RooUnfoldSpec::RooUnfoldSpec(const char* name, const char* title, const TH1* tru
     obs->setConstant(true);
     reco_vars.add(*obs);
   }
-
+  
   this->setup(truth,truth_vars,reco,reco_vars,response,bkg,data,includeUnderflowOverflow,errorThreshold,useDensity);
 }
 

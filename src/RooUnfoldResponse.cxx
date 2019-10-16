@@ -539,7 +539,11 @@ TH1D* RooUnfoldResponseT<Hist,Hist2D>::TH1purity()
       n_reco = reco[i];
     }
       
-    pur->SetBinContent(i + 1,(Double_t)n_recogen/n_reco);
+    if (n_reco > 0) {
+      pur->SetBinContent(i + 1,(Double_t)n_recogen/n_reco);
+    } else {
+      pur->SetBinContent(i + 1, 0.0);
+    }
   }
 
   return pur;
