@@ -417,7 +417,7 @@ RooUnfoldT<Hist,Hist2D>::GetMeasuredCov() const
 
 
 template<class Hist,class Hist2D> void
-RooUnfoldT<Hist,Hist2D>::ForceRecalculation () {
+RooUnfoldT<Hist,Hist2D>::ForceRecalculation () const {
   //! clear and rebuild the cache
   this->_cache = Cache();
   this->_res->ClearCache();
@@ -454,17 +454,27 @@ RooUnfoldT<Hist,Hist2D>::Unfold() const
 }
 
 template<class Hist,class Hist2D> void
+RooUnfoldT<Hist,Hist2D>::GetErrorsCovariance() const
+{
+  //!Creates vector of diagonals of covariance matrices.
+  if(this->_cache._withError != kErrors){
+    throw std::runtime_error("unknown error propagation method!");
+  }
+  if (!_cache._haveCov) GetCov();
+  if (!_cache._haveCov) return;
+  _cache._variances.ResizeTo(_nt);
+  for (Int_t i= 0; i < _nt; i++) {
+    _cache._variances(i)= _cache._cov(i,i);
+  }
+  _cache._haveErrors= true;
+}
+
+template<class Hist,class Hist2D> void
 RooUnfoldT<Hist,Hist2D>::GetErrors() const
 {
-    //!Creates vector of diagonals of covariance matrices.
-    //!This may be overridden if it can be computed more quickly without the covariance matrix.
-    if (!_cache._haveCov) GetCov();
-    if (!_cache._haveCov) return;
-    _cache._variances.ResizeTo(_nt);
-    for (Int_t i= 0; i < _nt; i++) {
-      _cache._variances(i)= _cache._cov(i,i);
-    }
-    _cache._haveErrors= true;
+  //!Creates vector of diagonals of covariance matrices.
+  //!This may be overridden if it can be computed more quickly without the covariance matrix.
+  this->GetErrorsCovariance();
 }
 
 template<class Hist,class Hist2D> void
@@ -473,7 +483,7 @@ RooUnfoldT<Hist,Hist2D>::GetCov() const
   //!Dummy routine to get covariance matrix. It should be overridden by derived classes.
   const TMatrixD& covmeas(GetMeasuredCov());
   Int_t nb= std::min(_nm,_nt);
-  _cache._cov.ResizeTo (nb, nb);
+  _cache._cov.ResizeTo (_nt, _nt);
   for (int i=0; i<nb; i++)
     for (int j=0; j<nb; j++)
       _cache._cov(i,j)= covmeas(i,j);
@@ -574,20 +584,6 @@ RooUnfoldT<Hist,Hist2D>::UnfoldWithErrors (ErrorTreatment withError, bool getWei
 
     if (_cache._fail) return false;
 
-    const Hist* rmeas= _res->Hmeasured();
-    if (dim(_meas) != dim(rmeas) ||
-        nBins(_meas,X)    != nBins(rmeas,X)    ||
-        nBins(_meas,Y)    != nBins(rmeas,Y)    ||
-        nBins(_meas,Z)    != nBins(rmeas,Z)) {
-      cerr << "Warning: measured "              << nBins(_meas,X);
-      if (dim(_meas)>=2) cerr << "x" << nBins(_meas,Y);
-      if (dim(_meas)>=3) cerr << "x" << nBins(_meas,Z);
-      cerr << "-bin histogram does not match "  << nBins(rmeas,X);
-      if (dim(rmeas)>=2) cerr << "x" << nBins(rmeas,Y);
-      if (dim(rmeas)>=3) cerr << "x" << nBins(rmeas,Z);
-      cerr << "-bin measured histogram from RooUnfoldResponse" << endl;
-    }
-
     this->Unfold();
 
     if (!_cache._unfolded) {
@@ -597,6 +593,7 @@ RooUnfoldT<Hist,Hist2D>::UnfoldWithErrors (ErrorTreatment withError, bool getWei
   }
 
   Bool_t ok;
+  if(_cache._withError != withError) _cache._haveErrors = false;
   _cache._withError= withError;
   if (getWeights && (withError==kErrors || withError==kCovariance)) {
       if   (!_cache._haveWgt)      GetWgt();
@@ -604,6 +601,7 @@ RooUnfoldT<Hist,Hist2D>::UnfoldWithErrors (ErrorTreatment withError, bool getWei
   } else {
     switch (withError) {
     case kErrors:
+    case kRooFit:
       if   (!_cache._haveErrors)   GetErrors();
       ok= _cache._haveErrors;
       break;
@@ -980,6 +978,7 @@ RooUnfoldT<Hist,Hist2D>::Eunfold(ErrorTreatment withError) const
       }
       return Eunfold_m;
       break; }
+    case kRooFit:
     case kErrors: {
       TMatrixD Eunfold_m(_nt,_nt);
       for (int i=0; i<_nt;i++){
@@ -1019,6 +1018,7 @@ RooUnfoldT<Hist,Hist2D>::EunfoldV(ErrorTreatment withError) const
         }
         break;
       case kErrors:
+      case kRooFit:
         for (int i=0; i<_nt; i++){
           Eunfold_v(i)=sqrt (fabs (_cache._variances(i)));
         }
@@ -1053,6 +1053,7 @@ RooUnfoldT<Hist,Hist2D>::Wunfold(ErrorTreatment withError) const
         }
         break;
       case kErrors:
+      case kRooFit:
         for (int i=0; i<_nt;i++){
           Wunfold_m(i,i)=_cache._wgt(i,i);
         }
@@ -1337,6 +1338,9 @@ template class RooUnfoldT<TH1,TH2>;
 ClassImp (RooUnfold)
 
 #ifndef NOROOFIT
+#include "RooFitResult.h"
+#include "RooAbsPdf.h"
+#include "RooDataSet.h"
 template<> void RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>::SetResponse (const RooUnfoldResponseT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>* res, Bool_t takeOwnership){
   //! Set response matrix for unfolding, optionally taking ownership of the RooUnfoldResponseT<Hist,Hist2D> object
   if(!res) throw std::runtime_error("cannot set response to invalid value!");
@@ -1346,6 +1350,108 @@ template<> void RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>::S
   _nt= _res->GetNbinsTruth();
   SetNameTitleDefault();
 }
+namespace {
+  void getParameters(const RooUnfolding::RooFitHist* hist, RooArgSet& params){
+    if(hist){
+      RooArgSet* args = hist->func()->getParameters((RooArgSet*)0); 
+      params.add(*args,true);
+      delete args;
+    }
+  }
+  class FitResultHack : public RooFitResult {
+  public:
+    void setCovariance(TMatrixDSym& m){
+      this->setCovarianceMatrix(m);
+    }
+  };
+}
+
+template<> void RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>::GetErrors() const
+{
+  if(_cache._withError == kErrors){
+    GetErrorsCovariance();
+    return;
+  }
+  if(_cache._withError != kRooFit){
+    throw std::runtime_error("unknown error propagation method!");
+  }
+
+
+    //!Creates vector of diagonals of covariance matrices.
+    //!This may be overridden if it can be computed more quickly without the covariance matrix.
+  const auto* res = this->response();
+  RooArgSet allParams;
+  getParameters(this->Hmeasured(),allParams);
+  getParameters(res->Hmeasured(),allParams);
+  getParameters(res->Htruth(),allParams);
+  getParameters(res->Hfakes(),allParams);
+  getParameters(res->Hresponse(),allParams);
+  RooArgSet errorParams;
+  for(auto p:allParams){
+    if(!p->isConstant()) errorParams.add(*p);
+  }
+
+  int n = this->_NToys;
+
+  auto* snsh = errorParams.snapshot();
+  RooArgList errorParamList(errorParams);
+  RooFitResult * prefitResult = RooFitResult::prefitResult(errorParamList);
+  if(_cache._covMes){
+    auto meas(this->Vmeasured());
+    auto covMes = *(_cache._covMes);
+    auto setCov(prefitResult->covarianceMatrix());
+    auto gammas = this->Hmeasured()->nps();
+    for(size_t i=0; i<covMes.GetNcols(); ++i){
+      RooRealVar* p1 = gammas[i];
+      int idx1 = errorParamList.index(p1);
+      if(idx1<0) continue;
+      for(size_t j=0; j<covMes.GetNrows(); ++j){
+        RooRealVar* p2 = gammas[j];
+        int idx2 = errorParamList.index(p2);
+        if(idx2<0) continue;
+        double val = covMes(i,j)/(meas[i]*meas[j]);
+        setCov(idx1,idx2) = val;
+      }
+    }
+    ((::FitResultHack*)prefitResult)->setCovariance(setCov);
+  }
+
+  RooAbsPdf* paramPdf = prefitResult->createHessePdf(errorParams) ;
+  RooDataSet* d = paramPdf->generate(errorParams,n) ;
+
+  std::vector<TVectorD> values;
+  for (int i=0 ; i<n ; ++i) {
+    errorParams = (*d->get(i)) ;
+    this->ForceRecalculation();
+    values.push_back(this->Vunfold());
+  }
+
+  errorParams = *snsh;
+  delete snsh;
+  delete prefitResult;
+  delete paramPdf;
+  delete d;
+
+  this->ForceRecalculation();
+  this->Unfold();
+
+  _cache._variances.ResizeTo(_nt);
+  for (int i=0 ; i<this->_nt ; ++i) {
+    double sum = 0;
+    for (int j=0 ; j<n ; ++j) {
+      sum += values[j][i];
+    }
+    double mu = sum/n;
+    double sum2 = 0;
+    for (int j=0 ; j<n ; ++j) {
+      sum2 += (values[j][i] - mu)*(values[j][i] - mu);
+    }
+    _cache._variances(i) = sum2/(n-1);
+  }
+  _cache._haveErrors= true;
+}
+
+
 template class RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>;
 typedef RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist> RooUnfoldT_RooFitHist;
 ClassImp (RooUnfoldT_RooFitHist)

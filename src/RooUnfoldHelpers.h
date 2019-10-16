@@ -26,6 +26,7 @@ namespace RooUnfolding {
     kErrors,             //   bin-by-bin errors (diagonal covariance matrix)
     kCovariance,         //   covariance matrix from unfolding
     kCovToy,             //   covariance matrix from toy MC
+    kRooFit,             //   toys using RooFit
     kDefault=-1          //   not specified
   };
   
