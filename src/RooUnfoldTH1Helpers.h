@@ -9,7 +9,7 @@ class TAxis;
 
 namespace RooUnfolding {
   const TAxis* getAxis(const TH1* h, RooUnfolding::Dimension d);
-
+  
   template<> struct Variable<TH1> {
     int _nBins;
     double _min;

@@ -7,6 +7,7 @@
 
 #include "RooRealVar.h"
 #include "RooAbsData.h"
+#include "TH1.h"
 
 class RooHistFunc;
 class RooHistPdf;
@@ -94,6 +95,10 @@ namespace RooUnfolding {
   std::vector<RooAbsReal*> matchingObjects(const RooAbsCollection* c, const char* pattern);
   void printClients(const RooAbsArg* obj);
   void printServers(const RooAbsArg* obj);
+  TH1* convertTH1(const TVectorD& values, const TVectorD& errors, const RooUnfolding::RooFitHist* hist);
+  std::vector<Variable<TH1>> convertTH1(const std::vector<Variable<RooUnfolding::RooFitHist> >& vars);  
+
+  
 }
 
 #endif

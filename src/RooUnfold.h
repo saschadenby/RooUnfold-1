@@ -85,7 +85,8 @@ public:
   virtual Int_t      verbose() const;
   virtual void       SetVerbose (Int_t level);
   virtual void       SetOverflow(Int_t overflow);
-  virtual void       IncludeSystematics (Int_t dosys= 1);
+  virtual void       IncludeSystematics (RooUnfolding::SystematicsTreatment dosys= RooUnfolding::kAll);
+  inline void IncludeSystematics (int i) { return IncludeSystematics((RooUnfolding::SystematicsTreatment)i); }
   virtual Int_t      SystematicsIncluded() const;
   virtual Int_t      NToys() const;         // Number of toys
   virtual void       SetNToys (Int_t toys); // Set number of toys
@@ -101,7 +102,7 @@ public:
   Double_t GetMaxParm() const;
   Double_t GetStepSizeParm() const;
   Double_t GetDefaultParm() const;
-  RooUnfoldT<TH1,TH2>* RunToy() const;
+  double RunToy(TVectorD& x, TVectorD& xe) const;
   void Print(Option_t* opt="") const;
   void Dump() const;    
   void ForceRecalculation() const ;
@@ -162,16 +163,16 @@ protected:
   };
   mutable Cache _cache; //!
 
-  TMatrixD* _covMes;                       // Measurement covariance matrix
-  Int_t    _verbose;                       // Debug print level
-  Int_t    _nm;                            // Total number of measured bins (including under/overflows if _overflow set)
-  Int_t    _nt;                            // Total number of truth    bins (including under/overflows if _overflow set
-  Int_t    _overflow;                      // Use histogram under/overflows if 1 (set from RooUnfoldResponse)
-  Int_t    _NToys;                         // Number of toys to be used
-  Int_t    _dosys;                         // include systematic errors from response matrix? use _dosys=2 to exclude measurement errors
-  RooUnfoldResponseT<Hist,Hist2D>* _res;   // Response matrix (not owned)
-  Hist*    _meas;                          // Measured distribution (not owned)
-  RooUnfolding::Algorithm _alg;            // The used algorithm.
+  TMatrixD* _covMes;                         // Measurement covariance matrix
+  Int_t    _verbose;                         // Debug print level
+  Int_t    _nm;                              // Total number of measured bins (including under/overflows if _overflow set)
+  Int_t    _nt;                              // Total number of truth    bins (including under/overflows if _overflow set
+  Int_t    _overflow;                        // Use histogram under/overflows if 1 (set from RooUnfoldResponse)
+  Int_t    _NToys;                           // Number of toys to be used
+  RooUnfolding::SystematicsTreatment _dosys; // include systematic errors from response matrix? use _dosys=2 to exclude measurement errors
+  RooUnfoldResponseT<Hist,Hist2D>* _res;     // Response matrix (not owned)
+  Hist*    _meas;                            // Measured distribution (not owned)
+  RooUnfolding::Algorithm _alg;              // The used algorithm.
 
 public:
 

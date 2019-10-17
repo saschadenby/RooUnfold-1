@@ -229,7 +229,7 @@ namespace RooUnfolding { // section 1: trivial helpers
   Variable<RooUnfolding::RooFitHist>::Variable(RooAbsArg* var) : _var(var) {}
 
   template<> Variable<RooUnfolding::RooFitHist> var(const RooUnfolding::RooFitHist* h, Dimension d){
-    return Variable<RooUnfolding::RooFitHist>(NULL);
+    return Variable<RooUnfolding::RooFitHist>(h->obs(d));
   }
 
   template<> const char* name<RooUnfolding::RooFitHist>(const RooUnfolding::RooFitHist* h){
@@ -1151,6 +1151,22 @@ RooArgSet RooUnfolding::allVars(RooWorkspace* ws, const char* pattern){
   }
   return retval;
 }
+
+namespace RooUnfolding {
+  std::vector<Variable<TH1>> convertTH1(const std::vector<Variable<RooUnfolding::RooFitHist> >& vars){
+    std::vector<Variable<TH1> > outvars;
+    for(auto var:vars){
+      auto v = var._var;
+      outvars.push_back(RooUnfolding::Variable<TH1>(::nBins(v),::min(v),::max(v),v->GetName()));
+    }
+    return outvars;
+  }
+  TH1* convertTH1(const TVectorD& values, const TVectorD& errors, const RooUnfolding::RooFitHist* hist){
+    return RooUnfolding::createHist<TH1>(values,errors,hist->GetName(),hist->GetTitle(),RooUnfolding::convertTH1(RooUnfolding::vars(hist)));
+  }
+}
+
+
 
 ClassImp(RooUnfolding::RooFitHist)
 

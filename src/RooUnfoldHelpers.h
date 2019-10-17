@@ -29,6 +29,12 @@ namespace RooUnfolding {
     kRooFit,             //   toys using RooFit
     kDefault=-1          //   not specified
   };
+
+  enum SystematicsTreatment {       // Systematics treatment
+    kNoSystematics=0,
+    kAll=1,
+    kNoMeasured=2
+  };
   
   enum Dimension { X=0, Y=1, Z=2 };
   template<class Hist> struct Variable;
