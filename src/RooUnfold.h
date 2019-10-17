@@ -70,11 +70,11 @@ public:
   virtual const Hist* Hmeasured() const;
   virtual Hist* Hmeasured();
   virtual Hist* Hunfold (RooUnfolding::ErrorTreatment withError=RooUnfolding::kErrors);
-  virtual TH1* TH1unfold ();
-  virtual TH1* TH1bias ();
 
   const    TVectorD& Vmeasured() const;   // Measured distribution as a TVectorD
   const    TVectorD& Emeasured() const;   // Measured distribution errors as a TVectorD
+  const    TVectorD& Vbias() const;   // Bias distribution as a TVectorD
+  const    TVectorD& Ebias() const;   // Bias distribution errors as a TVectorD
   const    TMatrixD& GetMeasuredCov() const;   // Measured distribution covariance matrix
 
   virtual const TVectorD&  Vunfold() const;

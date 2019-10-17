@@ -1265,6 +1265,27 @@ const TVectorD&          RooUnfoldT<Hist,Hist2D>::Vmeasured() const
 }
 
 template<class Hist,class Hist2D> 
+const TVectorD&          RooUnfoldT<Hist,Hist2D>::Vbias() const
+{
+  //! Bias distribution as a vector.
+  if (!_cache._haveBias){
+    throw std::runtime_error("calculate bias before attempting to retrieve it!");
+  }
+  return *_cache._bias;
+}
+
+template<class Hist,class Hist2D> 
+const TVectorD&          RooUnfoldT<Hist,Hist2D>::Ebias() const
+{
+  //! Bias errors as a vector.
+  if (!_cache._haveBias){
+    throw std::runtime_error("calculate bias before attempting to retrieve it!");
+  }
+  return *_cache._sigbias;
+}
+
+
+template<class Hist,class Hist2D> 
 const TVectorD&          RooUnfoldT<Hist,Hist2D>::Emeasured() const
 {
   //! Measured errors as a vector.
