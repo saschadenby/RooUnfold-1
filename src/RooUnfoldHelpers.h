@@ -29,6 +29,11 @@ namespace RooUnfolding {
     kRooFit,             //   toys using RooFit
     kDefault=-1          //   not specified
   };
+
+  enum ToyType {         // Distribution type used to throw toys.
+    kPoisson,            // Poisson distribution.
+    kGaussian            // Gaussian distribution.
+  };
   
   enum Dimension { X=0, Y=1, Z=2 };
   template<class Hist> struct Variable;

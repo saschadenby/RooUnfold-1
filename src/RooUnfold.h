@@ -25,6 +25,7 @@ public:
   
   typedef RooUnfolding::Algorithm Algorithm;
   typedef RooUnfolding::ErrorTreatment ErrorTreatment;
+  typedef RooUnfolding::ToyType ToyType;
   static const Algorithm kNone;
   static const Algorithm kBayes;
   static const Algorithm kSVD;
@@ -39,6 +40,8 @@ public:
   static const ErrorTreatment kCovariance;
   static const ErrorTreatment kCovToy;
   static const ErrorTreatment kDefault;
+  static const ToyType kPoisson;
+  static const ToyType kGaussian;
   
   // Standard methods
 
@@ -101,7 +104,7 @@ public:
   Double_t GetMaxParm() const;
   Double_t GetStepSizeParm() const;
   Double_t GetDefaultParm() const;
-  RooUnfoldT<TH1,TH2>* RunToy() const;
+  RooUnfoldT<TH1,TH2>* RunToy(RooUnfolding::ToyType toytype=RooUnfolding::kPoisson) const;
   void Print(Option_t* opt="") const;
   void Dump() const;    
   void ForceRecalculation() const ;
@@ -172,6 +175,7 @@ protected:
   RooUnfoldResponseT<Hist,Hist2D>* _res;   // Response matrix (not owned)
   Hist*    _meas;                          // Measured distribution (not owned)
   RooUnfolding::Algorithm _alg;            // The used algorithm.
+  RooUnfolding::ToyType _toytype;          // Contains the type of distribution used to throw toys.
 
 public:
 

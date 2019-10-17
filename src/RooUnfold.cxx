@@ -121,6 +121,9 @@ template<class Hist,class Hist2D> const typename RooUnfoldT<Hist,Hist2D>::ErrorT
 template<class Hist,class Hist2D> const typename RooUnfoldT<Hist,Hist2D>::ErrorTreatment RooUnfoldT<Hist,Hist2D>::kCovariance = RooUnfolding::kCovariance;
 template<class Hist,class Hist2D> const typename RooUnfoldT<Hist,Hist2D>::ErrorTreatment RooUnfoldT<Hist,Hist2D>::kCovToy = RooUnfolding::kCovToy;
 template<class Hist,class Hist2D> const typename RooUnfoldT<Hist,Hist2D>::ErrorTreatment RooUnfoldT<Hist,Hist2D>::kDefault = RooUnfolding::kDefault;
+template<class Hist,class Hist2D> const typename RooUnfoldT<Hist,Hist2D>::ToyType RooUnfoldT<Hist,Hist2D>::kPoisson = RooUnfolding::kPoisson;
+template<class Hist,class Hist2D> const typename RooUnfoldT<Hist,Hist2D>::ToyType RooUnfoldT<Hist,Hist2D>::kGaussian = RooUnfolding::kGaussian;
+
 
 using namespace RooUnfolding;
 
@@ -545,7 +548,6 @@ RooUnfoldT<Hist,Hist2D>::CalculateBias(Int_t ntoys, const Hist* hTrue) const
     truth = h2v(hTrue,false);
   }
 
-
   for ( int i = 0; i < ntoys; i++){
     RooUnfoldT<TH1,TH2>* unfold = RunToy();
     const TVectorD& toy_meas(unfold->Vmeasured());
@@ -819,7 +821,7 @@ RooUnfoldT<Hist,Hist2D>::GetDefaultParm() const
 }
 
 template<class Hist,class Hist2D> RooUnfoldT<TH1,TH2>*
-RooUnfoldT<Hist,Hist2D>::RunToy() const
+RooUnfoldT<Hist,Hist2D>::RunToy(ToyType toytype) const
 {
   //! Returns new RooUnfold object with smeared measurements and
   //! (if IncludeSystematics) response matrix for use as a toy.
@@ -853,10 +855,33 @@ RooUnfoldT<Hist,Hist2D>::RunToy() const
     
     reco->SetBinContent(i + 1, recov(i));
 
-    Double_t e= errv(i);
+    Double_t new_bin;
+    Double_t g;
+    Double_t e;
     gRandom->SetSeed(0);
-    Double_t g= gRandom->Gaus(0,e);
-    if (e>0.0) newmeas->SetBinContent(i+1, measv(i) + g);
+
+    switch(toytype){
+    case kPoisson:
+
+      new_bin = gRandom->Poisson(recov(i));
+      break;
+      
+    case kGaussian:
+
+      e = errv(i);
+      
+      if (e>0.0) {
+	g = gRandom->Gaus(0,e);
+	new_bin = recov(i) + g;
+      } else {
+	new_bin = recov(i);
+      }
+
+    default:
+      cerr << "Unknown toy type " << Int_t(toytype) << std::endl;
+    }
+
+    newmeas->SetBinContent(i+1, new_bin);
     
     for (Int_t j = 0; j < _nt; j++){
       tru->SetBinContent(j + 1, truv(j));
