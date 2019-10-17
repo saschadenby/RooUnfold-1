@@ -104,7 +104,7 @@ public:
   RooUnfoldT<TH1,TH2>* RunToy() const;
   void Print(Option_t* opt="") const;
   void Dump() const;    
-  void ForceRecalculation();
+  void ForceRecalculation() const ;
 
 protected:
   void Assign (const RooUnfoldT<Hist,Hist2D>& rhs); // implementation of assignment operator
@@ -126,6 +126,7 @@ protected:
   // cache 
   virtual void GetCov() const; // Get covariance matrix using errors on measured distribution
   virtual void GetErrors() const;
+  virtual void GetErrorsCovariance() const;
   virtual void GetSettings() const;
   virtual void GetErrMat() const; // Get covariance matrix using errors from residuals on reconstructed distribution
   virtual void GetWgt() const; // Get weight matrix using errors on measured distribution

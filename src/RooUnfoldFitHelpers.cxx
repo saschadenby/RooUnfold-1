@@ -124,7 +124,7 @@ namespace {
 
   template<class T> RooArgList argList(const std::vector<T*>& vars){
     RooArgList retval;
-    for(auto v:vars) retval.add(*v);
+    for(auto v:vars) retval.add(*v,true);
     return retval;
   }
 }  
@@ -694,7 +694,6 @@ namespace RooUnfolding { // section 2: non-trivial helpers
             double val = dh->weight();
             double err = sqrt(dh->weightSquared());
             if(val > 0 && err/val>uncThreshold){
-              std::cout << val << " " << err << " " << uncThreshold << std::endl;          
               TString name = TString::Format("gamma_stat_%s_%d",dh->GetName(),(int)gammas.size());
               RooRealVar* g = new RooRealVar(name,name,1.);
               g->setError(err/val);
@@ -770,13 +769,13 @@ namespace RooUnfolding { // section 2: non-trivial helpers
     for(auto g:gamma){
       if(g){
         g->setConstant(false);
-        gammas.add(*g);
+        gammas.add(*g,true);
       } else {
         if(!const_g){
           const_g = new RooRealVar("gamma_stat_const","gamma_stat_const",1.);
           const_g->setConstant(true);
         }
-        gammas.add(*const_g);
+        gammas.add(*const_g,true);
       }
     }
     ParamHistFunc* phf = new ParamHistFunc(TString::Format("%s_mcstat",name),title,obslist,gammas);
@@ -786,7 +785,7 @@ namespace RooUnfolding { // section 2: non-trivial helpers
   
   RooAbsReal* RooFitHist::setupErrors(const RooHistFunc* hf, const RooDataHist* dh, double uncThreshold){
     RooArgList obslist;
-    for(auto obs:this->_obs) obslist.add(*obs);
+    for(auto obs:this->_obs) obslist.add(*obs,true);
     this->_gamma = createGammas(dh,obslist,uncThreshold);
     RooArgList components;
     components.add(*hf);
@@ -865,7 +864,7 @@ namespace RooUnfolding { // section 2: non-trivial helpers
     RooArgSet vars;
     for(size_t i=0; i<obs.size(); ++i){
       if(dhist->get()->find(*obs[i]))
-        vars.add(*obs[i]);
+        vars.add(*obs[i],true);
     }
     return new RooHistFunc(TString::Format("%s_func",dhist->GetName()),dhist->GetTitle(),vars,*dhist);
   }
@@ -890,7 +889,7 @@ namespace RooUnfolding { // section 2: non-trivial helpers
     RooArgSet vars;
     for(size_t i=0; i<obs.size(); ++i){
       if(dhist->get()->find(*obs[i]))
-        vars.add(*obs[i]);
+        vars.add(*obs[i],true);
     }
     RooHistPdf* hf = new RooHistPdf(TString::Format("%s_shape",dhist->GetName()),dhist->GetTitle(),vars,*dhist);
     RooRealVar* norm = new RooRealVar(TString::Format("%s_norm",dhist->GetName()),dhist->GetTitle(),dhist->sumEntries());
@@ -1147,7 +1146,7 @@ RooArgSet RooUnfolding::allVars(RooWorkspace* ws, const char* pattern){
   while((arg = itr.next())){
     if(!arg) continue;
     if(re.Match(arg->GetName())){
-      retval.add(*arg);
+      retval.add(*arg,true);
     }
   }
   return retval;

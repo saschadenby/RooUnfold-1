@@ -152,7 +152,12 @@ Double_t RooUnfoldFunc::getValV(const RooArgSet* set) const
 
 RooArgList* RooUnfoldFunc::makeParameterList() const {
   //! return a list of all parameters in this function
-  RooArgSet* pset = this->getParameters((RooArgSet*)0);
+  RooArgSet obs;
+  for(int d=0; d<this->unfolding()->response()->Hresponse()->dim(); ++d){
+    obs.add(*(this->unfolding()->response()->Hresponse()->obs(d)));
+  }
+  RooArgSet* pset = this->getParameters(&obs);
+
   RooArgList* list = new RooArgList(*pset);
   delete pset;
   return list;
