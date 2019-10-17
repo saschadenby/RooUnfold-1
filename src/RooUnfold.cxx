@@ -765,10 +765,8 @@ RooUnfoldT<Hist,Hist2D>::GetDefaultParm() const
 }
 
 template<> double
-RooUnfoldT<TH1,TH2>::RunToy(TVectorD&x, TVectorD&xe) const
-{
-  //! Returns new RooUnfold object with smeared measurements and
-  //! (if IncludeSystematics) response matrix for use as a toy.
+RooUnfoldT<TH1,TH2>::RunToy(TVectorD&x, TVectorD&xe) const {
+  //! fills a vector with smeared measurements for use as a toy.
   //! Use multiple toys to find spread of unfolding results.
   TString name= GetName();
   name += "_toy";
@@ -830,6 +828,18 @@ RooUnfoldT<TH1,TH2>::RunToy(TVectorD&x, TVectorD&xe) const
   double retval = unfold->Chi2 (unfold->response()->Htruth());
   delete unfold;
   return retval;
+}
+
+template<> void
+RooUnfoldT<TH1,TH2>::RunToys(int ntoys, std::vector<TVectorD>& vx, std::vector<TVectorD>& vxe, std::vector<double>& chi2) const {
+  //! fills vectors with smeared measurements for use as a toy.
+  //! Use multiple toys to find spread of unfolding results.  
+  for(size_t i=0; i<ntoys; ++i){
+    TVectorD x, xe;
+    chi2.push_back(this->RunToy(x,xe));
+    vx.push_back(x);
+    vxe.push_back(xe);
+  }
 }
 
 template<class Hist,class Hist2D> void
@@ -1340,141 +1350,101 @@ namespace {
   };
 }
 
+template<> void
+RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>::RunToys(int ntoys, std::vector<TVectorD>& vx, std::vector<TVectorD>& vxe, std::vector<double>& chi2) const {
+  //! run a number of toys
+  
+  const auto* res = this->response();
+  RooArgSet allParams;
+  if(this->_dosys != kNoMeasured){
+    getParameters(this->Hmeasured(),allParams);
+  }
+  if(this->_dosys == kAll){
+    getParameters(res->Hmeasured(),allParams);
+    getParameters(res->Htruth(),allParams);
+    getParameters(res->Hfakes(),allParams);
+    getParameters(res->Hresponse(),allParams);
+  }
+  RooArgSet errorParams;
+  for(auto p:allParams){
+    if(!p->isConstant()) errorParams.add(*p);
+  }
+  
+  auto* snsh = errorParams.snapshot();
+  RooArgList errorParamList(errorParams);
+  RooFitResult * prefitResult = RooFitResult::prefitResult(errorParamList);
+  if(_cache._covMes && !this->_dosys==kNoMeasured){
+    auto meas(this->Vmeasured());
+    auto covMes = *(_cache._covMes);
+    auto setCov(prefitResult->covarianceMatrix());
+    auto gammas = this->Hmeasured()->nps();
+    for(size_t i=0; i<covMes.GetNcols(); ++i){
+      RooRealVar* p1 = gammas[i];
+      int idx1 = errorParamList.index(p1);
+      if(idx1<0) continue;
+      for(size_t j=0; j<covMes.GetNrows(); ++j){
+        RooRealVar* p2 = gammas[j];
+        int idx2 = errorParamList.index(p2);
+        if(idx2<0) continue;
+        double val = covMes(i,j)/(meas[i]*meas[j]);
+        setCov(idx1,idx2) = val;
+      }
+    }
+    ((::FitResultHack*)prefitResult)->setCovariance(setCov);
+  }
+
+  RooAbsPdf* paramPdf = prefitResult->createHessePdf(errorParams) ;
+  RooDataSet* d = paramPdf->generate(errorParams,ntoys) ;
+
+  auto errorType = _cache._withError;
+  
+  for(int i=0; i<ntoys; ++i){
+    errorParams = (*d->get(i)) ;
+    this->ForceRecalculation();
+    vx.push_back(this->Vunfold());
+    if(errorType != kNoError){
+      vxe.push_back(this->EunfoldV());
+      chi2.push_back(this->Chi2 (this->response()->Htruth()));
+    }
+  }
+
+  _cache._withError =  errorType;
+  
+  errorParams = *snsh;
+  delete snsh;
+  delete prefitResult;
+  delete paramPdf;
+  delete d;
+  
+  this->ForceRecalculation();
+}
 
 template<> double
 RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>::RunToy(TVectorD&x, TVectorD&xe) const
 {
-  const auto* res = this->response();
-  RooArgSet allParams;
-  if(this->_dosys != kNoMeasured){
-    getParameters(this->Hmeasured(),allParams);
-  }
-  if(this->_dosys == kAll){
-    getParameters(res->Hmeasured(),allParams);
-    getParameters(res->Htruth(),allParams);
-    getParameters(res->Hfakes(),allParams);
-    getParameters(res->Hresponse(),allParams);
-  }
-  RooArgSet errorParams;
-  for(auto p:allParams){
-    if(!p->isConstant()) errorParams.add(*p);
-  }
-  
-  auto* snsh = errorParams.snapshot();
-  RooArgList errorParamList(errorParams);
-  RooFitResult * prefitResult = RooFitResult::prefitResult(errorParamList);
-  if(_cache._covMes && !this->_dosys==kNoMeasured){
-    auto meas(this->Vmeasured());
-    auto covMes = *(_cache._covMes);
-    auto setCov(prefitResult->covarianceMatrix());
-    auto gammas = this->Hmeasured()->nps();
-    for(size_t i=0; i<covMes.GetNcols(); ++i){
-      RooRealVar* p1 = gammas[i];
-      int idx1 = errorParamList.index(p1);
-      if(idx1<0) continue;
-      for(size_t j=0; j<covMes.GetNrows(); ++j){
-        RooRealVar* p2 = gammas[j];
-        int idx2 = errorParamList.index(p2);
-        if(idx2<0) continue;
-        double val = covMes(i,j)/(meas[i]*meas[j]);
-        setCov(idx1,idx2) = val;
-      }
-    }
-    ((::FitResultHack*)prefitResult)->setCovariance(setCov);
-  }
-
-  RooAbsPdf* paramPdf = prefitResult->createHessePdf(errorParams) ;
-  RooDataSet* d = paramPdf->generate(errorParams,1) ;
-
-  errorParams = (*d->get(0)) ;
-  this->ForceRecalculation();
-  x.ResizeTo(this->_nt);
-  x = this->Vunfold();
-  xe.ResizeTo(this->_nt);  
-  xe = this->Eunfold();
-
-  errorParams = *snsh;
-  delete snsh;
-  delete prefitResult;
-  delete paramPdf;
-  delete d;
-
-  this->ForceRecalculation();
-  double chi2 = this->Chi2 (this->response()->Htruth());
-  return chi2;
+  std::vector<TVectorD> vx, vxe;
+  std::vector<double> chi2;
+  this->RunToys(1,vx,vxe,chi2);
+  x.ResizeTo(vx[0].GetNrows());
+  xe.ResizeTo(vxe[0].GetNrows());
+  x = vx[0];
+  xe = vxe[0];
+  return chi2[0];
 }
 
 template<> void RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>::GetErrors() const
 {
-  //! Performs the error propagation
-  if(_cache._withError == kErrors){
-    GetErrorsCovariance();
-    return;
-  }
-  if(_cache._withError != kRooFit){
-    throw std::runtime_error("unknown error propagation method!");
-  }
-
-  const auto* res = this->response();
-  RooArgSet allParams;
-  if(this->_dosys != kNoMeasured){
-    getParameters(this->Hmeasured(),allParams);
-  }
-  if(this->_dosys == kAll){
-    getParameters(res->Hmeasured(),allParams);
-    getParameters(res->Htruth(),allParams);
-    getParameters(res->Hfakes(),allParams);
-    getParameters(res->Hresponse(),allParams);
-  }
-  RooArgSet errorParams;
-  for(auto p:allParams){
-    if(!p->isConstant()) errorParams.add(*p);
-  }
-
-  int n = this->_NToys;
+  std::vector<TVectorD> values, etoys;
+  std::vector<double> chi2;
+  auto errortmp = _cache._withError;
+  _cache._withError = kNoError;
+  this->RunToys(this->_NToys,values,etoys,chi2);
+  _cache._withError = errortmp;
   
-  auto* snsh = errorParams.snapshot();
-  RooArgList errorParamList(errorParams);
-  RooFitResult * prefitResult = RooFitResult::prefitResult(errorParamList);
-  if(_cache._covMes && !this->_dosys==kNoMeasured){
-    auto meas(this->Vmeasured());
-    auto covMes = *(_cache._covMes);
-    auto setCov(prefitResult->covarianceMatrix());
-    auto gammas = this->Hmeasured()->nps();
-    for(size_t i=0; i<covMes.GetNcols(); ++i){
-      RooRealVar* p1 = gammas[i];
-      int idx1 = errorParamList.index(p1);
-      if(idx1<0) continue;
-      for(size_t j=0; j<covMes.GetNrows(); ++j){
-        RooRealVar* p2 = gammas[j];
-        int idx2 = errorParamList.index(p2);
-        if(idx2<0) continue;
-        double val = covMes(i,j)/(meas[i]*meas[j]);
-        setCov(idx1,idx2) = val;
-      }
-    }
-    ((::FitResultHack*)prefitResult)->setCovariance(setCov);
-  }
-
-  RooAbsPdf* paramPdf = prefitResult->createHessePdf(errorParams) ;
-  RooDataSet* d = paramPdf->generate(errorParams,n) ;
-
-  std::vector<TVectorD> values;
-  for (int i=0 ; i<n ; ++i) {
-    errorParams = (*d->get(i)) ;
-    this->ForceRecalculation();
-    values.push_back(this->Vunfold());
-  }
-
-  errorParams = *snsh;
-  delete snsh;
-  delete prefitResult;
-  delete paramPdf;
-  delete d;
-
   this->ForceRecalculation();
   this->Unfold();
 
+  int n = (int)(values.size());
   _cache._variances.ResizeTo(_nt);
   for (int i=0 ; i<this->_nt ; ++i) {
     double sum = 0;
