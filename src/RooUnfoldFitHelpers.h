@@ -27,9 +27,9 @@ namespace RooUnfolding {
     RooFitHist(RooHistFunc* f, RooAbsArg* obs);
     RooFitHist(RooHistFunc* f, RooAbsArg* obs1, RooAbsArg* obs2);
     RooFitHist(RooHistFunc* hist, const RooArgList& obslist, double uncThreshold = -1);        
-    RooFitHist(RooDataHist* f, const std::vector<RooAbsArg*>& obs);
-    RooFitHist(RooDataHist* f, RooAbsArg* obs);
-    RooFitHist(RooDataHist* f, RooAbsArg* obs1, RooAbsArg* obs2);
+    RooFitHist(RooDataHist* hist, const std::vector<RooAbsArg*>& obs);
+    RooFitHist(RooDataHist* hist, RooAbsArg* obs);
+    RooFitHist(RooDataHist* hist, RooAbsArg* obs1, RooAbsArg* obs2);
     RooFitHist(RooDataHist* hist, const RooArgList& obslist, double uncThreshold = -1);    
     RooFitHist(const TH1* hist, const std::vector<RooAbsArg*>& obs, bool includeUnderflowOverflow, double errorThreshold, bool correctDensity=false);
     RooFitHist(const TH1* hist, const RooArgList& obs, bool includeUnderflowOverflow, double errorThreshold, bool correctDensity=false);
@@ -40,6 +40,7 @@ namespace RooUnfolding {
     virtual RooAbsArg* obs(size_t) const;
     virtual size_t dim() const;
     RooFitHist* clone() const;
+    RooFitHist* asimovClone(bool correctDensity) const;    
 
     virtual double error() const;
     virtual double value() const;

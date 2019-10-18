@@ -1166,6 +1166,55 @@ namespace RooUnfolding {
   }
 }
 
+RooUnfolding::RooFitHist* RooUnfolding::RooFitHist::asimovClone(bool correctDensity) const {   
+  // Define x,y,z as 1st, 2nd and 3rd observable
+  RooAbsArg* xvar = _obs.at(0);
+  RooAbsArg* yvar = _obs.size() > 1 ? _obs.at(1) : (RooAbsArg*)0;
+  RooAbsArg* zvar = _obs.size() > 2 ? _obs.at(2) : (RooAbsArg*)0;
+  
+  RooArgSet args;
+  RooArgList arglist;    
+  for(auto v:this->_obs){
+    args.add(*v);
+    arglist.add(*v);      
+  }
+  TString name = TString::Format("%s_asimov",this->name());
+  
+  RooDataHist* dh = new RooDataHist(name,this->title(),args);
+  
+  // Transfer contents
+  Int_t xmin(0),ymin(0),zmin(0) ;
+  
+  for (int ix=0 ; ix < ::nBins(xvar) ; ix++) {
+    ::setBin(xvar,ix) ;
+    if (yvar) {
+      for (int iy=0 ; iy < ::nBins(yvar) ; iy++) {
+        ::setBin(yvar,iy) ;
+        if (zvar) {
+          for (int iz=0 ; iz < ::nBins(zvar) ; iz++) {
+            ::setBin(zvar,iz) ;
+            double volume = ::useIf(dh->binVolume(),correctDensity);
+            dh->add(args,this->value(),sqrt(volume*this->value())/volume) ;
+          }
+        } else {
+          double volume = ::useIf(dh->binVolume(),correctDensity);
+          dh->add(args,this->value(),sqrt(volume*this->value())/volume) ;
+        }
+      }
+    } else {
+      double volume = ::useIf(dh->binVolume(),correctDensity);        
+      dh->add(args,this->value(),sqrt(volume*this->value())/volume) ;
+    }
+  }
+  
+  dh->removeSelfFromDir();
+  
+  return new RooFitHist(dh,arglist,0);
+}
+
+template<> RooUnfolding::RooFitHist* RooUnfolding::asimovClone(const RooUnfolding::RooFitHist* hist, bool correctDensity){
+  return hist->asimovClone(correctDensity);
+}
 
 
 ClassImp(RooUnfolding::RooFitHist)

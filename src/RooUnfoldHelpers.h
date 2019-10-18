@@ -40,7 +40,8 @@ namespace RooUnfolding {
   template<class Hist> struct Variable;
 
   template<class Hist> const char* name(const Hist* hist);
-  template<class Hist> Hist* clone(const Hist* hist);  
+  template<class Hist> Hist* clone(const Hist* hist);
+  template<class Hist> Hist* asimovClone(const Hist* hist, bool correctDensity);    
   template<class Hist> const char* title(const Hist* hist);  
   template<class Hist> double min(const Hist* hist, RooUnfolding::Dimension d);
   template<class Hist> double max(const Hist* hist, RooUnfolding::Dimension d);

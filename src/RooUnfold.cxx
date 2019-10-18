@@ -533,40 +533,55 @@ RooUnfoldT<Hist,Hist2D>::CalculateBias(Int_t ntoys, const Hist* hTrue) const
 {
   //! TODO: document
 
-  if (ntoys<=1) return;
-
-  TMatrixD pull_results(ntoys,_nt);
-  TVectorD truth(_nt);
-  if (!hTrue){
-    truth = _res->Vtruth();
+  TVectorD truth(hTrue ? h2v(hTrue,false) : _res->Vtruth());
+  TVectorD truthE(hTrue ? h2ve(hTrue,false) : _res->Etruth());  
+  
+  Hist* asimov = RooUnfolding::asimovClone(this->response()->Hmeasured(),this->response()->UseDensityStatus());
+  auto* toyFactory = this->New(this->GetAlgorithm(),this->response(),asimov);
+  
+  if (ntoys<=1){
+    TVectorD unfold = toyFactory->Vunfold();
+    TVectorD unfoldE = toyFactory->EunfoldV();
+    
+    _cache._bias.ResizeTo(_nt);
+    _cache._sigbias.ResizeTo(_nt);
+    
+    for(int i=0; i<_nt; ++i){
+      _cache._bias[i] = unfold[i] - truth[i];
+      _cache._sigbias[i] = sqrt(truthE[i]*truthE[i] + unfoldE[i]*unfoldE[i]);
+    }
   } else {
-    truth = h2v(hTrue,false);
+    TMatrixD pull_results(ntoys,_nt);
+    
+    TVectorD bias(_nt);
+    TVectorD sigbias(_nt);
+    for ( int i = 0; i < ntoys; i++){
+      TVectorD toy_unfold(_nt), toy_error(_nt);
+      toyFactory->RunToy(toy_unfold,toy_error);
+      for (int j = 0; j < toy_unfold.GetNrows(); j++){
+        if (toy_error(j) != 0){
+          pull_results(i, j) = (toy_unfold(j) - truth(j)) / toy_error(j);
+          bias(j) += pull_results(i, j);
+        } 
+      }
+    }
+    _cache._bias.ResizeTo(_nt);
+    _cache._sigbias.ResizeTo(_nt);
+    for (int i = 0; i < _nt; i++){
+      _cache._bias(i) = bias(i) / ntoys;
+    }
+    for (int j = 0; j < _nt; j++){
+      double sum2 = 0;
+      for (int i = 0; i < ntoys; i++){
+        double val = (pull_results(i, j) - _cache._bias(j));
+        sum2 += val*val;
+      }
+      _cache._sigbias(j) = sqrt(sum2) / (ntoys-1);
+    }
   }
 
-  TVectorD bias(_nt);
-  TVectorD sigbias(_nt);
-  for ( int i = 0; i < ntoys; i++){
-    TVectorD toy_unfold(_nt), toy_error(_nt);
-    RunToy(toy_unfold,toy_error);
-    TVectorD truth(_res->Vtruth());
-    for (int j = 0; j < toy_unfold.GetNrows(); j++){
-      if (toy_error(j) != 0){
-	pull_results(i, j) = (toy_unfold(j) - truth(j)) / toy_error(j);
-	bias(j) += pull_results(i, j);
-      } 
-    }
-  }
-  _cache._bias.ResizeTo(_nt);
-  _cache._sigbias.ResizeTo(_nt);
-  for (int i = 0; i < _nt; i++){
-    _cache._bias(i) = bias(i) / ntoys;
-  }
-  for (int j = 0; j < _nt; j++){
-    for (int i = 0; i < ntoys; i++){  
-      _cache._sigbias(j) += sqrt( (pull_results(i, j) - _cache._bias(j)) * (pull_results(i, j) - _cache._bias(j)) );
-    }
-    _cache._sigbias(j) = sigbias(j) / ntoys;
-  }
+  delete toyFactory;
+  
   _cache._haveBias=true;
 }
 
