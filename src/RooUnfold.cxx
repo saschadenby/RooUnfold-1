@@ -580,6 +580,7 @@ RooUnfoldT<Hist,Hist2D>::CalculateBias(Int_t ntoys, const Hist* hTrue) const
     }
   }
 
+  delete asimov;
   delete toyFactory;
   
   _cache._haveBias=true;
