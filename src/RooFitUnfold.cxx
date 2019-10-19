@@ -876,7 +876,6 @@ RooAbsReal* RooUnfoldSpec::makeFunc(Algorithm alg, Double_t regparam){
   return func;
 }
 
-
 ClassImp(RooUnfoldSpec)
 
 #endif

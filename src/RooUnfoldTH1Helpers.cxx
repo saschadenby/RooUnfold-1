@@ -307,12 +307,54 @@ namespace RooUnfolding {
     return h;
   }
   template<class Hist> Hist* clone(const Hist* orighist){
-    if (!orighist) return NULL;
+    if(!orighist) return NULL;
+
     Bool_t oldstat= TH1::AddDirectoryStatus();
     TH1::AddDirectory (kFALSE);
     Hist* hist = (Hist*)(orighist ->Clone());
     TH1::AddDirectory (oldstat);
     return hist;
+  }
+  template<> TH2* asimovClone<TH2>(const TH2* orighist, bool correctDensity){
+    TH2* hist = (TH2*)(orighist->Clone());    
+    for(int i=0; i<hist->GetNbinsX()+2; ++i){
+      for(int j=0; j<hist->GetNbinsY()+2; ++j){
+        int bin = hist->GetBin(i,j);
+        double val = hist->GetBinContent(bin);
+        double vol = correctDensity ? hist->GetXaxis()->GetBinWidth(i)*hist->GetYaxis()->GetBinWidth(j) : 1.;
+        hist->SetBinError(bin,sqrt(vol*val)/vol);          
+      }
+    }
+    return hist;
+  }
+  template<> TH3* asimovClone<TH3>(const TH3* orighist, bool correctDensity){  
+    TH3* hist = (TH3*)(orighist->Clone());
+    for(int i=0; i<hist->GetNbinsX()+2; ++i){
+      for(int j=0; j<hist->GetNbinsY()+2; ++j){
+        for(int k=0; k<hist->GetNbinsZ()+2; ++k){
+          int bin = hist->GetBin(i,j,k);
+          double val = hist->GetBinContent(bin);
+          double vol = correctDensity ? hist->GetXaxis()->GetBinWidth(i)*hist->GetYaxis()->GetBinWidth(j)*hist->GetZaxis()->GetBinWidth(k) : 1.;
+          hist->SetBinError(bin,sqrt(vol*val)/vol);
+        }
+      }
+    }
+    return hist;
+  }
+  template<> TH1* asimovClone<TH1>(const TH1* orighist, bool correctDensity){
+    if(orighist->InheritsFrom(TH3::Class())){
+      return asimovClone<TH3>((TH3*)orighist,correctDensity);
+    } else if(orighist->InheritsFrom(TH2::Class())){
+      return asimovClone<TH2>((TH2*)orighist,correctDensity);
+    } else {
+      TH1* hist = (TH1*)(orighist->Clone());      
+      for(int i=0; i<hist->GetNbinsX()+2; ++i){
+        double val = hist->GetBinContent(i);
+        double vol = correctDensity ? hist->GetXaxis()->GetBinWidth(i) : 1.;
+        hist->SetBinError(i,sqrt(vol*val)/vol);          
+      }
+      return hist;
+    }
   }
   template<class Hist> Hist* createHist(const TVectorD& v, const TVectorD& ve, const char* name, const char* title, const std::vector<Variable<Hist>>& x, bool overflow){  
     // Sets the bin content of the histogram as that element of the input vector

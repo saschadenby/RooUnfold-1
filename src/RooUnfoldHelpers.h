@@ -30,16 +30,18 @@ namespace RooUnfolding {
     kDefault=-1          //   not specified
   };
 
-  enum ToyType {         // Distribution type used to throw toys.
-    kPoisson,            // Poisson distribution.
-    kGaussian            // Gaussian distribution.
+  enum SystematicsTreatment {       // Systematics treatment
+    kNoSystematics=0,
+    kAll=1,
+    kNoMeasured=2
   };
   
   enum Dimension { X=0, Y=1, Z=2 };
   template<class Hist> struct Variable;
 
   template<class Hist> const char* name(const Hist* hist);
-  template<class Hist> Hist* clone(const Hist* hist);  
+  template<class Hist> Hist* clone(const Hist* hist);
+  template<class Hist> Hist* asimovClone(const Hist* hist, bool correctDensity);    
   template<class Hist> const char* title(const Hist* hist);  
   template<class Hist> double min(const Hist* hist, RooUnfolding::Dimension d);
   template<class Hist> double max(const Hist* hist, RooUnfolding::Dimension d);

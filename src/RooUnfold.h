@@ -73,11 +73,11 @@ public:
   virtual const Hist* Hmeasured() const;
   virtual Hist* Hmeasured();
   virtual Hist* Hunfold (RooUnfolding::ErrorTreatment withError=RooUnfolding::kErrors);
-  virtual TH1* TH1unfold ();
-  virtual TH1* TH1bias ();
 
   const    TVectorD& Vmeasured() const;   // Measured distribution as a TVectorD
   const    TVectorD& Emeasured() const;   // Measured distribution errors as a TVectorD
+  const    TVectorD& Vbias() const;   // Bias distribution as a TVectorD
+  const    TVectorD& Ebias() const;   // Bias distribution errors as a TVectorD
   const    TMatrixD& GetMeasuredCov() const;   // Measured distribution covariance matrix
 
   virtual const TVectorD&  Vunfold() const;
@@ -88,7 +88,8 @@ public:
   virtual Int_t      verbose() const;
   virtual void       SetVerbose (Int_t level);
   virtual void       SetOverflow(Int_t overflow);
-  virtual void       IncludeSystematics (Int_t dosys= 1);
+  virtual void       IncludeSystematics (RooUnfolding::SystematicsTreatment dosys= RooUnfolding::kAll);
+  inline void IncludeSystematics (int i) { return IncludeSystematics((RooUnfolding::SystematicsTreatment)i); }
   virtual Int_t      SystematicsIncluded() const;
   virtual Int_t      NToys() const;         // Number of toys
   virtual void       SetNToys (Int_t toys); // Set number of toys
@@ -104,7 +105,8 @@ public:
   Double_t GetMaxParm() const;
   Double_t GetStepSizeParm() const;
   Double_t GetDefaultParm() const;
-  RooUnfoldT<TH1,TH2>* RunToy(RooUnfolding::ToyType toytype=RooUnfolding::kPoisson) const;
+  double RunToy(TVectorD& x, TVectorD& xe) const;
+  void RunToys(int ntoys, std::vector<TVectorD>& x, std::vector<TVectorD>& xe, std::vector<double>& chi2) const;  
   void Print(Option_t* opt="") const;
   void Dump() const;    
   void ForceRecalculation() const ;
@@ -165,6 +167,7 @@ protected:
   };
   mutable Cache _cache; //!
 
+<<<<<<< HEAD
   TMatrixD* _covMes;                       // Measurement covariance matrix
   Int_t    _verbose;                       // Debug print level
   Int_t    _nm;                            // Total number of measured bins (including under/overflows if _overflow set)
@@ -176,6 +179,18 @@ protected:
   Hist*    _meas;                          // Measured distribution (not owned)
   RooUnfolding::Algorithm _alg;            // The used algorithm.
   RooUnfolding::ToyType _toytype;          // Contains the type of distribution used to throw toys.
+=======
+  TMatrixD* _covMes;                         // Measurement covariance matrix
+  Int_t    _verbose;                         // Debug print level
+  Int_t    _nm;                              // Total number of measured bins (including under/overflows if _overflow set)
+  Int_t    _nt;                              // Total number of truth    bins (including under/overflows if _overflow set
+  Int_t    _overflow;                        // Use histogram under/overflows if 1 (set from RooUnfoldResponse)
+  Int_t    _NToys;                           // Number of toys to be used
+  RooUnfolding::SystematicsTreatment _dosys; // include systematic errors from response matrix? use _dosys=2 to exclude measurement errors
+  RooUnfoldResponseT<Hist,Hist2D>* _res;     // Response matrix (not owned)
+  Hist*    _meas;                            // Measured distribution (not owned)
+  RooUnfolding::Algorithm _alg;              // The used algorithm.
+>>>>>>> f8ce9f1176553ec0180f9c617748bf31e37f3eea
 
 public:
 

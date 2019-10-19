@@ -7,6 +7,7 @@
 
 #include "RooRealVar.h"
 #include "RooAbsData.h"
+#include "TH1.h"
 
 class RooHistFunc;
 class RooHistPdf;
@@ -26,9 +27,9 @@ namespace RooUnfolding {
     RooFitHist(RooHistFunc* f, RooAbsArg* obs);
     RooFitHist(RooHistFunc* f, RooAbsArg* obs1, RooAbsArg* obs2);
     RooFitHist(RooHistFunc* hist, const RooArgList& obslist, double uncThreshold = -1);        
-    RooFitHist(RooDataHist* f, const std::vector<RooAbsArg*>& obs);
-    RooFitHist(RooDataHist* f, RooAbsArg* obs);
-    RooFitHist(RooDataHist* f, RooAbsArg* obs1, RooAbsArg* obs2);
+    RooFitHist(RooDataHist* hist, const std::vector<RooAbsArg*>& obs);
+    RooFitHist(RooDataHist* hist, RooAbsArg* obs);
+    RooFitHist(RooDataHist* hist, RooAbsArg* obs1, RooAbsArg* obs2);
     RooFitHist(RooDataHist* hist, const RooArgList& obslist, double uncThreshold = -1);    
     RooFitHist(const TH1* hist, const std::vector<RooAbsArg*>& obs, bool includeUnderflowOverflow, double errorThreshold, bool correctDensity=false);
     RooFitHist(const TH1* hist, const RooArgList& obs, bool includeUnderflowOverflow, double errorThreshold, bool correctDensity=false);
@@ -39,6 +40,7 @@ namespace RooUnfolding {
     virtual RooAbsArg* obs(size_t) const;
     virtual size_t dim() const;
     RooFitHist* clone() const;
+    RooFitHist* asimovClone(bool correctDensity) const;    
 
     virtual double error() const;
     virtual double value() const;
@@ -94,6 +96,10 @@ namespace RooUnfolding {
   std::vector<RooAbsReal*> matchingObjects(const RooAbsCollection* c, const char* pattern);
   void printClients(const RooAbsArg* obj);
   void printServers(const RooAbsArg* obj);
+  TH1* convertTH1(const TVectorD& values, const TVectorD& errors, const RooUnfolding::RooFitHist* hist);
+  std::vector<Variable<TH1>> convertTH1(const std::vector<Variable<RooUnfolding::RooFitHist> >& vars);  
+
+  
 }
 
 #endif
