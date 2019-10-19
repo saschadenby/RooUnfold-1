@@ -262,7 +262,7 @@ namespace RooUnfolding { // section 1: trivial helpers
   }
   template<> double max<RooUnfolding::RooFitHist>(const RooUnfolding::RooFitHist* hist, RooUnfolding::Dimension d){
     if(d > hist->dim()) throw std::runtime_error(TString::Format("unable to retrieve max for dimension %d for histogram %s with %d dimensions",d,name(hist),(int)(hist->dim())).Data());
-    return ::min(hist->obs(d));
+    return ::max(hist->obs(d));
   }
   template<> int sumW2N<RooUnfolding::RooFitHist>(const RooUnfolding::RooFitHist* hist){
     return hist->weighted();
