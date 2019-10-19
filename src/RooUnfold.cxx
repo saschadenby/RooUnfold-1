@@ -1383,11 +1383,18 @@ RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>::RunToys(int ntoys
   }
   RooArgSet errorParams;
   for(auto p:allParams){
-    if(!p->isConstant()) errorParams.add(*p);
+    RooRealVar* rrv = dynamic_cast<RooRealVar*>(p);
+    if(!rrv) continue;
+    if(rrv->isConstant()) continue;
+    if(rrv->getError() == 0.){
+      throw std::runtime_error(TString::Format("unable to build covariance matrix for parameter '%s' with error 0 - is this an observable? please set constant",rrv->GetName()).Data());
+    }
+    errorParams.add(*rrv);
   }
   
   auto* snsh = errorParams.snapshot();
   RooArgList errorParamList(errorParams);
+
   RooFitResult * prefitResult = RooFitResult::prefitResult(errorParamList);
   if(_cache._covMes && !this->_dosys==kNoMeasured){
     auto meas(this->Vmeasured());
@@ -1408,7 +1415,7 @@ RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>::RunToys(int ntoys
     }
     ((::FitResultHack*)prefitResult)->setCovariance(setCov);
   }
-
+  
   RooAbsPdf* paramPdf = prefitResult->createHessePdf(errorParams) ;
   RooDataSet* d = paramPdf->generate(errorParams,ntoys) ;
 
