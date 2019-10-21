@@ -1211,9 +1211,10 @@ RooUnfolding::RooFitHist* RooUnfolding::RooFitHist::asimovClone(bool correctDens
   
   return new RooFitHist(dh,arglist,0);
 }
-
-template<> RooUnfolding::RooFitHist* RooUnfolding::asimovClone(const RooUnfolding::RooFitHist* hist, bool correctDensity){
-  return hist->asimovClone(correctDensity);
+namespace RooUnfolding {
+  template<> RooUnfolding::RooFitHist* asimovClone(const RooUnfolding::RooFitHist* hist, bool correctDensity){
+    return hist->asimovClone(correctDensity);
+  }
 }
 
 

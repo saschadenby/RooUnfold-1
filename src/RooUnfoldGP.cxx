@@ -116,6 +116,11 @@ RooUnfoldGPT<Hist,Hist2D>::Impl()
   return _specialcache._svd;
 }
 
+template<class Hist, class Hist2D> Double_t
+RooUnfoldGPT<Hist,Hist2D>::GetRegParm() const
+{
+  return (Double_t)_kernel;
+}
 template<class Hist, class Hist2D> void
 RooUnfoldGPT<Hist,Hist2D>::SetRegParm(Double_t regparm)
 {
@@ -173,18 +178,30 @@ RooUnfoldGPT<Hist,Hist2D>::SetBinCenters() const
 template<class Hist, class Hist2D> void
 RooUnfoldGPT<Hist,Hist2D>::SetFitSettings() const
 {
+  
   if (_kernel == 1){
-    _specialcache._kernel_init.push_back(13.0);
-    _specialcache._kernel_init.push_back(0.01);
-    _specialcache._kernel_step.push_back(0.001);
-    _specialcache._kernel_step.push_back(0.0001);
+    if (_specialcache._kernel_init.size() == 0){
+      _specialcache._kernel_init.push_back(15.0);
+      _specialcache._kernel_init.push_back(0.01);
+      _specialcache._kernel_step.push_back(0.001);
+      _specialcache._kernel_step.push_back(0.0001);
+    } else {
+      _specialcache._kernel_init.at(0) = 13.0;
+      _specialcache._kernel_init.at(1) = 0.01;
+    }
   } else {
-    _specialcache._kernel_init.push_back(10.0);
-    _specialcache._kernel_init.push_back(1.0);
-    _specialcache._kernel_init.push_back(1.0);
-    _specialcache._kernel_step.push_back(0.1);
-    _specialcache._kernel_step.push_back(0.1);
-    _specialcache._kernel_step.push_back(0.1);
+    if (_specialcache._kernel_init.size() == 0){
+      _specialcache._kernel_init.push_back(10.0);
+      _specialcache._kernel_init.push_back(1.0);
+      _specialcache._kernel_init.push_back(1.0);
+      _specialcache._kernel_step.push_back(0.1);
+      _specialcache._kernel_step.push_back(0.1);
+      _specialcache._kernel_step.push_back(0.1);
+    } else {
+      _specialcache._kernel_init.at(0) = 10.0;
+      _specialcache._kernel_init.at(1) = 1.0;      
+      _specialcache._kernel_init.at(2) = 1.0;      
+    }
   }
 }
 
@@ -285,9 +302,16 @@ RooUnfoldGPT<Hist,Hist2D>::MLEstimator() const
 template<class Hist, class Hist2D> void
 RooUnfoldGPT<Hist,Hist2D>::MLCovariance() const
 {
+  TMatrixD cov(this->_nm, this->_nm);  
+  TVectorD nu = this->_res->Vmeasured();
+
+  for (int i = 0; i < this->_nm; i++){
+    cov(i,i) = nu(i);
+  }
+
     if (!InvertResponse()) return;
     _specialcache._MLCov.ResizeTo(this->_nt,this->_nt);
-    ABAT (*_specialcache._resinv, this->GetMeasuredCov(), _specialcache._MLCov);
+    ABAT (*_specialcache._resinv, cov, _specialcache._MLCov);
     
     _specialcache._haveMLCov = true;
 }

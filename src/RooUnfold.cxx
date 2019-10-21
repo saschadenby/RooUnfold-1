@@ -535,9 +535,9 @@ RooUnfoldT<Hist,Hist2D>::CalculateBias(Int_t ntoys, const Hist* hTrue) const
 
   TVectorD truth(hTrue ? h2v(hTrue,false) : _res->Vtruth());
   TVectorD truthE(hTrue ? h2ve(hTrue,false) : _res->Etruth());  
-  
+
   Hist* asimov = RooUnfolding::asimovClone(this->response()->Hmeasured(),this->response()->UseDensityStatus());
-  auto* toyFactory = this->New(this->GetAlgorithm(),this->response(),asimov);
+  auto* toyFactory = this->New(this->GetAlgorithm(),this->response(),asimov,GetRegParm());
   
   if (ntoys<=1){
     TVectorD unfold = toyFactory->Vunfold();
@@ -828,7 +828,7 @@ RooUnfoldT<TH1,TH2>::RunToy(TVectorD&x, TVectorD&xe) const {
   
   RooUnfolding::Algorithm alg = this->GetAlgorithm();
   Double_t regparm = GetRegParm();
-
+  
   RooUnfoldT<TH1,TH2>* unfold = RooUnfoldT<TH1,TH2>::New(alg,res,newmeas,regparm);
 
   delete newmeas;

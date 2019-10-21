@@ -704,7 +704,7 @@ const TMatrixD& RooUnfoldResponseT<Hist,Hist2D>::Mresponse(bool norm) const
 
   if (!_mRes){
     if (norm){
-      _cached= (_mRes= new TMatrixD(h2mNorm  (_res, _tru, _overflow,_density))); 
+      _cached= (_mRes= new TMatrixD(h2mNorm  (_res, _tru, _overflow,_density)));
     } else {
       _cached = (_mRes = new TMatrixD(h2m (_res, _overflow, _density)));
     }
