@@ -279,7 +279,7 @@ RooUnfoldGPT<Hist,Hist2D>::MLEstimator() const
     _specialcache._MLEst -= fakes;
   }
 
-  if (!checkGP(_specialcache._MLEst)) {
+  if (!checkGP(_specialcache._MLEst) && this->_verbose) {
     std::cout << "WARNING! Some of the bin counts are very low. The Gaussian bin count assumption might not hold resulting in bad unfolding results" << std::endl;
   }
 
@@ -510,9 +510,11 @@ RooUnfoldGPT<Hist,Hist2D>::MinimizeMLH() const
     std::cout << "Minimization of the marginal likelihood did not converge. Try again with new initial values and step sizes." << std::endl;
   } else {
     const double* xs = min->X();
-    std::cout << "Marginal likelihood minimization converged. Parameter values: " << std::endl;
+
+    if (this->_verbose) std::cout << "Marginal likelihood minimization converged. Parameter values: " << std::endl;
+
     for (int i = 0; i < _specialcache._kernel_init.size(); i++){
-      std::cout << "Parameter " << i << ": " << xs[i] << std::endl;
+      if (this->_verbose) std::cout << "Parameter " << i << ": " << xs[i] << std::endl;
       _specialcache._opt_params.push_back(xs[i]);
     }
     _specialcache._MLHConverged = true;
