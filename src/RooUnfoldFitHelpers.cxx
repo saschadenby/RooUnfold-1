@@ -229,7 +229,7 @@ namespace RooUnfolding { // section 1: trivial helpers
   Variable<RooUnfolding::RooFitHist>::Variable(RooAbsArg* var) : _var(var) {}
 
   template<> Variable<RooUnfolding::RooFitHist> var(const RooUnfolding::RooFitHist* h, Dimension d){
-    return Variable<RooUnfolding::RooFitHist>(NULL);
+    return Variable<RooUnfolding::RooFitHist>(h->obs(d));
   }
 
   template<> const char* name<RooUnfolding::RooFitHist>(const RooUnfolding::RooFitHist* h){
@@ -1151,6 +1151,71 @@ RooArgSet RooUnfolding::allVars(RooWorkspace* ws, const char* pattern){
   }
   return retval;
 }
+
+namespace RooUnfolding {
+  std::vector<Variable<TH1>> convertTH1(const std::vector<Variable<RooUnfolding::RooFitHist> >& vars){
+    std::vector<Variable<TH1> > outvars;
+    for(auto var:vars){
+      auto v = var._var;
+      outvars.push_back(RooUnfolding::Variable<TH1>(::nBins(v),::min(v),::max(v),v->GetName()));
+    }
+    return outvars;
+  }
+  TH1* convertTH1(const TVectorD& values, const TVectorD& errors, const RooUnfolding::RooFitHist* hist){
+    return RooUnfolding::createHist<TH1>(values,errors,hist->GetName(),hist->GetTitle(),RooUnfolding::convertTH1(RooUnfolding::vars(hist)));
+  }
+}
+
+RooUnfolding::RooFitHist* RooUnfolding::RooFitHist::asimovClone(bool correctDensity) const {   
+  // Define x,y,z as 1st, 2nd and 3rd observable
+  RooAbsArg* xvar = _obs.at(0);
+  RooAbsArg* yvar = _obs.size() > 1 ? _obs.at(1) : (RooAbsArg*)0;
+  RooAbsArg* zvar = _obs.size() > 2 ? _obs.at(2) : (RooAbsArg*)0;
+  
+  RooArgSet args;
+  RooArgList arglist;    
+  for(auto v:this->_obs){
+    args.add(*v);
+    arglist.add(*v);      
+  }
+  TString name = TString::Format("%s_asimov",this->name());
+  
+  RooDataHist* dh = new RooDataHist(name,this->title(),args);
+  
+  // Transfer contents
+  Int_t xmin(0),ymin(0),zmin(0) ;
+  
+  for (int ix=0 ; ix < ::nBins(xvar) ; ix++) {
+    ::setBin(xvar,ix) ;
+    if (yvar) {
+      for (int iy=0 ; iy < ::nBins(yvar) ; iy++) {
+        ::setBin(yvar,iy) ;
+        if (zvar) {
+          for (int iz=0 ; iz < ::nBins(zvar) ; iz++) {
+            ::setBin(zvar,iz) ;
+            double volume = ::useIf(dh->binVolume(),correctDensity);
+            dh->add(args,this->value(),sqrt(volume*this->value())/volume) ;
+          }
+        } else {
+          double volume = ::useIf(dh->binVolume(),correctDensity);
+          dh->add(args,this->value(),sqrt(volume*this->value())/volume) ;
+        }
+      }
+    } else {
+      double volume = ::useIf(dh->binVolume(),correctDensity);        
+      dh->add(args,this->value(),sqrt(volume*this->value())/volume) ;
+    }
+  }
+  
+  dh->removeSelfFromDir();
+  
+  return new RooFitHist(dh,arglist,0);
+}
+
+template<> RooUnfolding::RooFitHist* RooUnfolding::asimovClone(const RooUnfolding::RooFitHist* hist, bool correctDensity){
+  return hist->asimovClone(correctDensity);
+}
+
 
 ClassImp(RooUnfolding::RooFitHist)
 

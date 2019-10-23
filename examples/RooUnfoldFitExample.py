@@ -376,7 +376,7 @@ def makePlots(outdir,ws,obsname,hist_truth,hist_reco,label):
 def makePlots_HistFactory(ws):
   import ROOT
 
-  unfoldfunc = ws.obj("unfolding")
+  unfoldfunc = ws.obj("unfold")
   
   unfolding = unfoldfunc.unfolding()
 
@@ -417,14 +417,13 @@ def makePlots_HistFactory(ws):
   canvas_reco.SaveAs("reco.pdf")
   canvas_reco.SaveAs("reco.png")
 
-def makePlots_RooUnfoldSpec(ws,spec):
+def makePlots_RooUnfoldSpec(ws):
   import ROOT
-
+  ws.Print("t")
   unfoldfunc = ws.obj("unfold")
-  unfolding = unfoldfunc.unfolding()
 
   sig_response = ws.obj("response")
-  sig_theory = ws.obj("sig_theory_hist_func")
+  sig_theory = ws.obj("sig_theory")
   sigbkg_reco = ws.obj("sigbkg_reco_histfunc")
   sig_truth = ws.obj("sig_truth")
   sig_reco = ws.obj("unfold_data_minus_bkg")
@@ -520,10 +519,12 @@ def main(args):
     ROOT.gDirectory.Clear()
     
     test_truth = spec.makeHistogram(histograms["sig_theory"])
-
+    test_truth_func = test_truth.func()
+    test_truth_func.SetName("sig_theory")
     ws = ROOT.RooWorkspace("workspace","workspace")
 
     getattr(ws,"import")(unfolding)
+    getattr(ws,"import")(test_truth_func)
 
     # Here the first unfolding is performed.
     src = str(unfolding.getStringAttribute("source"))
@@ -534,14 +535,14 @@ def main(args):
    
     unfolding.Delete()
 
-  return
+#  return
 
   ws.writeToFile("unfolding.root")
   
   if args.mode == "HistFactory":
     makePlots_HistFactory(ws)
   else:
-    makePlots_RooUnfoldSpec(ws,spec)
+    makePlots_RooUnfoldSpec(ws)
   
 
   
