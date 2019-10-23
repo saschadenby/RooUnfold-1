@@ -25,7 +25,6 @@ public:
   
   typedef RooUnfolding::Algorithm Algorithm;
   typedef RooUnfolding::ErrorTreatment ErrorTreatment;
-  typedef RooUnfolding::ToyType ToyType;
   static const Algorithm kNone;
   static const Algorithm kBayes;
   static const Algorithm kSVD;
@@ -40,8 +39,6 @@ public:
   static const ErrorTreatment kCovariance;
   static const ErrorTreatment kCovToy;
   static const ErrorTreatment kDefault;
-  static const ToyType kPoisson;
-  static const ToyType kGaussian;
   
   // Standard methods
 
@@ -167,19 +164,6 @@ protected:
   };
   mutable Cache _cache; //!
 
-<<<<<<< HEAD
-  TMatrixD* _covMes;                       // Measurement covariance matrix
-  Int_t    _verbose;                       // Debug print level
-  Int_t    _nm;                            // Total number of measured bins (including under/overflows if _overflow set)
-  Int_t    _nt;                            // Total number of truth    bins (including under/overflows if _overflow set
-  Int_t    _overflow;                      // Use histogram under/overflows if 1 (set from RooUnfoldResponse)
-  Int_t    _NToys;                         // Number of toys to be used
-  Int_t    _dosys;                         // include systematic errors from response matrix? use _dosys=2 to exclude measurement errors
-  RooUnfoldResponseT<Hist,Hist2D>* _res;   // Response matrix (not owned)
-  Hist*    _meas;                          // Measured distribution (not owned)
-  RooUnfolding::Algorithm _alg;            // The used algorithm.
-  RooUnfolding::ToyType _toytype;          // Contains the type of distribution used to throw toys.
-=======
   TMatrixD* _covMes;                         // Measurement covariance matrix
   Int_t    _verbose;                         // Debug print level
   Int_t    _nm;                              // Total number of measured bins (including under/overflows if _overflow set)
@@ -190,7 +174,6 @@ protected:
   RooUnfoldResponseT<Hist,Hist2D>* _res;     // Response matrix (not owned)
   Hist*    _meas;                            // Measured distribution (not owned)
   RooUnfolding::Algorithm _alg;              // The used algorithm.
->>>>>>> f8ce9f1176553ec0180f9c617748bf31e37f3eea
 
 public:
 

@@ -26,11 +26,13 @@ using namespace RooUnfolding;
 namespace { 
   void setBinning(RooRealVar* obs, const TAxis* ax, bool includeUnderflowOverflow){
     int n = ax->GetNbins()+(includeUnderflowOverflow?2:0);
+    int offset = (includeUnderflowOverflow?0:1);
     if(ax->IsVariableBinSize()){
       std::vector<double> bounds;
-      for(int i=0; i<ax->GetNbins()+1; ++i){
-        bounds.push_back(ax->GetBinLowEdge(i+1));
+      for(int i=0; i<n; ++i){
+        bounds.push_back(ax->GetBinLowEdge(offset + i));
       }
+      bounds.push_back(ax->GetBinUpEdge(n));
       RooBinning bins(n,&((bounds[0])));
       obs->setBinning(bins);
     } else {
@@ -330,7 +332,7 @@ RooUnfoldSpec::RooUnfoldSpec(const char* name, const char* title, const TH1* tru
   if(more_reco) throw std::runtime_error(TString::Format("encountered additional characters on reco observable list: '%s'",obs_reco_s.Data()).Data());
   if((int)obs_truth_v.size() != d) throw std::runtime_error(TString::Format("truth observable list is too short for %d dimensions: '%s'",d,obs_truth).Data());
   if((int)obs_reco_v.size() != d) throw std::runtime_error(TString::Format("reco observable list is too short for %d dimensions: '%s'",d,obs_truth).Data());
-    
+
   RooArgList truth_vars;
   for(int i=0; i<d; ++i){
     const TAxis* ax = RooUnfolding::getAxis(truth,(RooUnfolding::Dimension)i);
@@ -341,6 +343,7 @@ RooUnfoldSpec::RooUnfoldSpec(const char* name, const char* title, const TH1* tru
     obs->setConstant(true);
     truth_vars.add(*obs);
   }
+
   RooArgList reco_vars;
   for(int i=0; i<d; ++i){
     const TAxis* ax = RooUnfolding::getAxis(reco,(RooUnfolding::Dimension)i);
@@ -514,7 +517,7 @@ void RooUnfoldSpec::setup(const TH1* truth_th1, const RooArgList& obs_truth, con
   this->_obs_all.add(obs_truth);
   if(response_th1) this->_res.setNominal(response_th1,this->_obs_all,errorThreshold,includeUnderflowOverflow,this->_useDensity);
   if(bkg_th1)  this->_bkg.setNominal(bkg_th1,obs_reco,errorThreshold,includeUnderflowOverflow,this->_useDensity);
-  
+
   if(data_th1) this->_data.setNominal(data_th1,obs_reco,0.,includeUnderflowOverflow,this->_useDensity);
 }
 
@@ -760,7 +763,7 @@ void RooUnfoldSpec::HistContainer::setNominal(RooAbsReal* nom){
 }
 
 void RooUnfoldSpec::HistContainer::setNominal(RooDataHist* data, const RooArgList& obslist){
-  this->_nom = RooUnfolding::makeHistFunc(data,obslist);  
+  this->_nom = RooUnfolding::makeHistFunc(data,obslist);
   this->_gammas = RooUnfolding::createGammas(data,obslist,0.);
   if(_gammas.size()>0){
     this->_staterror = RooUnfolding::makeParamHistFunc(TString::Format("%s_staterrors",_nom->GetName()),_nom->GetTitle(),obslist,_gammas);
@@ -771,7 +774,7 @@ void RooUnfoldSpec::HistContainer::setNominal(const TH1* nom, const RooArgList& 
   this->_nom = RooUnfolding::makeHistFunc(nom,obslist,includeUnderflowOverflow,useDensity);  
   if(errorThreshold >= 0){
     this->_gammas = RooUnfolding::createGammas(nom,includeUnderflowOverflow,errorThreshold);
-    if(_gammas.size()>0){    
+    if(_gammas.size()>0){
       this->_staterror = RooUnfolding::makeParamHistFunc(TString::Format("%s_staterrors",nom->GetName()),nom->GetTitle(),obslist,_gammas);
     }
   }
