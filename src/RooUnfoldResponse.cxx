@@ -1102,7 +1102,7 @@ RooUnfoldResponse::Setup(const TH1* measured, const TH1* truth, const TH2* respo
     _mes= createHist<TH1>("measured", "Measured", Variable<TH1>(nBins(response,RooUnfolding::X), 0.0, 1.0, "xm"));
     _mdim= 1;
   }
-  _fak= createHist<TH1>("fakes","Fakes",vars(measured));
+
   if (truth) {
     _tru= clone(truth);
     _tdim= dim(_tru);
@@ -1116,6 +1116,16 @@ RooUnfoldResponse::Setup(const TH1* measured, const TH1* truth, const TH2* respo
   }
   _nm= nBins(_mes);
   _nt= nBins(_tru);
+
+  _mlow = measured->GetXaxis()->GetXmin();
+  _mhigh = measured->GetXaxis()->GetXmax();
+  _tlow = truth->GetXaxis()->GetXmin();
+  _thigh = truth->GetXaxis()->GetXmax();
+
+  _tru_m= createHist<TH1>("truth_m","truth_m",Variable<TH1>(_nm, _tlow, _thigh,"xt"));
+  _mestru= createHist<TH1>("meastru","Meastru",Variable<TH1>(_nm, _tlow, _thigh,"xt"));
+  _fak= createHist<TH1>("fakes","Fakes",Variable<TH1>(_nm, _mlow, _mhigh,"xm"));
+
   if (_nm != nBins(_res,RooUnfolding::X) || _nt != nBins(_res,RooUnfolding::Y)) {
     cerr << "Warning: RooUnfoldResponse<class TH1, class TH2> measured X truth is " << _nm << " X " << _nt
          << ", but matrix is " << nBins(_res,RooUnfolding::X)<< " X " << nBins(_res,RooUnfolding::Y) << endl;

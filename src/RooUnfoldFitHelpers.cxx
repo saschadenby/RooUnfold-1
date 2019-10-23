@@ -639,7 +639,7 @@ namespace RooUnfolding { // section 2: non-trivial helpers
         }
       } else {
         double val = histo->GetBinContent(ix+offset);
-        double err = histo->GetBinError(ix+offset);                    
+        double err = histo->GetBinError(ix+offset);              
         if(val > 0 && err/val>uncThreshold){
           TString name = TString::Format("gamma_stat_%s_%d",histo->GetName(),(int)gammas.size());
           RooRealVar* g = new RooRealVar(name,name,1.);
@@ -780,6 +780,7 @@ namespace RooUnfolding { // section 2: non-trivial helpers
     }
     ParamHistFunc* phf = new ParamHistFunc(TString::Format("%s_mcstat",name),title,obslist,gammas);
     phf->recursiveRedirectServers(obslist);
+
     return phf;
   }
   

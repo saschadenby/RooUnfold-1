@@ -186,7 +186,6 @@ RooUnfoldT<Hist,Hist2D>::New (RooUnfolding::Algorithm alg, const RooUnfoldRespon
   case kGP:
     unfold = new RooUnfoldGPT<Hist,Hist2D> (res,meas);
     break;
-
   case kDagostini:
     cerr << "RooUnfoldDagostini is not available" << endl;
     return 0;
@@ -1369,7 +1368,7 @@ namespace {
 template<> void
 RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>::RunToys(int ntoys, std::vector<TVectorD>& vx, std::vector<TVectorD>& vxe, std::vector<double>& chi2) const {
   //! run a number of toys
-  
+
   const auto* res = this->response();
   RooArgSet allParams;
   if(this->_dosys != kNoMeasured){
@@ -1394,7 +1393,6 @@ RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>::RunToys(int ntoys
   
   auto* snsh = errorParams.snapshot();
   RooArgList errorParamList(errorParams);
-
   RooFitResult * prefitResult = RooFitResult::prefitResult(errorParamList);
   if(_cache._covMes && !this->_dosys==kNoMeasured){
     auto meas(this->Vmeasured());
@@ -1416,6 +1414,7 @@ RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>::RunToys(int ntoys
     ((::FitResultHack*)prefitResult)->setCovariance(setCov);
   }
   
+
   RooAbsPdf* paramPdf = prefitResult->createHessePdf(errorParams) ;
   RooDataSet* d = paramPdf->generate(errorParams,ntoys) ;
 
@@ -1457,6 +1456,7 @@ RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>::RunToy(TVectorD&x
 
 template<> void RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>::GetErrors() const
 {
+
   std::vector<TVectorD> values, etoys;
   std::vector<double> chi2;
   auto errortmp = _cache._withError;
