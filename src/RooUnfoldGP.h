@@ -35,6 +35,7 @@ public:
   virtual void SetRegParm(Double_t parm);
   virtual void Reset() override;
   TDecompSVD* Impl();
+  virtual Double_t GetRegParm() const;
 
 protected:
   virtual void Unfold() const override;

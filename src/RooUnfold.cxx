@@ -122,6 +122,7 @@ template<class Hist,class Hist2D> const typename RooUnfoldT<Hist,Hist2D>::ErrorT
 template<class Hist,class Hist2D> const typename RooUnfoldT<Hist,Hist2D>::ErrorTreatment RooUnfoldT<Hist,Hist2D>::kCovToy = RooUnfolding::kCovToy;
 template<class Hist,class Hist2D> const typename RooUnfoldT<Hist,Hist2D>::ErrorTreatment RooUnfoldT<Hist,Hist2D>::kDefault = RooUnfolding::kDefault;
 
+
 using namespace RooUnfolding;
 
 template<class Hist,class Hist2D>
@@ -186,7 +187,6 @@ RooUnfoldT<Hist,Hist2D>::New (RooUnfolding::Algorithm alg, const RooUnfoldRespon
   case kGP:
     unfold = new RooUnfoldGPT<Hist,Hist2D> (res,meas);
     break;
-
   case kDagostini:
     cerr << "RooUnfoldDagostini is not available" << endl;
     return 0;
@@ -535,9 +535,9 @@ RooUnfoldT<Hist,Hist2D>::CalculateBias(Int_t ntoys, const Hist* hTrue) const
 
   TVectorD truth(hTrue ? h2v(hTrue,false) : _res->Vtruth());
   TVectorD truthE(hTrue ? h2ve(hTrue,false) : _res->Etruth());  
-  
+
   Hist* asimov = RooUnfolding::asimovClone(this->response()->Hmeasured(),this->response()->UseDensityStatus());
-  auto* toyFactory = this->New(this->GetAlgorithm(),this->response(),asimov);
+  auto* toyFactory = this->New(this->GetAlgorithm(),this->response(),asimov,GetRegParm());
   
   if (ntoys<=1){
     TVectorD unfold = toyFactory->Vunfold();
@@ -783,6 +783,7 @@ RooUnfoldT<Hist,Hist2D>::GetDefaultParm() const
 template<> double
 RooUnfoldT<TH1,TH2>::RunToy(TVectorD&x, TVectorD&xe) const {
   //! fills a vector with smeared measurements for use as a toy.
+
   //! Use multiple toys to find spread of unfolding results.
   TString name= GetName();
   name += "_toy";
@@ -813,10 +814,22 @@ RooUnfoldT<TH1,TH2>::RunToy(TVectorD&x, TVectorD&xe) const {
     
     reco->SetBinContent(i + 1, recov(i));
 
-    Double_t e= errv(i);
+    Double_t new_bin;
+    Double_t g;
+    Double_t e;
     gRandom->SetSeed(0);
-    Double_t g= gRandom->Gaus(0,e);
-    if (e>0.0) newmeas->SetBinContent(i+1, measv(i) + g);
+
+    new_bin = gRandom->Poisson(recov(i));
+    // e = errv(i);
+      
+    // if (e>0.0) {
+    //   g = gRandom->Gaus(0,e);
+    //   new_bin = recov(i) + g;
+    // } else {
+    //   new_bin = recov(i);
+    // }
+
+    newmeas->SetBinContent(i+1, new_bin);
     
     for (Int_t j = 0; j < _nt; j++){
       tru->SetBinContent(j + 1, truv(j));
@@ -828,7 +841,7 @@ RooUnfoldT<TH1,TH2>::RunToy(TVectorD&x, TVectorD&xe) const {
   
   RooUnfolding::Algorithm alg = this->GetAlgorithm();
   Double_t regparm = GetRegParm();
-
+  
   RooUnfoldT<TH1,TH2>* unfold = RooUnfoldT<TH1,TH2>::New(alg,res,newmeas,regparm);
 
   delete newmeas;
@@ -1313,7 +1326,7 @@ template<class Hist,class Hist2D>
 Double_t RooUnfoldT<Hist,Hist2D>::GetRegParm() const
 {
   //! Get regularisation parameter.
-  return -1;
+  return -1e30;
 }
 
 template<class Hist,class Hist2D> 
@@ -1369,7 +1382,7 @@ namespace {
 template<> void
 RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>::RunToys(int ntoys, std::vector<TVectorD>& vx, std::vector<TVectorD>& vxe, std::vector<double>& chi2) const {
   //! run a number of toys
-  
+
   const auto* res = this->response();
   RooArgSet allParams;
   if(this->_dosys != kNoMeasured){
@@ -1394,7 +1407,6 @@ RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>::RunToys(int ntoys
   
   auto* snsh = errorParams.snapshot();
   RooArgList errorParamList(errorParams);
-
   RooFitResult * prefitResult = RooFitResult::prefitResult(errorParamList);
   if(_cache._covMes && !this->_dosys==kNoMeasured){
     auto meas(this->Vmeasured());
@@ -1416,6 +1428,7 @@ RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>::RunToys(int ntoys
     ((::FitResultHack*)prefitResult)->setCovariance(setCov);
   }
   
+
   RooAbsPdf* paramPdf = prefitResult->createHessePdf(errorParams) ;
   RooDataSet* d = paramPdf->generate(errorParams,ntoys) ;
 
@@ -1457,6 +1470,7 @@ RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>::RunToy(TVectorD&x
 
 template<> void RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>::GetErrors() const
 {
+
   std::vector<TVectorD> values, etoys;
   std::vector<double> chi2;
   auto errortmp = _cache._withError;

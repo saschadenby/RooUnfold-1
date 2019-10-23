@@ -308,6 +308,7 @@ namespace RooUnfolding {
   }
   template<class Hist> Hist* clone(const Hist* orighist){
     if(!orighist) return NULL;
+
     Bool_t oldstat= TH1::AddDirectoryStatus();
     TH1::AddDirectory (kFALSE);
     Hist* hist = (Hist*)(orighist ->Clone());

@@ -116,6 +116,11 @@ RooUnfoldGPT<Hist,Hist2D>::Impl()
   return _specialcache._svd;
 }
 
+template<class Hist, class Hist2D> Double_t
+RooUnfoldGPT<Hist,Hist2D>::GetRegParm() const
+{
+  return (Double_t)_kernel;
+}
 template<class Hist, class Hist2D> void
 RooUnfoldGPT<Hist,Hist2D>::SetRegParm(Double_t regparm)
 {
@@ -173,12 +178,16 @@ RooUnfoldGPT<Hist,Hist2D>::SetBinCenters() const
 template<class Hist, class Hist2D> void
 RooUnfoldGPT<Hist,Hist2D>::SetFitSettings() const
 {
+  
   if (_kernel == 1){
+    if (_specialcache._kernel_init.size() == 2) return;
+
     _specialcache._kernel_init.push_back(13.0);
     _specialcache._kernel_init.push_back(0.01);
     _specialcache._kernel_step.push_back(0.001);
     _specialcache._kernel_step.push_back(0.0001);
   } else {
+    if (_specialcache._kernel_init.size() == 3) return;
     _specialcache._kernel_init.push_back(10.0);
     _specialcache._kernel_init.push_back(1.0);
     _specialcache._kernel_init.push_back(1.0);
@@ -262,7 +271,7 @@ RooUnfoldGPT<Hist,Hist2D>::MLEstimator() const
     _specialcache._MLEst -= fakes;
   }
 
-  if (!checkGP(_specialcache._MLEst)) {
+  if (!checkGP(_specialcache._MLEst) && this->_verbose) {
     std::cout << "WARNING! Some of the bin counts are very low. The Gaussian bin count assumption might not hold resulting in bad unfolding results" << std::endl;
   }
 
@@ -285,9 +294,16 @@ RooUnfoldGPT<Hist,Hist2D>::MLEstimator() const
 template<class Hist, class Hist2D> void
 RooUnfoldGPT<Hist,Hist2D>::MLCovariance() const
 {
+  TMatrixD cov(this->_nm, this->_nm);  
+  TVectorD nu = this->_res->Vmeasured();
+
+  for (int i = 0; i < this->_nm; i++){
+    cov(i,i) = nu(i);
+  }
+
     if (!InvertResponse()) return;
     _specialcache._MLCov.ResizeTo(this->_nt,this->_nt);
-    ABAT (*_specialcache._resinv, this->GetMeasuredCov(), _specialcache._MLCov);
+    ABAT (*_specialcache._resinv, cov, _specialcache._MLCov);
     
     _specialcache._haveMLCov = true;
 }
@@ -486,11 +502,14 @@ RooUnfoldGPT<Hist,Hist2D>::MinimizeMLH() const
     std::cout << "Minimization of the marginal likelihood did not converge. Try again with new initial values and step sizes." << std::endl;
   } else {
     const double* xs = min->X();
-    std::cout << "Marginal likelihood minimization converged. Parameter values: " << std::endl;
+   
+    if (this->_verbose >= 2) std::cout << "Marginal likelihood minimization converged." << std::endl;
+
     for (int i = 0; i < _specialcache._kernel_init.size(); i++){
-      std::cout << "Parameter " << i << ": " << xs[i] << std::endl;
+      if (this->_verbose >= 2) std::cout << "Parameter " << i << ": " << xs[i] << std::endl;
       _specialcache._opt_params.push_back(xs[i]);
     }
+    
     _specialcache._MLHConverged = true;
   }
 
