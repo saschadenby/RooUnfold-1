@@ -509,70 +509,31 @@ Double_t RooUnfoldResponseT<Hist,Hist2D>::GetUpBoundMeasured() const
 
 
 template<class Hist, class Hist2D>
-TH1D* RooUnfoldResponseT<Hist,Hist2D>::TH1purity()
+TVectorD RooUnfoldResponseT<Hist,Hist2D>::Vefficiency()
 {
-
-  TVectorD reco(_nm);
-  TVectorD trum(_nm);
-  TVectorD recogen(_nm);
-  TMatrixD resp(_nm,_nt);
-
-  if ( _nt != _nm) {
-    trum = h2v (_tru_m, false, _density);
-    recogen = h2v (_mestru, false, _density);
-  } else {
-    reco = h2v (_mes, false, _density);
-    resp = h2m (_res, false, _density);
-  }
-
-
-  TH1D* pur = new TH1D("purity","purity",resp.GetNcols(),GetLowBoundMeasured(),GetUpBoundMeasured());
-
-  for (int i = 0; i < resp.GetNrows(); i++){
-    Int_t n_recogen;
-    Int_t n_reco;
-    if ( _nt != _nm ){
-      n_recogen = recogen[i];
-      n_reco = trum[i];
-    } else {
-      n_recogen = resp[i][i];
-      n_reco = reco[i];
-    }
-      
-    if (n_reco > 0) {
-      pur->SetBinContent(i + 1,(Double_t)n_recogen/n_reco);
-    } else {
-      pur->SetBinContent(i + 1, 0.0);
-    }
-  }
-
-  return pur;
-}
-
-template<class Hist, class Hist2D>
-TH1D* RooUnfoldResponseT<Hist,Hist2D>::TH1eff()
-{
-  
   TMatrixD resp(h2m(_res, false, _density));
   TVectorD truth(h2v(_tru, false, _density));
 
-  TH1D* eff = new TH1D("eff","eff",truth.GetNrows(),GetLowBoundTruth(),GetUpBoundTruth());
+  TVectorD eff(resp.GetNcols());
 
-  for (int i_t = 0; i_t < resp.GetNcols(); i_t++){
-    
-    Int_t n_truth = truth[i_t];
+  for (int i = 0; i < resp.GetNcols(); i++){
+
+    Int_t n_truth = truth[i];
     Int_t n_truth_reco = 0;
 
     for (int i_r = 0; i_r < resp.GetNrows(); i_r++){
       
-      n_truth_reco += resp[i_r][i_t];
+      n_truth_reco += resp[i_r][i];
     }
-      
-    eff->SetBinContent(i_t + 1,(Double_t)n_truth_reco/n_truth);
+    
+    eff[i] = (Double_t)n_truth_reco/n_truth;
+    
   }
 
   return eff;
 }
+
+
 
 template<class Hist, class Hist2D>
 const Hist* RooUnfoldResponseT<Hist,Hist2D>::Hmeasured() const

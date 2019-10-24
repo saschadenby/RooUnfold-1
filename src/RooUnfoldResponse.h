@@ -46,8 +46,6 @@ public:
   Double_t     GetLowBoundMeasured()     const;   // Get the lower bound of the truth histgram.
   Double_t     GetUpBoundMeasured()     const;   // Get the upper bound of the truth histgram.
 
-  TH1D*         TH1purity();                    // Distribution with the bin purities.
-  TH1D*         TH1eff();                    // Distribution with the bin efficiencies.
   const Hist*   Hmeasured()            const;   // Measured distribution, including fakes
   Hist*         Hmeasured();                    // Measured distribution, including fakes
   const Hist*   Hfakes()               const;   // Fakes distribution
@@ -59,6 +57,7 @@ public:
   Hist2D*       HresponseNoOverflow()  const;   // Response matrix with under/overflow bins moved into histogram body
 
   TVectorD        Vpurity();                   // Distribution with the purities as a TVectorD
+  TVectorD        Vefficiency();                   // Distribution with the efficiencies as a TVectorD
   const TVectorD& Vmeasured()         const;   // Measured distribution as a TVectorD
   const TVectorD& Emeasured()         const;   // Measured distribution errors as a TVectorD
   const TVectorD& Vfakes()            const;   // Fakes distribution as a TVectorD
