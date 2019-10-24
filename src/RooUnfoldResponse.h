@@ -103,6 +103,8 @@ private:
   mutable TVectorD* _eTru= 0;   //! Cached truth    error
   mutable TMatrixD* _mRes= 0;   //! Cached response matrix
   mutable TMatrixD* _eRes= 0;   //! Cached response error
+  mutable TMatrixD* _mResNorm= 0;   //! Cached normalized response matrix
+  mutable TMatrixD* _eResNorm= 0;   //! Cached normalized response error  
   mutable Bool_t    _cached = false; //! We are using cached vectors/matrices
 
 public:
