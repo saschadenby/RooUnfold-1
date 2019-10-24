@@ -95,6 +95,7 @@ public:
   virtual void       SetRegParm (Double_t parm);
   virtual Double_t   GetRegParm() const; // Get Regularisation Parameter
   Double_t Chi2 (const Hist* hTrue,RooUnfolding::ErrorTreatment DoChi2=RooUnfolding::kCovariance) const;
+  virtual void CalculateBias(RooUnfolding::BiasMethod method, Int_t ntoys = 50, const Hist* hTrue = 0) const; // Estimate bias
   virtual void CalculateBias(Int_t ntoys = 50, const Hist* hTrue = 0) const; // Estimate bias by throwing toys.
 
   RooUnfolding::Algorithm GetAlgorithm() const;

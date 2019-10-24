@@ -529,7 +529,7 @@ RooUnfoldT<Hist,Hist2D>::GetErrMat() const
 }
 
 template<class Hist,class Hist2D> void
-RooUnfoldT<Hist,Hist2D>::CalculateBias(Int_t ntoys, const Hist* hTrue) const
+RooUnfoldT<Hist,Hist2D>::CalculateBias(RooUnfolding::BiasMethod method, Int_t ntoys, const Hist* hTrue) const
 {
   //! TODO: document
 
@@ -539,7 +539,7 @@ RooUnfoldT<Hist,Hist2D>::CalculateBias(Int_t ntoys, const Hist* hTrue) const
   Hist* asimov = RooUnfolding::asimovClone(this->response()->Hmeasured(),this->response()->UseDensityStatus());
   auto* toyFactory = this->New(this->GetAlgorithm(),this->response(),asimov,GetRegParm());
   
-  if (ntoys<=1){
+  if (method == RooUnfolding::kAsimovEstimator){
     TVectorD unfold = toyFactory->Vunfold();
     TVectorD unfoldE = toyFactory->EunfoldV();
     
@@ -550,7 +550,7 @@ RooUnfoldT<Hist,Hist2D>::CalculateBias(Int_t ntoys, const Hist* hTrue) const
       _cache._bias[i] = unfold[i] - truth[i];
       _cache._sigbias[i] = sqrt(truthE[i]*truthE[i] + unfoldE[i]*unfoldE[i]);
     }
-  } else {
+  } else if(method == RooUnfolding::kToys){
     TMatrixD pull_results(ntoys,_nt);
     
     TVectorD bias(_nt);
@@ -578,12 +578,21 @@ RooUnfoldT<Hist,Hist2D>::CalculateBias(Int_t ntoys, const Hist* hTrue) const
       }
       _cache._sigbias(j) = sqrt(sum2) / (ntoys-1);
     }
+  } else if(method == RooUnfolding::kToyToys){
+    // todo
   }
 
   delete asimov;
   delete toyFactory;
   
   _cache._haveBias=true;
+}
+
+template<class Hist,class Hist2D> void
+RooUnfoldT<Hist,Hist2D>::CalculateBias(Int_t ntoys, const Hist* hTrue) const
+{
+  if(ntoys == 0) CalculateBias(RooUnfolding::kAsimovEstimator,0,hTrue);
+  else CalculateBias(RooUnfolding::kToys,ntoys,hTrue);  
 }
 
 template<class Hist,class Hist2D> Bool_t

@@ -471,7 +471,7 @@ Int_t RooUnfoldResponseT<Hist,Hist2D>::GetNbinsTruth() const
 }
 
 template<class Hist, class Hist2D>
-TVectorD RooUnfoldResponseT<Hist,Hist2D>::Vefficiency()
+TVectorD RooUnfoldResponseT<Hist,Hist2D>::Vefficiency() const
 {
   TMatrixD resp(h2m(_res, false, _density));
   TVectorD truth(h2v(_tru, false, _density));
@@ -556,18 +556,24 @@ Hist2D*         RooUnfoldResponseT<Hist,Hist2D>::Hresponse()
   return _res;
 }
 
+template<class Hist, class Hist2D>
+TVectorD        RooUnfoldResponseT<Hist,Hist2D>::Vfolded(const TVectorD& truth) const {
+  auto res = this->Mresponse(true);
+  if(!truth.GetNrows() == res.GetNcols())  throw std::runtime_error("Error in RooUnfoldResponseT::Vfolded: invalid dimensionality in given truth vector!");
+  return res*truth;
+}
 
 template<class Hist, class Hist2D>
 const TVectorD& RooUnfoldResponseT<Hist,Hist2D>::Vmeasured() const
 {
   //! Measured distribution as a TVectorD
   if (!_vMes) _cached= (_vMes= new TVectorD(h2v  (_mes, _overflow,_density)));
-  if(_vMes->GetNrows() != this->GetNbinsMeasured()) throw std::runtime_error("invalid dimensionality in measured vector!");
+  if(_vMes->GetNrows() != this->GetNbinsMeasured()) throw std::runtime_error("Error in RooUndfoldResponseT::Vmeasured: invalid dimensionality in measured vector!");
   return *_vMes;
 }
 
 template<class Hist, class Hist2D>
-TVectorD RooUnfoldResponseT<Hist,Hist2D>::Vpurity()
+TVectorD RooUnfoldResponseT<Hist,Hist2D>::Vpurity() const
 {
   const TVectorD& reco(Vmeasured());
   const TMatrixD& resp(Mresponse(false));

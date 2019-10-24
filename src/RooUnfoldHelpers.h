@@ -35,6 +35,12 @@ namespace RooUnfolding {
     kAll=1,
     kNoMeasured=2
   };
+
+  enum BiasMethod { // Method of bias calculation
+    kAsimovEstimator = 0,
+    kToys = 1,
+    kToyToys = 2
+  };
   
   enum Dimension { X=0, Y=1, Z=2 };
   template<class Hist> struct Variable;
