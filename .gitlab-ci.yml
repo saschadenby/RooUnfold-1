@@ -155,13 +155,13 @@ test_GNUmake:
 
 doxygen:
   <<: *doxygen
+  dependencies:
+    - compile_cmake
   artifacts:
     paths:
       - build/doxygen
   script:
-    - mkdir -p build
     - cd build
-    - cmake ..
     - make doxygen
 
 doc_bayes_errors:
