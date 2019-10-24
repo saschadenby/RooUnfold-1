@@ -41,10 +41,6 @@ public:
   Int_t        GetDimensionTruth()    const;   // Dimensionality of the truth distribution
   Int_t        GetNbinsMeasured()     const;   // Total number of bins in the measured distribution
   Int_t        GetNbinsTruth()        const;   // Total number of bins in the truth distribution
-  Double_t     GetLowBoundTruth()     const;   // Get the lower bound of the truth histgram.
-  Double_t     GetUpBoundTruth()     const;   // Get the upper bound of the truth histgram.
-  Double_t     GetLowBoundMeasured()     const;   // Get the lower bound of the truth histgram.
-  Double_t     GetUpBoundMeasured()     const;   // Get the upper bound of the truth histgram.
 
   const Hist*   Hmeasured()            const;   // Measured distribution, including fakes
   Hist*         Hmeasured();                    // Measured distribution, including fakes
@@ -90,14 +86,6 @@ protected:
 
   // instance variables
 
-  Int_t _mdim = 0;     // Number of measured  dimensions
-  Int_t _tdim = 0;     // Number of truth     dimensions
-  Int_t _nm = 0;       // Total number of measured  bins (not counting under/overflows)
-  Int_t _nt = 0;       // Total number of truth     bins (not counting under/overflows)
-  Double_t _mlow = 0;  // Lower boundary of the measured histogram.
-  Double_t _mhigh = 1; // Higher boundary of the measured histogram.
-  Double_t _tlow = 0;  // Lower boundary of the truth histogram.
-  Double_t _thigh = 1; // Higher boundary of the truth histogram.
   Hist*  _mes = 0;      // Measured histogram
   Hist*  _mestru = 0;   // Histogram with events that were reconstructed in the same bin.
   Hist*  _fak = 0;      // Fakes    histogram
