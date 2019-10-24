@@ -82,8 +82,6 @@ protected:
   virtual bool Cached() const;
   virtual void SetNameTitleDefault (const char* defname= 0, const char* deftitle= 0);
 
-  static Int_t GetBinDim (const Hist* h, Int_t i);
-
   // instance variables
 
   Hist*  _mes = 0;      // Measured histogram
