@@ -910,7 +910,7 @@ RooUnfoldT<Hist,Hist2D>::Eunfold(ErrorTreatment withError) const
       return _cache._err_mat;
       break;
     default:
-      throw std::runtime_error("Error, unrecognised error method");
+      throw std::runtime_error(TString::Format("Error in RooUnfoldT::Wunfold, unrecognised error method '%d'",withError).Data());                      
     }
 }
 
@@ -950,7 +950,7 @@ RooUnfoldT<Hist,Hist2D>::EunfoldV(ErrorTreatment withError) const
         }
         break;
       default:
-        throw std::runtime_error("Error, unrecognised error method");
+        throw std::runtime_error(TString::Format("Error in RooUnfoldT::EunfoldV, unrecognised error method '%d'",withError).Data());        
     }
     return Eunfold_v;
 }
@@ -981,7 +981,7 @@ RooUnfoldT<Hist,Hist2D>::Wunfold(ErrorTreatment withError) const
         InvertMatrix (_cache._err_mat, Wunfold_m, "covariance matrix from toys", _verbose);
         break;
       default:
-        cerr<<"Error, unrecognised error method= "<<withError<<endl;
+        throw std::runtime_error(TString::Format("Error in RooUnfoldT::Wunfold, unrecognised error method '%d'",withError).Data());                
     }
     return Wunfold_m;
 }
@@ -1453,7 +1453,7 @@ RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>::RunBiasToys(int n
   RooDataSet* d = paramPdf->generate(errorParams,ntoys) ;
   
   auto errorType = _withError;
-  _withError = kDefault;
+  _withError = kNoError;
   for(int i=0; i<ntoys; ++i){
     errorParams = (*d->get(i)) ;
     this->ForceRecalculation();

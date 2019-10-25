@@ -165,7 +165,7 @@ protected:
     TMatrixD* _covMes;       // Measurement covariance matrix    
   };
   mutable Cache _cache; //!
-  mutable RooUnfolding::ErrorTreatment _withError; // type of error last calulcated
+  mutable RooUnfolding::ErrorTreatment _withError = RooUnfolding::kDefault; // type of error last calulcated
   
   TMatrixD* _covMes;                         // Measurement covariance matrix
   Int_t    _verbose;                         // Debug print level
