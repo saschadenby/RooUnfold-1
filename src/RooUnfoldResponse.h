@@ -41,13 +41,7 @@ public:
   Int_t        GetDimensionTruth()    const;   // Dimensionality of the truth distribution
   Int_t        GetNbinsMeasured()     const;   // Total number of bins in the measured distribution
   Int_t        GetNbinsTruth()        const;   // Total number of bins in the truth distribution
-  Double_t     GetLowBoundTruth()     const;   // Get the lower bound of the truth histgram.
-  Double_t     GetUpBoundTruth()     const;   // Get the upper bound of the truth histgram.
-  Double_t     GetLowBoundMeasured()     const;   // Get the lower bound of the truth histgram.
-  Double_t     GetUpBoundMeasured()     const;   // Get the upper bound of the truth histgram.
 
-  TH1D*         TH1purity();                    // Distribution with the bin purities.
-  TH1D*         TH1eff();                    // Distribution with the bin efficiencies.
   const Hist*   Hmeasured()            const;   // Measured distribution, including fakes
   Hist*         Hmeasured();                    // Measured distribution, including fakes
   const Hist*   Hfakes()               const;   // Fakes distribution
@@ -58,7 +52,9 @@ public:
   Hist2D*       Hresponse();                    // Response matrix as a 2D-histogram: (x,y)=(measured,truth)
   Hist2D*       HresponseNoOverflow()  const;   // Response matrix with under/overflow bins moved into histogram body
 
-  TVectorD        Vpurity();                   // Distribution with the purities as a TVectorD
+  TVectorD        Vfolded(const TVectorD& truth) const;  // Fold a vector according to the response
+  const TVectorD& Vpurity()           const;   // Distribution with the purities as a TVectorD
+  const TVectorD& Vefficiency()       const;   // Distribution with the efficiencies as a TVectorD
   const TVectorD& Vmeasured()         const;   // Measured distribution as a TVectorD
   const TVectorD& Emeasured()         const;   // Measured distribution errors as a TVectorD
   const TVectorD& Vfakes()            const;   // Fakes distribution as a TVectorD
@@ -78,8 +74,8 @@ public:
   Hist* ApplyToTruth (const Hist* truth= 0, const char* name= "AppliedResponse") const; // If argument is 0, applies itself to its own truth
   TF1* MakeFoldingFunction (TF1* func, Double_t eps=1e-12, Bool_t verbose=false) const;
 
-  RooUnfoldResponseT* RunToy() const;
-  virtual void ClearCache();
+  virtual void RunToy() const;
+  virtual void ClearCache() const;
 
 protected:
 
@@ -87,18 +83,8 @@ protected:
   virtual bool Cached() const;
   virtual void SetNameTitleDefault (const char* defname= 0, const char* deftitle= 0);
 
-  static Int_t GetBinDim (const Hist* h, Int_t i);
-
   // instance variables
 
-  Int_t _mdim = 0;     // Number of measured  dimensions
-  Int_t _tdim = 0;     // Number of truth     dimensions
-  Int_t _nm = 0;       // Total number of measured  bins (not counting under/overflows)
-  Int_t _nt = 0;       // Total number of truth     bins (not counting under/overflows)
-  Double_t _mlow = 0;  // Lower boundary of the measured histogram.
-  Double_t _mhigh = 1; // Higher boundary of the measured histogram.
-  Double_t _tlow = 0;  // Lower boundary of the truth histogram.
-  Double_t _thigh = 1; // Higher boundary of the truth histogram.
   Hist*  _mes = 0;      // Measured histogram
   Hist*  _mestru = 0;   // Histogram with events that were reconstructed in the same bin.
   Hist*  _fak = 0;      // Fakes    histogram
@@ -109,13 +95,24 @@ protected:
   bool  _density = false;
 
 private:
-  mutable TVectorD* _vMes= 0;   //! Cached measured vector
-  mutable TVectorD* _eMes= 0;   //! Cached measured error
-  mutable TVectorD* _vFak= 0;   //! Cached fakes    vector
-  mutable TVectorD* _vTru= 0;   //! Cached truth    vector
-  mutable TVectorD* _eTru= 0;   //! Cached truth    error
-  mutable TMatrixD* _mRes= 0;   //! Cached response matrix
-  mutable TMatrixD* _eRes= 0;   //! Cached response error
+  class Cache {
+  public:
+    Cache();
+    ~Cache();
+    typename RooUnfoldResponseT<Hist,Hist2D>::Cache& operator=(const Cache&);
+    TVectorD* _vMes;   //! Cached measured vector
+    TVectorD* _eMes;   //! Cached measured error
+    TVectorD* _vFak;   //! Cached fakes    vector
+    TVectorD* _vTru;   //! Cached truth    vector
+    TVectorD* _eTru;   //! Cached truth    error
+    TMatrixD* _mRes;   //! Cached response matrix
+    TMatrixD* _eRes;   //! Cached response error
+    TMatrixD* _mResNorm;   //! Cached normalized response matrix
+    TMatrixD* _eResNorm;   //! Cached normalized response error
+    TVectorD* _vPur;   //! Cached purity vector
+    TVectorD* _vEff;   //! Cached efficiency vector        
+  };
+  mutable Cache _cache; //!
   mutable Bool_t    _cached = false; //! We are using cached vectors/matrices
 
 public:
@@ -145,7 +142,6 @@ public:
   virtual RooUnfoldResponse& operator= (const RooUnfoldResponse& rhs); // assignment operator
 
   // Set up an existing object
-
 
   virtual RooUnfoldResponse& Reset ();  // clear an existing object
   virtual RooUnfoldResponse& Setup (const RooUnfoldResponse& rhs);  // set up based on another instance

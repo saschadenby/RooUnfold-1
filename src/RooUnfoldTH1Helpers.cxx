@@ -649,4 +649,12 @@ namespace RooUnfolding {
     delete hc;
     return h;
   }
+
+  TH1* convertTH1(const TVectorD& values, const TVectorD& errors, const TH1* hist){
+    return RooUnfolding::createHist<TH1>(values,errors,hist->GetName(),hist->GetTitle(),RooUnfolding::vars(hist));
+  }
+  TH1* convertTH1(const TVectorD& values, const TH1* hist){
+    return RooUnfolding::createHist<TH1>(values,hist->GetName(),hist->GetTitle(),RooUnfolding::vars(hist));
+  }
+  
 }

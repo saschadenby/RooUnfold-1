@@ -1153,20 +1153,6 @@ RooArgSet RooUnfolding::allVars(RooWorkspace* ws, const char* pattern){
   return retval;
 }
 
-namespace RooUnfolding {
-  std::vector<Variable<TH1>> convertTH1(const std::vector<Variable<RooUnfolding::RooFitHist> >& vars){
-    std::vector<Variable<TH1> > outvars;
-    for(auto var:vars){
-      auto v = var._var;
-      outvars.push_back(RooUnfolding::Variable<TH1>(::nBins(v),::min(v),::max(v),v->GetName()));
-    }
-    return outvars;
-  }
-  TH1* convertTH1(const TVectorD& values, const TVectorD& errors, const RooUnfolding::RooFitHist* hist){
-    return RooUnfolding::createHist<TH1>(values,errors,hist->GetName(),hist->GetTitle(),RooUnfolding::convertTH1(RooUnfolding::vars(hist)));
-  }
-}
-
 RooUnfolding::RooFitHist* RooUnfolding::RooFitHist::asimovClone(bool correctDensity) const {   
   // Define x,y,z as 1st, 2nd and 3rd observable
   RooAbsArg* xvar = _obs.at(0);
@@ -1215,6 +1201,20 @@ RooUnfolding::RooFitHist* RooUnfolding::RooFitHist::asimovClone(bool correctDens
 namespace RooUnfolding {
   template<> RooUnfolding::RooFitHist* asimovClone(const RooUnfolding::RooFitHist* hist, bool correctDensity){
     return hist->asimovClone(correctDensity);
+  }
+  std::vector<Variable<TH1>> convertTH1(const std::vector<Variable<RooUnfolding::RooFitHist> >& vars){
+    std::vector<Variable<TH1> > outvars;
+    for(auto var:vars){
+      auto v = var._var;
+      outvars.push_back(RooUnfolding::Variable<TH1>(::nBins(v),::min(v),::max(v),v->GetName()));
+    }
+    return outvars;
+  }
+  TH1* convertTH1(const TVectorD& values, const TVectorD& errors, const RooUnfolding::RooFitHist* hist){
+    return RooUnfolding::createHist<TH1>(values,errors,hist->GetName(),hist->GetTitle(),RooUnfolding::convertTH1(RooUnfolding::vars(hist)));
+  }
+  TH1* convertTH1(const TVectorD& values, const RooUnfolding::RooFitHist* hist){
+    return RooUnfolding::createHist<TH1>(values,hist->GetName(),hist->GetTitle(),RooUnfolding::convertTH1(RooUnfolding::vars(hist)));
   }
 }
 

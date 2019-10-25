@@ -95,6 +95,7 @@ public:
   virtual void       SetRegParm (Double_t parm);
   virtual Double_t   GetRegParm() const; // Get Regularisation Parameter
   Double_t Chi2 (const Hist* hTrue,RooUnfolding::ErrorTreatment DoChi2=RooUnfolding::kCovariance) const;
+  virtual void CalculateBias(RooUnfolding::BiasMethod method, Int_t ntoys = 50, const Hist* hTrue = 0) const; // Estimate bias
   virtual void CalculateBias(Int_t ntoys = 50, const Hist* hTrue = 0) const; // Estimate bias by throwing toys.
 
   RooUnfolding::Algorithm GetAlgorithm() const;
@@ -103,7 +104,9 @@ public:
   Double_t GetStepSizeParm() const;
   Double_t GetDefaultParm() const;
   double RunToy(TVectorD& x, TVectorD& xe) const;
-  void RunToys(int ntoys, std::vector<TVectorD>& x, std::vector<TVectorD>& xe, std::vector<double>& chi2) const;  
+  void RunToys(int ntoys, std::vector<TVectorD>& x, std::vector<TVectorD>& xe, std::vector<double>& chi2) const;
+  void RunBiasToys(int ntoys, std::vector<TVectorD>& vbias) const;
+  
   void Print(Option_t* opt="") const;
   void Dump() const;    
   void ForceRecalculation() const ;
@@ -119,9 +122,9 @@ protected:
 
 private:
   void Init();
-  void Destroy();  
   void CopyData (const RooUnfoldT<Hist,Hist2D>& rhs);
   void SetAlgorithm (RooUnfolding::Algorithm alg);
+  virtual void ClearCache() const;
   //RooUnfoldT<Hist,Hist2D>* clone(const RooUnfoldT<Hist,Hist2D>& rhs);
 
 protected:
@@ -160,10 +163,10 @@ protected:
     TVectorD* _eMes;         // Cached measured error
     TMatrixD* _covL;         // Cached lower triangular matrix for which _covMes = _covL * _covL^T.
     TMatrixD* _covMes;       // Measurement covariance matrix    
-    RooUnfolding::ErrorTreatment _withError; // type of error last calulcated
   };
   mutable Cache _cache; //!
-
+  mutable RooUnfolding::ErrorTreatment _withError = RooUnfolding::kDefault; // type of error last calulcated
+  
   TMatrixD* _covMes;                         // Measurement covariance matrix
   Int_t    _verbose;                         // Debug print level
   Int_t    _nm;                              // Total number of measured bins (including under/overflows if _overflow set)

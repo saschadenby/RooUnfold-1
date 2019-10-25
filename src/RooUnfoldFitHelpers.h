@@ -97,9 +97,7 @@ namespace RooUnfolding {
   void printClients(const RooAbsArg* obj);
   void printServers(const RooAbsArg* obj);
   TH1* convertTH1(const TVectorD& values, const TVectorD& errors, const RooUnfolding::RooFitHist* hist);
-  std::vector<Variable<TH1>> convertTH1(const std::vector<Variable<RooUnfolding::RooFitHist> >& vars);  
-
-  
+  TH1* convertTH1(const TVectorD& values, const RooUnfolding::RooFitHist* hist);
 }
 
 #endif
