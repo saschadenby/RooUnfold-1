@@ -53,8 +53,8 @@ public:
   Hist2D*       HresponseNoOverflow()  const;   // Response matrix with under/overflow bins moved into histogram body
 
   TVectorD        Vfolded(const TVectorD& truth) const;  // Fold a vector according to the response
-  TVectorD        Vpurity()           const;   // Distribution with the purities as a TVectorD
-  TVectorD        Vefficiency()       const;   // Distribution with the efficiencies as a TVectorD
+  const TVectorD& Vpurity()           const;   // Distribution with the purities as a TVectorD
+  const TVectorD& Vefficiency()       const;   // Distribution with the efficiencies as a TVectorD
   const TVectorD& Vmeasured()         const;   // Measured distribution as a TVectorD
   const TVectorD& Emeasured()         const;   // Measured distribution errors as a TVectorD
   const TVectorD& Vfakes()            const;   // Fakes distribution as a TVectorD
@@ -109,6 +109,8 @@ private:
     TMatrixD* _eRes;   //! Cached response error
     TMatrixD* _mResNorm;   //! Cached normalized response matrix
     TMatrixD* _eResNorm;   //! Cached normalized response error
+    TVectorD* _vPur;   //! Cached purity vector
+    TVectorD* _vEff;   //! Cached efficiency vector        
   };
   mutable Cache _cache; //!
   mutable Bool_t    _cached = false; //! We are using cached vectors/matrices

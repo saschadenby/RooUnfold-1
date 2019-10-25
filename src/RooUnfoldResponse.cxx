@@ -208,7 +208,9 @@ RooUnfoldResponseT<Hist,Hist2D>::Cache::Cache() :
   _mRes(0),   
   _eRes(0),   
   _mResNorm(0),
-  _eResNorm(0)
+  _eResNorm(0),
+  _vEff(0),
+  _vPur(0)  
 {
   //! default constructor
 }
@@ -225,6 +227,8 @@ typename RooUnfoldResponseT<Hist,Hist2D>::Cache& RooUnfoldResponseT<Hist,Hist2D>
   if(this->_eRes)     { delete this->_eRes;     }  this->_eRes     = other._eRes;    
   if(this->_mResNorm) { delete this->_mResNorm; }  this->_mResNorm = other._mResNorm;
   if(this->_eResNorm) { delete this->_eResNorm; }  this->_eResNorm = other._eResNorm;
+  if(this->_vEff)     { delete this->_vEff;     }  this->_vEff     = other._vEff;    
+  if(this->_vPur)     { delete this->_vPur;     }  this->_vPur     = other._vPur;      
   return *this;
 }
 
@@ -241,6 +245,8 @@ RooUnfoldResponseT<Hist,Hist2D>::Cache::~Cache(){
   if(this->_eRes)     delete this->_eRes;    
   if(this->_mResNorm) delete this->_mResNorm;
   if(this->_eResNorm) delete this->_eResNorm;
+  if(this->_vEff) delete this->_vEff;
+  if(this->_vPur) delete this->_vPur;  
 }
 
 template <class Hist, class Hist2D> Hist*
@@ -490,32 +496,6 @@ Int_t RooUnfoldResponseT<Hist,Hist2D>::GetNbinsTruth() const
   return ::nBins(this->_tru);
 }
 
-template<class Hist, class Hist2D>
-TVectorD RooUnfoldResponseT<Hist,Hist2D>::Vefficiency() const
-{
-  TMatrixD resp(h2m(_res, false, _density));
-  TVectorD truth(h2v(_tru, false, _density));
-
-  TVectorD eff(resp.GetNcols());
-
-  for (int i = 0; i < resp.GetNcols(); i++){
-
-    Int_t n_truth = truth[i];
-    Int_t n_truth_reco = 0;
-
-    for (int i_r = 0; i_r < resp.GetNrows(); i_r++){
-      
-      n_truth_reco += resp[i_r][i];
-    }
-    
-    eff[i] = (Double_t)n_truth_reco/n_truth;
-    
-  }
-
-  return eff;
-}
-
-
 
 template<class Hist, class Hist2D>
 const Hist* RooUnfoldResponseT<Hist,Hist2D>::Hmeasured() const
@@ -593,21 +573,49 @@ const TVectorD& RooUnfoldResponseT<Hist,Hist2D>::Vmeasured() const
 }
 
 template<class Hist, class Hist2D>
-TVectorD RooUnfoldResponseT<Hist,Hist2D>::Vpurity() const
+const TVectorD& RooUnfoldResponseT<Hist,Hist2D>::Vefficiency() const
 {
-  const TVectorD& reco(Vmeasured());
-  const TMatrixD& resp(Mresponse(false));
-
-  TVectorD pur(resp.GetNcols());
-
-  for (int i = 0; i < resp.GetNcols(); i++){
-    Int_t n_recogen = resp[i][i];
-    Int_t n_reco = reco[i];
+  if(!this->_cache._vEff){
+    TMatrixD resp(h2m(_res, false, _density));
+    TVectorD truth(h2v(_tru, false, _density));
+    
+    this->_cache._vEff = new TVectorD(resp.GetNcols());
+    
+    for (int i = 0; i < resp.GetNcols(); i++){
       
-    pur[i] = (Double_t)n_recogen/n_reco;
+      double n_truth = truth[i];
+      double n_truth_reco = 0;
+      
+      for (int i_r = 0; i_r < resp.GetNrows(); i_r++){
+        
+        n_truth_reco += resp[i_r][i];
+      }
+      
+      (*this->_cache._vEff)[i] = (Double_t)n_truth_reco/n_truth;
+    }
   }
 
-  return pur;
+  return *(this->_cache._vEff);
+}
+
+template<class Hist, class Hist2D>
+const TVectorD& RooUnfoldResponseT<Hist,Hist2D>::Vpurity() const
+{
+  if(!this->_cache._vPur){
+    const TVectorD& reco(Vmeasured());
+    const TMatrixD& resp(Mresponse(false));
+    
+    this->_cache._vPur = new TVectorD(resp.GetNcols());
+    
+    for (int i = 0; i < resp.GetNcols(); i++){
+    Int_t n_recogen = resp[i][i];
+    Int_t n_reco = reco[i];
+    
+    (*_cache._vPur)[i] = (Double_t)n_recogen/n_reco;
+    }
+  }
+  
+  return *(this->_cache._vPur);
 }
 
 template<class Hist, class Hist2D>
