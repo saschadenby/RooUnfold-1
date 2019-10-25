@@ -522,8 +522,29 @@ RooUnfoldT<Hist,Hist2D>::GetErrMat() const
 template<class Hist,class Hist2D> void
 RooUnfoldT<Hist,Hist2D>::CalculateBias(RooUnfolding::BiasMethod method, Int_t ntoys, const Hist* hTrue) const
 {
-  //! TODO: document
+  //! Calculate bias using one of the available methods
+  //! 
+  //! BiasEstimator
+  //! Unfold the nominal measured distribution and use its
+  //! (relative) discrepancy to the given truth distribution as the
+  //! bias. `ntoys` is ignored here.
+  //! 
+  //! BiasClosure
+  //! Throw `ntoys` toys around the nominal measured
+  //! distribution. Unfold each of these toys. Use the (relative)
+  //! discrepancy and spread w.r.t. the given truth distribution as
+  //! bias.
+  //!
+  //! BiasAsimov
+  //! Throw `ntoys` primary toys around the nominal truth
+  //! distribution.  For each of these toys, throw `ntoys` secondary
+  //! toys around it.  Fold and unfold each of these secondary toys,
+  //! calculate the relative discrepancy w.r.t. the corresponding
+  //! primary toy. Use the mean and spread of this quantity as the
+  //! bias. The parameter `hTrue` is ignored in this case.
 
+  if(!hTrue) hTrue = this->response()->Htruth();
+  
   TVectorD truth(hTrue ? h2v(hTrue,false) : _res->Vtruth());
   TVectorD truthE(hTrue ? h2ve(hTrue,false) : _res->Etruth());  
 
@@ -577,7 +598,7 @@ RooUnfoldT<Hist,Hist2D>::CalculateBias(RooUnfolding::BiasMethod method, Int_t nt
     }
   } else if(method == RooUnfolding::kBiasAsimov){
     std::vector<TVectorD> bias;
-    toyFactory->RunBiasToys(ntoys,bias);
+    toyFactory->RunBiasAsimovToys(ntoys,bias);
     _cache._bias.ResizeTo(_nt);
     _cache._sigbias.ResizeTo(_nt);
     for (int i = 0; i < _nt; ++i){
@@ -602,6 +623,10 @@ RooUnfoldT<Hist,Hist2D>::CalculateBias(RooUnfolding::BiasMethod method, Int_t nt
 template<class Hist,class Hist2D> void
 RooUnfoldT<Hist,Hist2D>::CalculateBias(Int_t ntoys, const Hist* hTrue) const
 {
+  //! legacy shorthand for CalculateBias
+  //! if `ntoys`==0, the BiasEstimator method is used
+  //! otherwise, the BiasClosure method is used
+  //! for all other methods, please use the other signature of CalculateBias
   if(ntoys == 0) CalculateBias(RooUnfolding::kBiasEstimator,0,hTrue);
   else CalculateBias(RooUnfolding::kBiasClosure,ntoys,hTrue);  
 }
@@ -609,7 +634,7 @@ RooUnfoldT<Hist,Hist2D>::CalculateBias(Int_t ntoys, const Hist* hTrue) const
 template<class Hist,class Hist2D> Bool_t
 RooUnfoldT<Hist,Hist2D>::UnfoldWithErrors (ErrorTreatment withError, bool getWeights) const
 {
-  //! This method initializes the unfolding.
+  //! This method initializes the unfolding with errors.
 
   if (!_cache._unfolded) {
 
@@ -1325,7 +1350,8 @@ namespace {
 
 template<> void
 RooUnfoldT<TH1,TH2>::RunToys(int ntoys, std::vector<TVectorD>& vx, std::vector<TVectorD>& vxe, std::vector<double>& chi2) const {
-  //! run a number of toys
+  //! run a number of toys, fill the values, errors and chi2 in the
+  //! given vectors
   auto errorType = _withError;
   _withError = kDefault;
   
@@ -1351,7 +1377,8 @@ RooUnfoldT<TH1,TH2>::RunToys(int ntoys, std::vector<TVectorD>& vx, std::vector<T
 
 template<> void
 RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>::RunToys(int ntoys, std::vector<TVectorD>& vx, std::vector<TVectorD>& vxe, std::vector<double>& chi2) const {
-  //! run a number of toys
+  //! run a number of toys, fill the values, errors and chi2 in the
+  //! given vectors
 
   const auto* res = this->response();
   RooArgSet errorParams;
@@ -1416,7 +1443,10 @@ RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>::RunToys(int ntoys
 }
 
 template<> void
-RooUnfoldT<TH1,TH2>::RunBiasToys(int ntoys, std::vector<TVectorD>& vbias) const {
+RooUnfoldT<TH1,TH2>::RunBiasAsimovToys(int ntoys, std::vector<TVectorD>& vbias) const {
+  //! run a number of primary toys on truth level. fold and unfold
+  //! each of these toys. fill the differences w.r.t. the nominal into
+  //! the given bias vector  
   const auto* res = this->response();
   for(int i=0; i<ntoys; ++i){
     this->ForceRecalculation();
@@ -1438,8 +1468,10 @@ RooUnfoldT<TH1,TH2>::RunBiasToys(int ntoys, std::vector<TVectorD>& vbias) const 
 }
 
 template<> void
-RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>::RunBiasToys(int ntoys, std::vector<TVectorD>& vbias) const {
-  //! run a number of toys
+RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>::RunBiasAsimovToys(int ntoys, std::vector<TVectorD>& vbias) const {
+  //! run a number of primary toys on truth level. fold and unfold
+  //! each of these toys. fill the differences w.r.t. the nominal into
+  //! the given bias vector
   const auto* res = this->response();
   RooArgSet errorParams;
   getParameters(res->Htruth(),errorParams);
@@ -1492,6 +1524,8 @@ RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>::RunBiasToys(int n
 template<class Hist, class Hist2D> double
 RooUnfoldT<Hist, Hist2D>::RunToy(TVectorD&x, TVectorD&xe) const
 {
+  //! run a single toy, fill the values and errors in the given vectors
+  //! returns the chi2
   std::vector<TVectorD> vx, vxe;
   std::vector<double> chi2;
   this->RunToys(1,vx,vxe,chi2);
@@ -1504,7 +1538,7 @@ RooUnfoldT<Hist, Hist2D>::RunToy(TVectorD&x, TVectorD&xe) const
 
 template<> void RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>::GetErrors() const
 {
-
+  //! calculate the errors on the unfolding
   std::vector<TVectorD> values, etoys;
   std::vector<double> chi2;
   auto errortmp = _withError;

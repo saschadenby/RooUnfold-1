@@ -105,7 +105,7 @@ public:
   Double_t GetDefaultParm() const;
   double RunToy(TVectorD& x, TVectorD& xe) const;
   void RunToys(int ntoys, std::vector<TVectorD>& x, std::vector<TVectorD>& xe, std::vector<double>& chi2) const;
-  void RunBiasToys(int ntoys, std::vector<TVectorD>& vbias) const;
+  void RunBiasAsimovToys(int ntoys, std::vector<TVectorD>& vbias) const;
   
   void Print(Option_t* opt="") const;
   void Dump() const;    
