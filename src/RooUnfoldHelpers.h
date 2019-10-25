@@ -37,9 +37,9 @@ namespace RooUnfolding {
   };
 
   enum BiasMethod { // Method of bias calculation
-    kAsimovEstimator = 0,
-    kToys = 1,
-    kToyToys = 2
+    kBiasEstimator = 0,
+    kBiasClosure = 1,
+    kBiasAsimov = 2
   };
   
   enum Dimension { X=0, Y=1, Z=2 };
