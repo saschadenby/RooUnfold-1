@@ -1,4 +1,5 @@
 #include "RooUnfoldHelpers.h"
+#include "TRandom.h"
 
 #include <iostream>
 #include <ostream>
@@ -365,4 +366,39 @@ namespace RooUnfolding {
     TVectorD eReco(vReco.GetNrows());        
     printTable (o, 1, vTrainTrue.GetNrows(), 0, vTrainTrue, vTrain, vTrue, vMeas, vReco, kNoError, eTrue, eReco, -999.0,false);
   }
+
+  void randomize(TVectorD& values, const TVectorD& errors){
+    TRandom rnd;
+    for(int i=0; i<values.GetNrows(); ++i){
+      values[i] = rnd.Gaus(values[i],errors[i]);
+    }
+  }
+  
+  void randomize(TVectorD& values){
+    TRandom rnd;
+    for(int i=0; i<values.GetNrows(); ++i){
+      values[i] = rnd.Poisson(values[i]);
+    }
+  }
+  
+  void randomize(TMatrixD& values, const TMatrixD& errors){
+    TRandom rnd;
+    for(int i=0; i<values.GetNrows(); ++i){
+      for(int j=0; j<values.GetNcols(); ++j){
+        values(i,j) = rnd.Gaus(values(i,j),errors(i,j));
+      }
+    }
+  }
+
+  void mNorm (TMatrixD& m, const TVectorD& norm){
+    // normalize Matrix to values of vector
+    for (Int_t j= 0; j < m.GetNcols(); ++j) {
+      double fac = norm[j];
+      if (fac != 0.0) fac= 1.0/fac;
+      for (Int_t i= 0; i < m.GetNrows(); ++i) {
+        m(i,j)= m(i,j) * fac;
+      }
+    }
+  }
+  
 }

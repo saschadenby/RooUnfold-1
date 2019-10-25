@@ -120,9 +120,9 @@ protected:
 
 private:
   void Init();
-  void Destroy();  
   void CopyData (const RooUnfoldT<Hist,Hist2D>& rhs);
   void SetAlgorithm (RooUnfolding::Algorithm alg);
+  virtual void ClearCache() const;
   //RooUnfoldT<Hist,Hist2D>* clone(const RooUnfoldT<Hist,Hist2D>& rhs);
 
 protected:
@@ -161,10 +161,10 @@ protected:
     TVectorD* _eMes;         // Cached measured error
     TMatrixD* _covL;         // Cached lower triangular matrix for which _covMes = _covL * _covL^T.
     TMatrixD* _covMes;       // Measurement covariance matrix    
-    RooUnfolding::ErrorTreatment _withError; // type of error last calulcated
   };
   mutable Cache _cache; //!
-
+  mutable RooUnfolding::ErrorTreatment _withError; // type of error last calulcated
+  
   TMatrixD* _covMes;                         // Measurement covariance matrix
   Int_t    _verbose;                         // Debug print level
   Int_t    _nm;                              // Total number of measured bins (including under/overflows if _overflow set)

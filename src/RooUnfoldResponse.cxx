@@ -167,15 +167,9 @@ RooUnfoldResponseT<Hist,Hist2D>::setup()
 }
 
 template <class Hist, class Hist2D> void
-RooUnfoldResponseT<Hist,Hist2D>::ClearCache()
+RooUnfoldResponseT<Hist,Hist2D>::ClearCache() const
 {
-  if(_vMes){ delete _vMes; _vMes= 0; }
-  if(_eMes){ delete _eMes; _eMes= 0; }
-  if(_vFak){ delete _vFak; _vFak= 0; }
-  if(_vTru){ delete _vTru; _vTru= 0; }
-  if(_eTru){ delete _eTru; _eTru= 0; }
-  if(_mRes){ delete _mRes; _mRes= 0; }
-  if(_eRes){ delete _eRes; _eRes= 0; }
+  _cache = Cache();
   _cached= false;
 }
 
@@ -202,6 +196,51 @@ template <class Hist, class Hist2D> bool
 RooUnfoldResponseT<Hist,Hist2D>::Cached () const
 {
   return _cached;
+}
+
+template<class Hist,class Hist2D>
+RooUnfoldResponseT<Hist,Hist2D>::Cache::Cache() :
+  _vMes(0),   
+  _eMes(0),   
+  _vFak(0),   
+  _vTru(0),   
+  _eTru(0),   
+  _mRes(0),   
+  _eRes(0),   
+  _mResNorm(0),
+  _eResNorm(0)
+{
+  //! default constructor
+}
+
+template<class Hist,class Hist2D> 
+typename RooUnfoldResponseT<Hist,Hist2D>::Cache& RooUnfoldResponseT<Hist,Hist2D>::Cache::operator= ( const RooUnfoldResponseT<Hist,Hist2D>::Cache & other ){
+  //! assignment operator
+  if(this->_vMes)     { delete this->_vMes;     }  this->_vMes     = other._vMes;    
+  if(this->_eMes)     { delete this->_eMes;     }  this->_eMes     = other._eMes;    
+  if(this->_vFak)     { delete this->_vFak;     }  this->_vFak     = other._vFak;    
+  if(this->_vTru)     { delete this->_vTru;     }  this->_vTru     = other._vTru;    
+  if(this->_eTru)     { delete this->_eTru;     }  this->_eTru     = other._eTru;    
+  if(this->_mRes)     { delete this->_mRes;     }  this->_mRes     = other._mRes;    
+  if(this->_eRes)     { delete this->_eRes;     }  this->_eRes     = other._eRes;    
+  if(this->_mResNorm) { delete this->_mResNorm; }  this->_mResNorm = other._mResNorm;
+  if(this->_eResNorm) { delete this->_eResNorm; }  this->_eResNorm = other._eResNorm;
+  return *this;
+}
+
+
+template<class Hist,class Hist2D>
+RooUnfoldResponseT<Hist,Hist2D>::Cache::~Cache(){
+  //! destructor
+  if(this->_vMes)     delete this->_vMes;    
+  if(this->_eMes)     delete this->_eMes;    
+  if(this->_vFak)     delete this->_vFak;    
+  if(this->_vTru)     delete this->_vTru;    
+  if(this->_eTru)     delete this->_eTru;    
+  if(this->_mRes)     delete this->_mRes;    
+  if(this->_eRes)     delete this->_eRes;    
+  if(this->_mResNorm) delete this->_mResNorm;
+  if(this->_eResNorm) delete this->_eResNorm;
 }
 
 template <class Hist, class Hist2D> Hist*
@@ -282,36 +321,17 @@ RooUnfoldResponseT<Hist,Hist2D>::MakeFoldingFunction (TF1* func, Double_t eps, B
   return 0;
 #endif
 }
-
-
-template <class Hist, class Hist2D> RooUnfoldResponseT<Hist,Hist2D>*
-RooUnfoldResponseT<Hist,Hist2D>::RunToy() const
-{
-  //! Returns new RooUnfoldResponse object with smeared response matrix elements for use as a toy.
-  const Hist2D* hres= this->Hresponse();
-  TMatrixD values(h2m(hres));
-  TMatrixD errors(h2me(hres));
-  for (Int_t i= 0; i<GetNbinsMeasured(); i++) {
-    for (Int_t j= 0; j<GetNbinsTruth(); j++) {
-      Double_t e= errors(i,j);
-      if (e>0.0) {
-        Double_t v= values(i,j) + gRandom->Gaus(0.0,e);
-        if (v<0.0) v= 0.0;
-        values(i,j) = v;
-      }
-    }
-  }
-
-  Hist2D* smeared = createHist<Hist2D>(values,errors,RooUnfolding::name(hres),RooUnfolding::title(hres),var(hres,X),var(hres,Y));
-  TString name= GetName();
-  name += "_toy";
-  RooUnfoldResponseT<Hist,Hist2D>* res= new RooUnfoldResponseT<Hist,Hist2D> (name.Data(),this->GetTitle());
-
-  res->_mes = this->_mes;
-  res->_tru = this->_tru;
-  res->_res = smeared;
-
-  return res;
+template <class Hist, class Hist2D> void
+RooUnfoldResponseT<Hist,Hist2D>::RunToy() const {
+  this->ClearCache();
+  Vmeasured()     ;
+  Vtruth()        ;
+  Mresponse(false) ;
+  RooUnfolding::randomize(*_cache._vMes,*_cache._eMes);
+  RooUnfolding::randomize(*_cache._vTru,*_cache._eTru);
+  RooUnfolding::randomize(*_cache._mRes,*_cache._eRes);
+  _cache._mResNorm = new TMatrixD(*_cache._mRes);
+  mNorm(*_cache._mResNorm,*_cache._vTru);
 }
 
 template <class Hist, class Hist2D> void
@@ -567,9 +587,9 @@ template<class Hist, class Hist2D>
 const TVectorD& RooUnfoldResponseT<Hist,Hist2D>::Vmeasured() const
 {
   //! Measured distribution as a TVectorD
-  if (!_vMes) _cached= (_vMes= new TVectorD(h2v  (_mes, _overflow,_density)));
-  if(_vMes->GetNrows() != this->GetNbinsMeasured()) throw std::runtime_error("Error in RooUndfoldResponseT::Vmeasured: invalid dimensionality in measured vector!");
-  return *_vMes;
+  if (!_cache._vMes) _cached= (_cache._vMes= new TVectorD(h2v  (_mes, _overflow,_density)));
+  if(_cache._vMes->GetNrows() != this->GetNbinsMeasured()) throw std::runtime_error("Error in RooUndfoldResponseT::Vmeasured: invalid dimensionality in measured vector!");
+  return *_cache._vMes;
 }
 
 template<class Hist, class Hist2D>
@@ -595,39 +615,39 @@ const TVectorD& RooUnfoldResponseT<Hist,Hist2D>::Vfakes() const
 {
   //! Fakes distribution as a TVectorD
   if(!_fak){
-    _cached = (_vFak = new TVectorD(this->GetNbinsMeasured()) );
+    _cached = (_cache._vFak = new TVectorD(this->GetNbinsMeasured()) );
   } else {
-    if (!_vFak) _cached= (_vFak= new TVectorD(h2v  (_fak, _overflow,_density)));
+    if (!_cache._vFak) _cached= (_cache._vFak= new TVectorD(h2v  (_fak, _overflow,_density)));
   }
-  if(_vFak->GetNrows() != this->GetNbinsMeasured()) throw std::runtime_error("invalid dimensionality in fakes vector!");
-  return *_vFak;
+  if(_cache._vFak->GetNrows() != this->GetNbinsMeasured()) throw std::runtime_error("invalid dimensionality in fakes vector!");
+  return *_cache._vFak;
 }
 
 template<class Hist, class Hist2D>
 const TVectorD& RooUnfoldResponseT<Hist,Hist2D>::Emeasured() const
 {
   //! Measured distribution errors as a TVectorD
-  if (!_eMes) _cached= (_eMes= new TVectorD(h2ve (_mes, _overflow,_density)));
-  if(_eMes->GetNrows() != this->GetNbinsMeasured()) throw std::runtime_error("invalid dimensionality in measured uncertainty vector!");
-  return *_eMes;
+  if (!_cache._eMes) _cached= (_cache._eMes= new TVectorD(h2ve (_mes, _overflow,_density)));
+  if(_cache._eMes->GetNrows() != this->GetNbinsMeasured()) throw std::runtime_error("invalid dimensionality in measured uncertainty vector!");
+  return *_cache._eMes;
 }
 
 template<class Hist, class Hist2D>
 const TVectorD& RooUnfoldResponseT<Hist,Hist2D>::Vtruth() const
 {
   //! Truth distribution as a TVectorD
-  if (!_vTru) _cached= (_vTru= new TVectorD(h2v  (_tru, _overflow,_density))); 
-  if(_vTru->GetNrows() != this->GetNbinsTruth()) throw std::runtime_error("invalid dimensionality in truth vector!");
-  return *_vTru;
+  if (!_cache._vTru) _cached= (_cache._vTru= new TVectorD(h2v  (_tru, _overflow,_density))); 
+  if(_cache._vTru->GetNrows() != this->GetNbinsTruth()) throw std::runtime_error("invalid dimensionality in truth vector!");
+  return *_cache._vTru;
 }
 
 template<class Hist, class Hist2D>
 const TVectorD& RooUnfoldResponseT<Hist,Hist2D>::Etruth() const
 {
   //! Truth distribution errors as a TVectorD
-  if (!_eTru) _cached= (_eTru= new TVectorD(h2ve (_tru, _overflow,_density))); 
-  if(_eTru->GetNrows() != this->GetNbinsTruth()) throw std::runtime_error("invalid dimensionality in truth uncertainty vector!");
-  return *_eTru;
+  if (!_cache._eTru) _cached= (_cache._eTru= new TVectorD(h2ve (_tru, _overflow,_density))); 
+  if(_cache._eTru->GetNrows() != this->GetNbinsTruth()) throw std::runtime_error("invalid dimensionality in truth uncertainty vector!");
+  return *_cache._eTru;
 }
 
 template<class Hist, class Hist2D>
@@ -636,11 +656,11 @@ const TMatrixD& RooUnfoldResponseT<Hist,Hist2D>::Mresponse(bool norm) const
   //! Response matrix as a TMatrixD: (row,column)=(measured,truth)
 
   if(norm){
-    if (!_mResNorm) _cached= (_mResNorm= new TMatrixD(h2mNorm  (_res, _tru, _overflow,_density)));
-    return *_mResNorm;
+    if (!_cache._mResNorm) _cached= (_cache._mResNorm= new TMatrixD(h2mNorm  (_res, _tru, _overflow,_density)));
+    return *_cache._mResNorm;
   } else {
-    if (!_mRes) _cached = (_mRes = new TMatrixD(h2m (_res, _overflow, _density)));
-    return *_mRes;
+    if (!_cache._mRes) _cached = (_cache._mRes = new TMatrixD(h2m (_res, _overflow, _density)));
+    return *_cache._mRes;
   }
 }
 
@@ -649,11 +669,11 @@ const TMatrixD& RooUnfoldResponseT<Hist,Hist2D>::Eresponse(bool norm) const
 {
   //! Response matrix errors as a TMatrixD: (row,column)=(measured,truth)
   if (norm){
-    if(!_eResNorm) _cached= (_eResNorm= new TMatrixD(h2meNorm (_res, _tru, _overflow,_density)));
-    return *_eResNorm;
+    if(!_cache._eResNorm) _cached= (_cache._eResNorm= new TMatrixD(h2meNorm (_res, _tru, _overflow,_density)));
+    return *_cache._eResNorm;
   } else {
-    if(!_eRes) _cached= (_eRes= new TMatrixD(h2me (_res, _overflow,_density)));
-    return *_eRes;
+    if(!_cache._eRes) _cached= (_cache._eRes= new TMatrixD(h2me (_res, _overflow,_density)));
+    return *_cache._eRes;
   }
 }
 

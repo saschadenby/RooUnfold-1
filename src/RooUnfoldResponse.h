@@ -74,8 +74,8 @@ public:
   Hist* ApplyToTruth (const Hist* truth= 0, const char* name= "AppliedResponse") const; // If argument is 0, applies itself to its own truth
   TF1* MakeFoldingFunction (TF1* func, Double_t eps=1e-12, Bool_t verbose=false) const;
 
-  RooUnfoldResponseT* RunToy() const;
-  virtual void ClearCache();
+  virtual void RunToy() const;
+  virtual void ClearCache() const;
 
 protected:
 
@@ -95,15 +95,22 @@ protected:
   bool  _density = false;
 
 private:
-  mutable TVectorD* _vMes= 0;   //! Cached measured vector
-  mutable TVectorD* _eMes= 0;   //! Cached measured error
-  mutable TVectorD* _vFak= 0;   //! Cached fakes    vector
-  mutable TVectorD* _vTru= 0;   //! Cached truth    vector
-  mutable TVectorD* _eTru= 0;   //! Cached truth    error
-  mutable TMatrixD* _mRes= 0;   //! Cached response matrix
-  mutable TMatrixD* _eRes= 0;   //! Cached response error
-  mutable TMatrixD* _mResNorm= 0;   //! Cached normalized response matrix
-  mutable TMatrixD* _eResNorm= 0;   //! Cached normalized response error  
+  class Cache {
+  public:
+    Cache();
+    ~Cache();
+    typename RooUnfoldResponseT<Hist,Hist2D>::Cache& operator=(const Cache&);
+    TVectorD* _vMes;   //! Cached measured vector
+    TVectorD* _eMes;   //! Cached measured error
+    TVectorD* _vFak;   //! Cached fakes    vector
+    TVectorD* _vTru;   //! Cached truth    vector
+    TVectorD* _eTru;   //! Cached truth    error
+    TMatrixD* _mRes;   //! Cached response matrix
+    TMatrixD* _eRes;   //! Cached response error
+    TMatrixD* _mResNorm;   //! Cached normalized response matrix
+    TMatrixD* _eResNorm;   //! Cached normalized response error
+  };
+  mutable Cache _cache; //!
   mutable Bool_t    _cached = false; //! We are using cached vectors/matrices
 
 public:
@@ -133,7 +140,6 @@ public:
   virtual RooUnfoldResponse& operator= (const RooUnfoldResponse& rhs); // assignment operator
 
   // Set up an existing object
-
 
   virtual RooUnfoldResponse& Reset ();  // clear an existing object
   virtual RooUnfoldResponse& Setup (const RooUnfoldResponse& rhs);  // set up based on another instance
