@@ -256,7 +256,7 @@ RooUnfoldGPT<Hist,Hist2D>::MLEstimator() const
     _specialcache._svd= new TDecompSVD (res);
 
   double c = _specialcache._svd->Condition();
-  if (c<0) std::cout << "WARNING: Response matrix is ill-conditioned. TDecompSVD condition number = " << c << std::endl;
+  if (c<0 && (this->_verbose>0)) std::cout << "WARNING: Response matrix is ill-conditioned. TDecompSVD condition number = " << c << std::endl;
 
   _specialcache._MLEst.ResizeTo(this->_nm);
   _specialcache._MLEst= this->Vmeasured();
