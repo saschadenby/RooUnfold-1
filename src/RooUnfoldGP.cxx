@@ -152,10 +152,10 @@ RooUnfoldGPT<Hist,Hist2D>::SetBinCenters() const
     delta_obsBins = 1 / (Double_t)(this->_nm - 2);
   }
   if (_kernel == 2){
-    Double_t trumin = this->_res->GetLowBoundTruth();
-    Double_t trumax = this->_res->GetUpBoundTruth();
-    Double_t obsmin = this->_res->GetLowBoundMeasured();
-    Double_t obsmax = this->_res->GetUpBoundMeasured();
+    Double_t trumin = ::min(this->_res->Htruth(),RooUnfolding::X);
+    Double_t trumax = ::max(this->_res->Htruth(),RooUnfolding::X);
+    Double_t obsmin = ::min(this->_res->Hmeasured(),RooUnfolding::X);
+    Double_t obsmax = ::max(this->_res->Hmeasured(),RooUnfolding::X);
 
     delta_truBins = fabs(trumax - trumin) / (Double_t)(this->_nt);
     delta_obsBins = fabs(trumax - trumin) / (Double_t)(this->_nm);

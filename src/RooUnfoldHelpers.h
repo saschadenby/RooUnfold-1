@@ -35,6 +35,12 @@ namespace RooUnfolding {
     kAll=1,
     kNoMeasured=2
   };
+
+  enum BiasMethod { // Method of bias calculation
+    kBiasEstimator,
+    kBiasClosure,
+    kBiasAsimov
+  };
   
   enum Dimension { X=0, Y=1, Z=2 };
   template<class Hist> struct Variable;
@@ -121,6 +127,11 @@ namespace RooUnfolding {
   TMatrixD& ABAT (const TMatrixD& a, const TVectorD& b, TMatrixD& c);
   template<class Hist> RooUnfolding::Variable<Hist> var(const Hist* h, Dimension d);
   template<class Hist> std::vector<RooUnfolding::Variable<Hist>> vars(const Hist* h);
+
+  void randomize(TVectorD& values);
+  void randomize(TVectorD& values, const TVectorD& errors);
+  void randomize(TMatrixD& values, const TMatrixD& errors);
+  void mNorm (TMatrixD& m, const TVectorD& norm);  
 }
 
 #include "RooUnfoldHelpers.tpp"

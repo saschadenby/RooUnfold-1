@@ -211,13 +211,6 @@ RooUnfoldT<Hist,Hist2D>::New (RooUnfolding::Algorithm alg, const RooUnfoldRespon
 }
 
 
-template<class Hist,class Hist2D> void
-RooUnfoldT<Hist,Hist2D>::Destroy()
-{
-  //! clear the cache
-  _cache = Cache();
-}
-
 template<class Hist,class Hist2D>
 RooUnfoldT<Hist,Hist2D>::Cache::Cache() :
   _minparm(0),
@@ -241,8 +234,7 @@ RooUnfoldT<Hist,Hist2D>::Cache::Cache() :
   _vMes(0),
   _eMes(0),
   _covL(0),
-  _covMes(0),
-  _withError(kDefault)
+  _covMes(0)
 {
   //! default constructor
 }
@@ -261,7 +253,6 @@ typename RooUnfoldT<Hist,Hist2D>::Cache& RooUnfoldT<Hist,Hist2D>::Cache::operato
   _haveBias =  other._haveBias;
   _haveErrors = other._haveErrors;
   _haveWgt = other._haveWgt;
-  _withError = other._withError;
   _rec.ResizeTo(other._rec);
   _cov.ResizeTo(other._cov);
   _wgt.ResizeTo(other._wgt);
@@ -339,7 +330,7 @@ template<class Hist,class Hist2D> void
 RooUnfoldT<Hist,Hist2D>::Reset()
 {
   //! clear and reinitialize
-  Destroy();
+  ClearCache();
   Init();
 }
 
@@ -459,7 +450,7 @@ template<class Hist,class Hist2D> void
 RooUnfoldT<Hist,Hist2D>::GetErrorsCovariance() const
 {
   //!Creates vector of diagonals of covariance matrices.
-  if(this->_cache._withError != kErrors){
+  if(this->_withError != kErrors){
     throw std::runtime_error("unknown error propagation method!");
   }
   if (!_cache._haveCov) GetCov();
@@ -529,17 +520,39 @@ RooUnfoldT<Hist,Hist2D>::GetErrMat() const
 }
 
 template<class Hist,class Hist2D> void
-RooUnfoldT<Hist,Hist2D>::CalculateBias(Int_t ntoys, const Hist* hTrue) const
+RooUnfoldT<Hist,Hist2D>::CalculateBias(RooUnfolding::BiasMethod method, Int_t ntoys, const Hist* hTrue) const
 {
-  //! TODO: document
+  //! Calculate bias using one of the available methods
+  //! 
+  //! BiasEstimator
+  //! Unfold the nominal measured distribution and use its
+  //! (relative) discrepancy to the given truth distribution as the
+  //! bias. `ntoys` is ignored here.
+  //! 
+  //! BiasClosure
+  //! Throw `ntoys` toys around the nominal measured
+  //! distribution. Unfold each of these toys. Use the (relative)
+  //! discrepancy and spread w.r.t. the given truth distribution as
+  //! bias.
+  //!
+  //! BiasAsimov
+  //! Throw `ntoys` primary toys around the nominal truth
+  //! distribution.  For each of these toys, throw `ntoys` secondary
+  //! toys around it.  Fold and unfold each of these secondary toys,
+  //! calculate the relative discrepancy w.r.t. the corresponding
+  //! primary toy. Use the mean and spread of this quantity as the
+  //! bias. The parameter `hTrue` is ignored in this case.
 
+  if(!hTrue) hTrue = this->response()->Htruth();
+  
   TVectorD truth(hTrue ? h2v(hTrue,false) : _res->Vtruth());
   TVectorD truthE(hTrue ? h2ve(hTrue,false) : _res->Etruth());  
 
   Hist* asimov = RooUnfolding::asimovClone(this->response()->Hmeasured(),this->response()->UseDensityStatus());
   auto* toyFactory = this->New(this->GetAlgorithm(),this->response(),asimov,GetRegParm());
+  toyFactory->SetVerbose(0);
   
-  if (ntoys<=1){
+  if (method == RooUnfolding::kBiasEstimator){
     TVectorD unfold = toyFactory->Vunfold();
     TVectorD unfoldE = toyFactory->EunfoldV();
     
@@ -547,20 +560,21 @@ RooUnfoldT<Hist,Hist2D>::CalculateBias(Int_t ntoys, const Hist* hTrue) const
     _cache._sigbias.ResizeTo(_nt);
     
     for(int i=0; i<_nt; ++i){
-      _cache._bias[i] = unfold[i] - truth[i];
-      _cache._sigbias[i] = sqrt(truthE[i]*truthE[i] + unfoldE[i]*unfoldE[i]);
+      _cache._bias[i] = (unfold[i] - truth[i]) / truth[i];
+      _cache._sigbias[i] = sqrt(truthE[i]*truthE[i] + unfoldE[i]*unfoldE[i]) / truth[i];
     }
-  } else {
+  } else if(method == RooUnfolding::kBiasClosure){
     TMatrixD pull_results(ntoys,_nt);
     
     TVectorD bias(_nt);
     TVectorD sigbias(_nt);
-    for ( int i = 0; i < ntoys; i++){
-      TVectorD toy_unfold(_nt), toy_error(_nt);
-      toyFactory->RunToy(toy_unfold,toy_error);
-      for (int j = 0; j < toy_unfold.GetNrows(); j++){
-        if (toy_error(j) != 0){
-          pull_results(i, j) = (toy_unfold(j) - truth(j)) / toy_error(j);
+    std::vector<TVectorD> toy_unfold,toy_error;
+    std::vector<double> chi;
+    toyFactory->RunToys(ntoys,toy_unfold,toy_error,chi);    
+    for ( int i = 0; i < ntoys; ++i){
+      for (int j = 0; j < toy_unfold[i].GetNrows(); ++j){
+        if (toy_error[i](j) != 0){
+          pull_results(i, j) = (toy_unfold[i](j) - truth(j)) / toy_unfold[i](j);
           bias(j) += pull_results(i, j);
         } 
       }
@@ -576,20 +590,51 @@ RooUnfoldT<Hist,Hist2D>::CalculateBias(Int_t ntoys, const Hist* hTrue) const
         double val = (pull_results(i, j) - _cache._bias(j));
         sum2 += val*val;
       }
-      _cache._sigbias(j) = sqrt(sum2) / (ntoys-1);
+      if(ntoys > 1){
+        _cache._sigbias(j) = sqrt(sum2) / (ntoys-1);
+      } else {
+        _cache._sigbias(j) = sqrt(sum2);
+      }
+    }
+  } else if(method == RooUnfolding::kBiasAsimov){
+    std::vector<TVectorD> bias;
+    toyFactory->RunBiasAsimovToys(ntoys,bias);
+    _cache._bias.ResizeTo(_nt);
+    _cache._sigbias.ResizeTo(_nt);
+    for (int i = 0; i < _nt; ++i){
+      double sum = 0;
+      double sum2 = 0;
+      for(size_t j=0; j<bias.size(); ++j){
+        sum += bias[j][i];
+        sum2 += bias[j][i]*bias[j][i];        
+      }
+      double mean = sum/bias.size();
+      _cache._bias(i) = mean;
+      _cache._sigbias(i) = sqrt((sum2 - sum*mean)/bias.size());
     }
   }
-
+  
   delete asimov;
   delete toyFactory;
   
   _cache._haveBias=true;
 }
 
+template<class Hist,class Hist2D> void
+RooUnfoldT<Hist,Hist2D>::CalculateBias(Int_t ntoys, const Hist* hTrue) const
+{
+  //! legacy shorthand for CalculateBias
+  //! if `ntoys`==0, the BiasEstimator method is used
+  //! otherwise, the BiasClosure method is used
+  //! for all other methods, please use the other signature of CalculateBias
+  if(ntoys == 0) CalculateBias(RooUnfolding::kBiasEstimator,0,hTrue);
+  else CalculateBias(RooUnfolding::kBiasClosure,ntoys,hTrue);  
+}
+
 template<class Hist,class Hist2D> Bool_t
 RooUnfoldT<Hist,Hist2D>::UnfoldWithErrors (ErrorTreatment withError, bool getWeights) const
 {
-  //! This method initializes the unfolding.
+  //! This method initializes the unfolding with errors.
 
   if (!_cache._unfolded) {
 
@@ -604,8 +649,8 @@ RooUnfoldT<Hist,Hist2D>::UnfoldWithErrors (ErrorTreatment withError, bool getWei
   }
 
   Bool_t ok;
-  if(_cache._withError != withError) _cache._haveErrors = false;
-  _cache._withError= withError;
+  if(_withError != withError) _cache._haveErrors = false;
+  _withError= withError;
   if (getWeights && (withError==kErrors || withError==kCovariance)) {
       if   (!_cache._haveWgt)      GetWgt();
       ok= _cache._haveWgt;
@@ -672,7 +717,7 @@ RooUnfoldT<Hist,Hist2D>::PrintTable (std::ostream& o, const Hist* hTrue, ErrorTr
 {
 
   //! Prints entries from truth, measured, and unfolded data for each bin.
-  if (withError==kDefault) withError= _cache._withError;
+  if (withError==kDefault) withError= _withError;
   if (withError==kDefault) withError= kErrors;
 
   if (!UnfoldWithErrors (withError)) withError= kNoError;
@@ -778,97 +823,6 @@ RooUnfoldT<Hist,Hist2D>::GetDefaultParm() const
 {
     //!Get suggested regularisation parameter.
     return _cache._defaultparm;
-}
-
-template<> double
-RooUnfoldT<TH1,TH2>::RunToy(TVectorD&x, TVectorD&xe) const {
-  //! fills a vector with smeared measurements for use as a toy.
-
-  //! Use multiple toys to find spread of unfolding results.
-  TString name= GetName();
-  name += "_toy";
-
-  TVectorD measv(Vmeasured());
-  TVectorD errv(Emeasured());
-  TVectorD truv(_res->Vtruth());
-  TVectorD recov(_res->Vmeasured());
-  TMatrixD respm(_res->Mresponse(false));
-  
-  Double_t min_reco = RooUnfolding::min(this->response()->Hmeasured(),RooUnfolding::X);
-  Double_t max_reco = RooUnfolding::max(this->response()->Hmeasured(),RooUnfolding::X);
-  Double_t min_truth = RooUnfolding::min(this->response()->Htruth(),RooUnfolding::X);
-  Double_t max_truth = RooUnfolding::max(this->response()->Htruth(),RooUnfolding::X);
-
-  
-  TH1D *newmeas = new TH1D("newhist","newhist",measv.GetNrows(),min_reco,max_reco);
-  TH1D *tru = new TH1D("tru","tru",truv.GetNrows(),min_truth,max_truth);
-  TH1D *reco = new TH1D("reco","reco",recov.GetNrows(),min_reco,max_reco);
-  TH2D *newresp = new TH2D("newresp","newresp",respm.GetNrows(),min_reco,max_reco,truv.GetNrows(),min_truth,max_truth);
-  
-  // Smear the response matrix?
-			    
-  // Change the creation of toy measured by folding truth hist
-  // and add gaussian/poisson noise to that?
-  
-  for (Int_t i= 0; i<_nm; i++) {
-    
-    reco->SetBinContent(i + 1, recov(i));
-
-    Double_t new_bin;
-    Double_t g;
-    Double_t e;
-    gRandom->SetSeed(0);
-
-    new_bin = gRandom->Poisson(recov(i));
-    // e = errv(i);
-      
-    // if (e>0.0) {
-    //   g = gRandom->Gaus(0,e);
-    //   new_bin = recov(i) + g;
-    // } else {
-    //   new_bin = recov(i);
-    // }
-
-    newmeas->SetBinContent(i+1, new_bin);
-    
-    for (Int_t j = 0; j < _nt; j++){
-      tru->SetBinContent(j + 1, truv(j));
-      newresp->SetBinContent(i + 1, j + 1, respm(i,j));
-    }
-  }
-
-  RooUnfoldResponseT<TH1,TH2>* res= new RooUnfoldResponseT<TH1,TH2> (_res->GetName(),_res->GetTitle(), newresp, tru, reco, false, false);
-  
-  RooUnfolding::Algorithm alg = this->GetAlgorithm();
-  Double_t regparm = GetRegParm();
-  
-  RooUnfoldT<TH1,TH2>* unfold = RooUnfoldT<TH1,TH2>::New(alg,res,newmeas,regparm);
-
-  delete newmeas;
-  delete tru;
-  delete reco;
-  delete newresp;
-
-  x.ResizeTo(this->_nt);
-  x = unfold->Vunfold();
-  xe.ResizeTo(this->_nt);    
-  xe = unfold->Eunfold();
-
-  double retval = unfold->Chi2 (unfold->response()->Htruth());
-  delete unfold;
-  return retval;
-}
-
-template<> void
-RooUnfoldT<TH1,TH2>::RunToys(int ntoys, std::vector<TVectorD>& vx, std::vector<TVectorD>& vxe, std::vector<double>& chi2) const {
-  //! fills vectors with smeared measurements for use as a toy.
-  //! Use multiple toys to find spread of unfolding results.  
-  for(size_t i=0; i<ntoys; ++i){
-    TVectorD x, xe;
-    chi2.push_back(this->RunToy(x,xe));
-    vx.push_back(x);
-    vxe.push_back(xe);
-  }
 }
 
 template<class Hist,class Hist2D> void
@@ -986,7 +940,7 @@ RooUnfoldT<Hist,Hist2D>::Eunfold(ErrorTreatment withError) const
       return _cache._err_mat;
       break;
     default:
-      throw std::runtime_error("Error, unrecognised error method");
+      throw std::runtime_error(TString::Format("Error in RooUnfoldT::Wunfold, unrecognised error method '%d'",withError).Data());                      
     }
 }
 
@@ -1026,7 +980,7 @@ RooUnfoldT<Hist,Hist2D>::EunfoldV(ErrorTreatment withError) const
         }
         break;
       default:
-        throw std::runtime_error("Error, unrecognised error method");
+        throw std::runtime_error(TString::Format("Error in RooUnfoldT::EunfoldV, unrecognised error method '%d'",withError).Data());        
     }
     return Eunfold_v;
 }
@@ -1057,7 +1011,7 @@ RooUnfoldT<Hist,Hist2D>::Wunfold(ErrorTreatment withError) const
         InvertMatrix (_cache._err_mat, Wunfold_m, "covariance matrix from toys", _verbose);
         break;
       default:
-        cerr<<"Error, unrecognised error method= "<<withError<<endl;
+        throw std::runtime_error(TString::Format("Error in RooUnfoldT::Wunfold, unrecognised error method '%d'",withError).Data());                
     }
     return Wunfold_m;
 }
@@ -1169,7 +1123,6 @@ template<class Hist,class Hist2D>
 RooUnfoldT<Hist,Hist2D>::~RooUnfoldT()
 {
   // destructor
-  Destroy();
 }
 
 template<class Hist,class Hist2D> 
@@ -1330,12 +1283,19 @@ Double_t RooUnfoldT<Hist,Hist2D>::GetRegParm() const
 }
 
 template<class Hist,class Hist2D> 
+void RooUnfoldT<Hist,Hist2D>::ClearCache() const
+{
+  //! Clear the cache
+  this->_cache = Cache();
+}
+
+template<class Hist,class Hist2D> 
 void RooUnfoldT<Hist,Hist2D>::IncludeSystematics (RooUnfolding::SystematicsTreatment dosys)
 {
   //! Include systematic errors from response matrix?
   //! Use dosys=2 to exclude measurement errors.
   if (dosys!=_dosys){
-    _cache = Cache();
+    this->ClearCache();
     _dosys= dosys;
   }
 }
@@ -1366,8 +1326,17 @@ template<> void RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>::S
 namespace {
   void getParameters(const RooUnfolding::RooFitHist* hist, RooArgSet& params){
     if(hist){
-      RooArgSet* args = hist->func()->getParameters((RooArgSet*)0); 
-      params.add(*args,true);
+      RooArgSet* args = hist->func()->getParameters((RooArgSet*)0);
+      for(auto p:*args){
+        if(params.find(*p)) continue;
+        RooRealVar* rrv = dynamic_cast<RooRealVar*>(p);
+        if(!rrv) continue;
+        if(rrv->isConstant()) continue;
+        if(rrv->getError() == 0.){
+          throw std::runtime_error(TString::Format("unable to build covariance matrix for parameter '%s' with error 0 - is this an observable? please set constant",rrv->GetName()).Data());
+        }
+        params.add(*rrv);
+      }
       delete args;
     }
   }
@@ -1380,29 +1349,47 @@ namespace {
 }
 
 template<> void
+RooUnfoldT<TH1,TH2>::RunToys(int ntoys, std::vector<TVectorD>& vx, std::vector<TVectorD>& vxe, std::vector<double>& chi2) const {
+  //! run a number of toys, fill the values, errors and chi2 in the
+  //! given vectors
+  auto errorType = _withError;
+  _withError = kDefault;
+  
+  const auto* res = this->response();
+  for(int i=0; i<ntoys; ++i){
+    this->ForceRecalculation();
+    this->Vmeasured();
+    if(this->_dosys != kNoMeasured){
+      RooUnfolding::randomize(*_cache._vMes);
+    }
+    if(this->_dosys == kAll){
+      res->RunToy();
+    }
+    vx.push_back(this->Vunfold());
+    if(errorType != kNoError){
+      vxe.push_back(this->EunfoldV());
+      chi2.push_back(this->Chi2 (this->response()->Htruth()));
+    }
+  }
+  this->ForceRecalculation();  
+  _withError =  errorType;
+}
+
+template<> void
 RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>::RunToys(int ntoys, std::vector<TVectorD>& vx, std::vector<TVectorD>& vxe, std::vector<double>& chi2) const {
-  //! run a number of toys
+  //! run a number of toys, fill the values, errors and chi2 in the
+  //! given vectors
 
   const auto* res = this->response();
-  RooArgSet allParams;
+  RooArgSet errorParams;
   if(this->_dosys != kNoMeasured){
-    getParameters(this->Hmeasured(),allParams);
+    getParameters(this->Hmeasured(),errorParams);
   }
   if(this->_dosys == kAll){
-    getParameters(res->Hmeasured(),allParams);
-    getParameters(res->Htruth(),allParams);
-    getParameters(res->Hfakes(),allParams);
-    getParameters(res->Hresponse(),allParams);
-  }
-  RooArgSet errorParams;
-  for(auto p:allParams){
-    RooRealVar* rrv = dynamic_cast<RooRealVar*>(p);
-    if(!rrv) continue;
-    if(rrv->isConstant()) continue;
-    if(rrv->getError() == 0.){
-      throw std::runtime_error(TString::Format("unable to build covariance matrix for parameter '%s' with error 0 - is this an observable? please set constant",rrv->GetName()).Data());
-    }
-    errorParams.add(*rrv);
+    getParameters(res->Hmeasured(),errorParams);
+    getParameters(res->Htruth(),errorParams);
+    getParameters(res->Hfakes(),errorParams);
+    getParameters(res->Hresponse(),errorParams);
   }
   
   auto* snsh = errorParams.snapshot();
@@ -1432,8 +1419,8 @@ RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>::RunToys(int ntoys
   RooAbsPdf* paramPdf = prefitResult->createHessePdf(errorParams) ;
   RooDataSet* d = paramPdf->generate(errorParams,ntoys) ;
 
-  auto errorType = _cache._withError;
-  
+  auto errorType = _withError;
+  _withError = kDefault;
   for(int i=0; i<ntoys; ++i){
     errorParams = (*d->get(i)) ;
     this->ForceRecalculation();
@@ -1444,7 +1431,7 @@ RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>::RunToys(int ntoys
     }
   }
 
-  _cache._withError =  errorType;
+  _withError =  errorType;
   
   errorParams = *snsh;
   delete snsh;
@@ -1455,9 +1442,90 @@ RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>::RunToys(int ntoys
   this->ForceRecalculation();
 }
 
-template<> double
-RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>::RunToy(TVectorD&x, TVectorD&xe) const
+template<> void
+RooUnfoldT<TH1,TH2>::RunBiasAsimovToys(int ntoys, std::vector<TVectorD>& vbias) const {
+  //! run a number of primary toys on truth level. fold and unfold
+  //! each of these toys. fill the differences w.r.t. the nominal into
+  //! the given bias vector  
+  const auto* res = this->response();
+  for(int i=0; i<ntoys; ++i){
+    this->ForceRecalculation();
+    this->Vmeasured();
+    if(this->_dosys != kNoMeasured){
+      RooUnfolding::randomize(*_cache._vMes);
+    }
+    if(this->_dosys == kAll){
+      res->RunToy();
+    }
+    TVectorD vtruth(res->Vtruth());
+    for(int j=0; j<ntoys; ++j){    
+      this->_cache._vMes = new TVectorD(res->Vfolded(res->Vtruth()));
+      RooUnfolding::randomize(*this->_cache._vMes);
+      vbias.push_back(vtruth-this->Vunfold());
+    }
+  }
+  this->ForceRecalculation();  
+}
+
+template<> void
+RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>::RunBiasAsimovToys(int ntoys, std::vector<TVectorD>& vbias) const {
+  //! run a number of primary toys on truth level. fold and unfold
+  //! each of these toys. fill the differences w.r.t. the nominal into
+  //! the given bias vector
+  const auto* res = this->response();
+  RooArgSet errorParams;
+  getParameters(res->Htruth(),errorParams);
+
+  if(this->_dosys == kAll){
+    getParameters(res->Hmeasured(),errorParams);
+    getParameters(res->Hfakes(),errorParams);
+    getParameters(res->Hresponse(),errorParams);
+  }
+  auto* snsh = errorParams.snapshot();  
+  RooArgList errorParamList(errorParams);
+  
+  RooFitResult * prefitResult = RooFitResult::prefitResult(errorParamList);
+  RooAbsPdf* paramPdf = prefitResult->createHessePdf(errorParams) ;
+  RooDataSet* data = paramPdf->generate(errorParams,ntoys) ;
+  
+  auto errorType = _withError;
+  _withError = kNoError;
+  for(int i=0; i<ntoys; ++i){
+    errorParams = (*data->get(i)) ;
+    auto* thistoy = errorParams.snapshot();      
+    TVectorD vtruth(res->Vtruth());
+    RooDataSet* toydata = paramPdf->generate(errorParams,ntoys) ;
+    for(int j=0; j<ntoys; ++j){    
+      this->ForceRecalculation();
+      errorParams = (*toydata->get(j)) ;
+      TVectorD vunfolded(this->Vunfold());
+      TVectorD bias(vunfolded.GetNrows());
+      for(int b=0; b<vunfolded.GetNrows(); ++b){
+        bias[b] = (vtruth[b]-vunfolded[b])/vtruth[b];
+      }
+      vbias.push_back(bias);
+    }
+    errorParams = *thistoy;
+    delete toydata;
+    delete thistoy;
+  }
+  _withError =  errorType;
+  
+  errorParams = *snsh;
+  delete snsh;
+  delete data;
+  delete prefitResult;
+  delete paramPdf;
+  
+  this->ForceRecalculation();
+}
+
+
+template<class Hist, class Hist2D> double
+RooUnfoldT<Hist, Hist2D>::RunToy(TVectorD&x, TVectorD&xe) const
 {
+  //! run a single toy, fill the values and errors in the given vectors
+  //! returns the chi2
   std::vector<TVectorD> vx, vxe;
   std::vector<double> chi2;
   this->RunToys(1,vx,vxe,chi2);
@@ -1470,13 +1538,13 @@ RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>::RunToy(TVectorD&x
 
 template<> void RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>::GetErrors() const
 {
-
+  //! calculate the errors on the unfolding
   std::vector<TVectorD> values, etoys;
   std::vector<double> chi2;
-  auto errortmp = _cache._withError;
-  _cache._withError = kNoError;
+  auto errortmp = _withError;
+  _withError = kNoError;
   this->RunToys(this->_NToys,values,etoys,chi2);
-  _cache._withError = errortmp;
+  _withError = errortmp;
   
   this->ForceRecalculation();
   this->Unfold();
