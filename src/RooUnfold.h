@@ -9,6 +9,7 @@
 
 #include "TNamed.h"
 #include "TVectorD.h"
+#include "TRandom.h"
 #include "TMatrixD.h"
 #include "RooUnfoldResponse.h"
 #include "RooUnfoldHelpers.h"
@@ -20,7 +21,6 @@ class RooUnfoldT : public TNamed {
 public:
   static RooUnfoldT<Hist,Hist2D>* New (RooUnfolding::Algorithm alg, const RooUnfoldResponseT<Hist,Hist2D>* res, const Hist* meas, Double_t regparm=-1e30,
                                        const char* name= 0, const char* title= 0);
-
   // typedefs to ensure compatibility with legacy code
   
   typedef RooUnfolding::Algorithm Algorithm;
@@ -165,6 +165,7 @@ protected:
     TMatrixD* _covL;         // Cached lower triangular matrix for which _covMes = _covL * _covL^T.
     TMatrixD* _covMes;       // Measurement covariance matrix    
   };
+  mutable TRandom rnd; //!
   mutable Cache _cache; //!
   mutable RooUnfolding::ErrorTreatment _withError = RooUnfolding::kDefault; // type of error last calulcated
   

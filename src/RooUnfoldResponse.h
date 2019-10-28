@@ -11,6 +11,7 @@
 #include "TMatrixD.h"
 #include "RooUnfoldFitHelpers.h"
 #include "RooRealVar.h"
+#include "TRandom.h"
 #include "RooAbsData.h"
 #include "TH1.h"
 #if ROOT_VERSION_CODE >= ROOT_VERSION(5,0,0)
@@ -113,6 +114,7 @@ private:
     TVectorD* _vEff;   //! Cached efficiency vector        
   };
   mutable Cache _cache; //!
+  mutable TRandom rnd; //!
   mutable Bool_t    _cached = false; //! We are using cached vectors/matrices
 
 public:

@@ -367,22 +367,19 @@ namespace RooUnfolding {
     printTable (o, 1, vTrainTrue.GetNrows(), 0, vTrainTrue, vTrain, vTrue, vMeas, vReco, kNoError, eTrue, eReco, -999.0,false);
   }
 
-  void randomize(TVectorD& values, const TVectorD& errors){
-    TRandom rnd;
+  void randomize(TVectorD& values, const TVectorD& errors, TRandom& rnd){
     for(int i=0; i<values.GetNrows(); ++i){
       values[i] = rnd.Gaus(values[i],errors[i]);
     }
   }
   
-  void randomize(TVectorD& values){
-    TRandom rnd;
+  void randomize(TVectorD& values, TRandom& rnd){
     for(int i=0; i<values.GetNrows(); ++i){
       values[i] = rnd.Poisson(values[i]);
     }
   }
   
-  void randomize(TMatrixD& values, const TMatrixD& errors){
-    TRandom rnd;
+  void randomize(TMatrixD& values, const TMatrixD& errors, TRandom& rnd){
     for(int i=0; i<values.GetNrows(); ++i){
       for(int j=0; j<values.GetNcols(); ++j){
         values(i,j) = rnd.Gaus(values(i,j),errors(i,j));

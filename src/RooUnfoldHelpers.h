@@ -5,6 +5,7 @@
 #include <TMatrixD.h>
 #include <TH1D.h>
 #include <TH2D.h>
+#include <TRandom.h>
 #include <iostream>
 
 namespace RooUnfolding {
@@ -128,9 +129,9 @@ namespace RooUnfolding {
   template<class Hist> RooUnfolding::Variable<Hist> var(const Hist* h, Dimension d);
   template<class Hist> std::vector<RooUnfolding::Variable<Hist>> vars(const Hist* h);
 
-  void randomize(TVectorD& values);
-  void randomize(TVectorD& values, const TVectorD& errors);
-  void randomize(TMatrixD& values, const TMatrixD& errors);
+  void randomize(TVectorD& values, TRandom& rnd);
+  void randomize(TVectorD& values, const TVectorD& errors, TRandom& rnd);
+  void randomize(TMatrixD& values, const TMatrixD& errors, TRandom& rnd);
   void mNorm (TMatrixD& m, const TVectorD& norm);  
 }
 

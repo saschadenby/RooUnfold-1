@@ -333,9 +333,9 @@ RooUnfoldResponseT<Hist,Hist2D>::RunToy() const {
   Vmeasured()     ;
   Vtruth()        ;
   Mresponse(false) ;
-  RooUnfolding::randomize(*_cache._vMes,*_cache._eMes);
-  RooUnfolding::randomize(*_cache._vTru,*_cache._eTru);
-  RooUnfolding::randomize(*_cache._mRes,*_cache._eRes);
+  RooUnfolding::randomize(*_cache._vMes,*_cache._eMes,this->rnd);
+  RooUnfolding::randomize(*_cache._vTru,*_cache._eTru,this->rnd);
+  RooUnfolding::randomize(*_cache._mRes,*_cache._eRes,this->rnd);
   _cache._mResNorm = new TMatrixD(*_cache._mRes);
   mNorm(*_cache._mResNorm,*_cache._vTru);
 }
@@ -560,7 +560,8 @@ template<class Hist, class Hist2D>
 TVectorD        RooUnfoldResponseT<Hist,Hist2D>::Vfolded(const TVectorD& truth) const {
   auto res = this->Mresponse(true);
   if(!truth.GetNrows() == res.GetNcols())  throw std::runtime_error("Error in RooUnfoldResponseT::Vfolded: invalid dimensionality in given truth vector!");
-  return res*truth;
+  auto prod = res*truth;
+  return prod;
 }
 
 template<class Hist, class Hist2D>

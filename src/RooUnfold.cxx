@@ -639,7 +639,7 @@ RooUnfoldT<Hist,Hist2D>::CalculateBias(RooUnfolding::BiasMethod method, Int_t nt
       double mean = sum/n;
       _cache._bias(i) = mean;
       // variance = 1/(n-1) * sum (x-mean)**2 = 1/(n-1) * ( sum(x**2) - 1/n * sum(x)**2 ) = 1/(n-1) * ( sum(x**2) - mean * sum(x)**2 )
-      double var = (sum2 - sum*mean)/(n-1);
+      double var = fabs(sum2 - sum*mean)/(n-1);
       // standard error on the mean      
       _cache._sigbias(i) = sqrt(var/n);
     }
@@ -1395,7 +1395,7 @@ RooUnfoldT<TH1,TH2>::RunToys(int ntoys, std::vector<TVectorD>& vx, std::vector<T
     this->ForceRecalculation();
     this->Vmeasured();
     if(this->_dosys != kNoMeasured){
-      RooUnfolding::randomize(*_cache._vMes);
+      RooUnfolding::randomize(*_cache._vMes,this->rnd);
     }
     if(this->_dosys == kAll){
       res->RunToy();
@@ -1487,7 +1487,7 @@ RooUnfoldT<TH1,TH2>::RunBiasAsimovToys(int ntoys, std::vector<TVectorD>& vbias) 
     this->ForceRecalculation();
     this->Vmeasured();
     if(this->_dosys != kNoMeasured){
-      RooUnfolding::randomize(*_cache._vMes);
+      RooUnfolding::randomize(*_cache._vMes,this->rnd);
     }
     if(this->_dosys == kAll){
       res->RunToy();
@@ -1495,7 +1495,7 @@ RooUnfoldT<TH1,TH2>::RunBiasAsimovToys(int ntoys, std::vector<TVectorD>& vbias) 
     TVectorD vtruth(res->Vtruth());
     for(int j=0; j<ntoys; ++j){    
       this->_cache._vMes = new TVectorD(res->Vfolded(res->Vtruth()));
-      RooUnfolding::randomize(*this->_cache._vMes);
+      RooUnfolding::randomize(*this->_cache._vMes,this->rnd);
       vbias.push_back(vtruth-this->Vunfold());
     }
   }
@@ -1508,51 +1508,62 @@ RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>::RunBiasAsimovToys
   //! each of these toys. fill the differences w.r.t. the nominal into
   //! the given bias vector
   const auto* res = this->response();
-  RooArgSet errorParams;
-  getParameters(res->Htruth(),errorParams);
-
-  if(this->_dosys == kAll){
-    getParameters(res->Hmeasured(),errorParams);
-    getParameters(res->Hfakes(),errorParams);
-    getParameters(res->Hresponse(),errorParams);
-  }
-  auto* snsh = errorParams.snapshot();  
-  RooArgList errorParamList(errorParams);
+//  RooArgSet errorParams;
+//  getParameters(res->Htruth(),errorParams);
+//
+//  if(this->_dosys == kAll){
+//    getParameters(res->Hmeasured(),errorParams);
+//    getParameters(res->Hfakes(),errorParams);
+//    getParameters(res->Hresponse(),errorParams);
+//  }
+//  auto* snsh = errorParams.snapshot();  
+//  RooArgList errorParamList(errorParams);
   
-  RooFitResult * prefitResult = RooFitResult::prefitResult(errorParamList);
-  RooAbsPdf* paramPdf = prefitResult->createHessePdf(errorParams) ;
-  RooDataSet* data = paramPdf->generate(errorParams,ntoys) ;
+//  RooFitResult * prefitResult = RooFitResult::prefitResult(errorParamList);
+//  RooAbsPdf* paramPdf = prefitResult->createHessePdf(errorParams) ;
+//  RooDataSet* data = paramPdf->gaenerate(errorParams,ntoys) ;
   
-  auto errorType = _withError;
-  _withError = kNoError;
+//  auto errorType = _withError;
+//  _withError = kNoError;
   for(int i=0; i<ntoys; ++i){
-    errorParams = (*data->get(i)) ;
-    auto* thistoy = errorParams.snapshot();      
+    //    errorParams = (*data->get(i)) ;
+    //    auto* thistoy = errorParams.snapshot();      
     TVectorD vtruth(res->Vtruth());
-    RooDataSet* toydata = paramPdf->generate(errorParams,ntoys) ;
-    for(int j=0; j<ntoys; ++j){    
-      this->ForceRecalculation();
-      errorParams = (*toydata->get(j)) ;
+    TMatrixD mres(res->Mresponse(true));
+    RooUnfolding::randomize(vtruth,this->rnd);
+    //    RooDataSet* toydata = paramPdf->generate(errorParams,ntoys) ;
+    for(int j=0; j<ntoys; ++j){
+      //      errorParams = (*toydata->get(j)) ;
+      //      res->ClearCache();
+      //      this->ForceRecalculation();
+      //      TVectorD toytruth(res->Vtruth());
+      TVectorD toytruth(vtruth);
+      RooUnfolding::randomize(toytruth,this->rnd);
+      this->_cache._vMes = new TVectorD(mres*toytruth);
       TVectorD vunfolded(this->Vunfold());
       TVectorD bias(vunfolded.GetNrows());
       for(int b=0; b<vunfolded.GetNrows(); ++b){
-        bias[b] = (vtruth[b]-vunfolded[b])/vtruth[b];
+        if(vtruth[b] > 0){
+          bias[b] = (vtruth[b]-vunfolded[b])/vtruth[b];
+        } else {
+          bias[b] = 0;
+        }
       }
       vbias.push_back(bias);
     }
-    errorParams = *thistoy;
-    delete toydata;
-    delete thistoy;
+//    errorParams = *thistoy;
+//    delete toydata;
+//    delete thistoy;
   }
-  _withError =  errorType;
+//  _withError =  errorType;
+//  
+//  errorParams = *snsh;
+//  delete snsh;
+//  delete data;
+//  delete prefitResult;
+//  delete paramPdf;
   
-  errorParams = *snsh;
-  delete snsh;
-  delete data;
-  delete prefitResult;
-  delete paramPdf;
-  
-  this->ForceRecalculation();
+//  this->ForceRecalculation();
 }
 
 
