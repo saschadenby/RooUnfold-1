@@ -606,7 +606,9 @@ RooUnfoldT<Hist,Hist2D>::CalculateBias(RooUnfolding::BiasMethod method, Int_t nt
       }
       if(ntoys > 1){
         // variance = sum of square differences divided by n-1
-        _cache._sigbias(j) = sqrt(sum2) / (ntoys-1);
+        double var = sum2 / (ntoys-1);
+        // standard error on the mean
+        _cache._sigbias(j) = sqrt( var / ntoys);
       } else {
         // pathological case of 1 toy
         _cache._sigbias(j) = sqrt(sum2);
@@ -637,7 +639,9 @@ RooUnfoldT<Hist,Hist2D>::CalculateBias(RooUnfolding::BiasMethod method, Int_t nt
       double mean = sum/n;
       _cache._bias(i) = mean;
       // variance = 1/(n-1) * sum (x-mean)**2 = 1/(n-1) * ( sum(x**2) - 1/n * sum(x)**2 ) = 1/(n-1) * ( sum(x**2) - mean * sum(x)**2 )
-      _cache._sigbias(i) = sqrt((sum2 - sum*mean)/(n-1));
+      double var = (sum2 - sum*mean)/(n-1);
+      // standard error on the mean      
+      _cache._sigbias(i) = sqrt(var/n);
     }
   }
   
@@ -738,11 +742,15 @@ RooUnfoldT<Hist,Hist2D>::Chi2(const Hist* hTrue,ErrorTreatment DoChi2) const {
     return chi2;
 }
 
+template<class Hist,class Hist2D> void
+RooUnfoldT<Hist,Hist2D>::PrintTable (const Hist* hTrue, RooUnfolding::ErrorTreatment withError) const {
+  //! Prints entries from truth, measured, and unfolded data for each bin.
+  this->PrintTable(std::cout);
+}
 
 template<class Hist,class Hist2D> void
 RooUnfoldT<Hist,Hist2D>::PrintTable (std::ostream& o, const Hist* hTrue, ErrorTreatment withError) const
 {
-
   //! Prints entries from truth, measured, and unfolded data for each bin.
   if (withError==kDefault) withError= _withError;
   if (withError==kDefault) withError= kErrors;
