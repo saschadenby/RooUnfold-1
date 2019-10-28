@@ -553,24 +553,36 @@ RooUnfoldT<Hist,Hist2D>::CalculateBias(RooUnfolding::BiasMethod method, Int_t nt
   toyFactory->SetVerbose(0);
   
   if (method == RooUnfolding::kBiasEstimator){
+    // for the "estimator" version, we just run the unfolding once
     TVectorD unfold = toyFactory->Vunfold();
     TVectorD unfoldE = toyFactory->EunfoldV();
     
     _cache._bias.ResizeTo(_nt);
     _cache._sigbias.ResizeTo(_nt);
-    
+
+    // loop over the bins
     for(int i=0; i<_nt; ++i){
+      // bias = comparison between unfolded and truth histogram given
       _cache._bias[i] = (unfold[i] - truth[i]) / truth[i];
+      // gaussian error propagation on truth and unfolded histogram - assume they are uncorrelated
       _cache._sigbias[i] = sqrt(truthE[i]*truthE[i] + unfoldE[i]*unfoldE[i]) / truth[i];
     }
   } else if(method == RooUnfolding::kBiasClosure){
-    TMatrixD pull_results(ntoys,_nt);
+    // for the "closure" version, throw some toys
     
     TVectorD bias(_nt);
     TVectorD sigbias(_nt);
     std::vector<TVectorD> toy_unfold,toy_error;
     std::vector<double> chi;
-    toyFactory->RunToys(ntoys,toy_unfold,toy_error,chi);    
+    // run `ntoys` toys and push the results in the toy_unfold and toy_error vector
+    toyFactory->RunToys(ntoys,toy_unfold,toy_error,chi);
+
+    TMatrixD pull_results(ntoys,_nt);
+    _cache._bias.ResizeTo(_nt);
+    _cache._sigbias.ResizeTo(_nt);
+
+    // in this loop, compute the "mean" between all toys for each bin
+    // bias = comparison between unfolded and truth histogram given
     for ( int i = 0; i < ntoys; ++i){
       for (int j = 0; j < toy_unfold[i].GetNrows(); ++j){
         if (toy_error[i](j) != 0){
@@ -579,38 +591,53 @@ RooUnfoldT<Hist,Hist2D>::CalculateBias(RooUnfolding::BiasMethod method, Int_t nt
         } 
       }
     }
-    _cache._bias.ResizeTo(_nt);
-    _cache._sigbias.ResizeTo(_nt);
+    // for the mean, divide by ntoys in the end
     for (int i = 0; i < _nt; i++){
       _cache._bias(i) = bias(i) / ntoys;
     }
+    // for the variance, loop over all bins and toys again
     for (int j = 0; j < _nt; j++){
       double sum2 = 0;
       for (int i = 0; i < ntoys; i++){
+        // get the difference between each individual toy and the mean
         double val = (pull_results(i, j) - _cache._bias(j));
+        // sum the squares of these differences
         sum2 += val*val;
       }
       if(ntoys > 1){
+        // variance = sum of square differences divided by n-1
         _cache._sigbias(j) = sqrt(sum2) / (ntoys-1);
       } else {
+        // pathological case of 1 toy
         _cache._sigbias(j) = sqrt(sum2);
       }
     }
   } else if(method == RooUnfolding::kBiasAsimov){
     std::vector<TVectorD> bias;
+    // in here, generate level 1 toys
+    // for each level 1 toy, generate level 2 toys
+    
+    // the differences between the level 2 toys
+    // and all the corresponding level 1 toys
+    // are collected in the bias vector
     toyFactory->RunBiasAsimovToys(ntoys,bias);
     _cache._bias.ResizeTo(_nt);
     _cache._sigbias.ResizeTo(_nt);
     for (int i = 0; i < _nt; ++i){
       double sum = 0;
       double sum2 = 0;
-      for(size_t j=0; j<bias.size(); ++j){
+      const size_t n = bias.size();
+      for(size_t j=0; j<n; ++j){
+        // linear sum - used to calculate mean
         sum += bias[j][i];
+        // square sum - used to calculate variance
         sum2 += bias[j][i]*bias[j][i];        
       }
-      double mean = sum/bias.size();
+      // explicitly calculate and store mean
+      double mean = sum/n;
       _cache._bias(i) = mean;
-      _cache._sigbias(i) = sqrt((sum2 - sum*mean)/bias.size());
+      // variance = 1/(n-1) * sum (x-mean)**2 = 1/(n-1) * ( sum(x**2) - 1/n * sum(x)**2 ) = 1/(n-1) * ( sum(x**2) - mean * sum(x)**2 )
+      _cache._sigbias(i) = sqrt((sum2 - sum*mean)/(n-1));
     }
   }
   
