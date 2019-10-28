@@ -65,6 +65,7 @@
 #include <sstream>
 #include <cmath>
 #include <vector>
+#include <math.h>
 
 #include "TClass.h"
 #include "TMatrixD.h"
@@ -560,8 +561,13 @@ RooUnfoldT<Hist,Hist2D>::CalculateBias(RooUnfolding::BiasMethod method, Int_t nt
     _cache._sigbias.ResizeTo(_nt);
     
     for(int i=0; i<_nt; ++i){
-      _cache._bias[i] = (unfold[i] - truth[i]) / truth[i];
-      _cache._sigbias[i] = sqrt(truthE[i]*truthE[i] + unfoldE[i]*unfoldE[i]) / truth[i];
+      if (truth[i]) {
+	  _cache._bias[i] = (unfold[i] - truth[i]) / truth[i];
+	  _cache._sigbias[i] = sqrt(truthE[i]*truthE[i] + unfoldE[i]*unfoldE[i]) / truth[i];
+      } else {
+	  _cache._bias[i] = (unfold[i] - truth[i]);
+	  _cache._sigbias[i] = sqrt(truthE[i]*truthE[i] + unfoldE[i]*unfoldE[i]);
+      }
     }
   } else if(method == RooUnfolding::kBiasClosure){
     TMatrixD pull_results(ntoys,_nt);
@@ -608,6 +614,7 @@ RooUnfoldT<Hist,Hist2D>::CalculateBias(RooUnfolding::BiasMethod method, Int_t nt
         sum += bias[j][i];
         sum2 += bias[j][i]*bias[j][i];        
       }
+      
       double mean = sum/bias.size();
       _cache._bias(i) = mean;
       _cache._sigbias(i) = sqrt((sum2 - sum*mean)/bias.size());
@@ -1461,7 +1468,9 @@ RooUnfoldT<TH1,TH2>::RunBiasAsimovToys(int ntoys, std::vector<TVectorD>& vbias) 
     for(int j=0; j<ntoys; ++j){    
       this->_cache._vMes = new TVectorD(res->Vfolded(res->Vtruth()));
       RooUnfolding::randomize(*this->_cache._vMes);
-      vbias.push_back(vtruth-this->Vunfold());
+      for (int i = 0; i < this->Vunfold().GetNrows(); i++){
+      }
+      vbias.push_back(this->Vunfold());
     }
   }
   this->ForceRecalculation();  
@@ -1501,7 +1510,11 @@ RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>::RunBiasAsimovToys
       TVectorD vunfolded(this->Vunfold());
       TVectorD bias(vunfolded.GetNrows());
       for(int b=0; b<vunfolded.GetNrows(); ++b){
-        bias[b] = (vtruth[b]-vunfolded[b])/vtruth[b];
+        if (vtruth[b]) {
+	  bias[b] = (vtruth[b]-vunfolded[b])/vtruth[b];
+	} else {
+	  bias[b] = (vtruth[b]-vunfolded[b]);
+	}
       }
       vbias.push_back(bias);
     }
