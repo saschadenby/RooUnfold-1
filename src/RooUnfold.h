@@ -25,6 +25,7 @@ public:
   
   typedef RooUnfolding::Algorithm Algorithm;
   typedef RooUnfolding::ErrorTreatment ErrorTreatment;
+  typedef RooUnfolding::BiasMethod BiasMethod;
   static const Algorithm kNone;
   static const Algorithm kBayes;
   static const Algorithm kSVD;
@@ -39,6 +40,10 @@ public:
   static const ErrorTreatment kCovariance;
   static const ErrorTreatment kCovToy;
   static const ErrorTreatment kDefault;
+  static const ErrorTreatment kRooFit;
+  static const BiasMethod kBiasAsimov;
+  static const BiasMethod kBiasEstimator;
+  static const BiasMethod kBiasClosure;
   
   // Standard methods
 

@@ -120,8 +120,11 @@ template<class Hist,class Hist2D> const typename RooUnfoldT<Hist,Hist2D>::ErrorT
 template<class Hist,class Hist2D> const typename RooUnfoldT<Hist,Hist2D>::ErrorTreatment RooUnfoldT<Hist,Hist2D>::kErrors = RooUnfolding::kErrors;
 template<class Hist,class Hist2D> const typename RooUnfoldT<Hist,Hist2D>::ErrorTreatment RooUnfoldT<Hist,Hist2D>::kCovariance = RooUnfolding::kCovariance;
 template<class Hist,class Hist2D> const typename RooUnfoldT<Hist,Hist2D>::ErrorTreatment RooUnfoldT<Hist,Hist2D>::kCovToy = RooUnfolding::kCovToy;
+template<class Hist,class Hist2D> const typename RooUnfoldT<Hist,Hist2D>::ErrorTreatment RooUnfoldT<Hist,Hist2D>::kRooFit = RooUnfolding::kRooFit;
 template<class Hist,class Hist2D> const typename RooUnfoldT<Hist,Hist2D>::ErrorTreatment RooUnfoldT<Hist,Hist2D>::kDefault = RooUnfolding::kDefault;
-
+template<class Hist,class Hist2D> const typename RooUnfoldT<Hist,Hist2D>::BiasMethod RooUnfoldT<Hist,Hist2D>::kBiasAsimov = RooUnfolding::kBiasAsimov;
+template<class Hist,class Hist2D> const typename RooUnfoldT<Hist,Hist2D>::BiasMethod RooUnfoldT<Hist,Hist2D>::kBiasEstimator = RooUnfolding::kBiasEstimator;
+template<class Hist,class Hist2D> const typename RooUnfoldT<Hist,Hist2D>::BiasMethod RooUnfoldT<Hist,Hist2D>::kBiasClosure = RooUnfolding::kBiasClosure;
 
 using namespace RooUnfolding;
 
