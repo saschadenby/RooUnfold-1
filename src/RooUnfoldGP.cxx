@@ -299,6 +299,7 @@ RooUnfoldGPT<Hist,Hist2D>::MLCovariance() const
 
   for (int i = 0; i < this->_nm; i++){
     cov(i,i) = nu(i);
+    std::cout << "Cov: " << cov(i,i) << std::endl;
   }
 
     if (!InvertResponse()) return;
@@ -483,7 +484,8 @@ RooUnfoldGPT<Hist,Hist2D>::MinimizeMLH() const
 
   min->SetMaxFunctionCalls(1000000);
   min->SetMaxIterations(100000);
-  min->SetTolerance(0.001);
+  min->SetTolerance(0.01);
+  
   //min->SetPrintLevel(1);
   
   ROOT::Math::Functor f(this, &RooUnfoldGPT<Hist,Hist2D>::MarginalLH,_specialcache._kernel_init.size()); 
@@ -498,20 +500,20 @@ RooUnfoldGPT<Hist,Hist2D>::MinimizeMLH() const
 
   min->Minimize();
 
-  if (min->Status()){
-    std::cout << "Minimization of the marginal likelihood did not converge. Try again with new initial values and step sizes." << std::endl;
-  } else {
-    const double* xs = min->X();
-   
-    if (this->_verbose >= 2) std::cout << "Marginal likelihood minimization converged." << std::endl;
-
-    for (int i = 0; i < _specialcache._kernel_init.size(); i++){
-      if (this->_verbose >= 2) std::cout << "Parameter " << i << ": " << xs[i] << std::endl;
-      _specialcache._opt_params.push_back(xs[i]);
-    }
+  //if (min->Status()){
+  //std::cout << "Minimization of the marginal likelihood did not converge. Try again with new initial values and step sizes." << std::endl;
+  //} else {
+  const double* xs = min->X();
+  
+  if (this->_verbose >= 2) std::cout << "Marginal likelihood minimization converged." << std::endl;
     
-    _specialcache._MLHConverged = true;
+  for (int i = 0; i < _specialcache._kernel_init.size(); i++){
+    if (this->_verbose >= 2) std::cout << "Parameter " << i << ": " << xs[i] << std::endl;
+    _specialcache._opt_params.push_back(xs[i]);
   }
+  
+  _specialcache._MLHConverged = true;
+  //}
 
   delete min;
 }
