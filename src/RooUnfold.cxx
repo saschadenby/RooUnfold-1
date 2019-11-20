@@ -65,6 +65,7 @@
 #include <sstream>
 #include <cmath>
 #include <vector>
+#include <math.h>
 
 #include "TClass.h"
 #include "TMatrixD.h"
@@ -566,9 +567,14 @@ RooUnfoldT<Hist,Hist2D>::CalculateBias(RooUnfolding::BiasMethod method, Int_t nt
     // loop over the bins
     for(int i=0; i<_nt; ++i){
       // bias = comparison between unfolded and truth histogram given
-      _cache._bias[i] = (unfold[i] - truth[i]) / truth[i];
       // gaussian error propagation on truth and unfolded histogram - assume they are uncorrelated
-      _cache._sigbias[i] = sqrt(truthE[i]*truthE[i] + unfoldE[i]*unfoldE[i]) / truth[i];
+      if (truth[i]) {
+	  _cache._bias[i] = (unfold[i] - truth[i]) / truth[i];
+	  _cache._sigbias[i] = sqrt(truthE[i]*truthE[i] + unfoldE[i]*unfoldE[i]) / truth[i];
+      } else {
+	_cache._bias[i] = (unfold[i] - truth[i]);
+	_cache._sigbias[i] = sqrt(truthE[i]*truthE[i] + unfoldE[i]*unfoldE[i]);
+      }
     }
   } else if(method == RooUnfolding::kBiasClosure){
     // for the "closure" version, throw some toys
@@ -1498,6 +1504,7 @@ RooUnfoldT<TH1,TH2>::RunBiasAsimovToys(int ntoys, std::vector<TVectorD>& vbias) 
     TVectorD vtruth(res->Vtruth());
     for(int j=0; j<ntoys; ++j){    
       this->_cache._vMes = new TVectorD(res->Vfolded(res->Vtruth()));
+
       RooUnfolding::randomize(*this->_cache._vMes,this->rnd);
       vbias.push_back(vtruth-this->Vunfold());
     }
