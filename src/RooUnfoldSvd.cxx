@@ -185,7 +185,7 @@ RooUnfoldSvdT<Hist,Hist2D>::Unfold() const
   if(!this->_train1d) throw std::runtime_error("no train1d given!");
   if(!this->_truth1d) throw std::runtime_error("no truth1d given!");
   if(!this->_reshist) throw std::runtime_error("no reshist given!");
-
+  
   this->_svd= new SVDUnfold (this->_meas1d, cov, this->_train1d, this->_truth1d, this->_reshist);
 
   this->_cache._rec.ResizeTo (this->_nt);

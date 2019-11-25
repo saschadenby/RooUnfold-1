@@ -79,7 +79,8 @@ private:
    static void     RegularisedSymMatInvert( TMatrixDSym& mat, Double_t eps = 1e-3 );
    
    // Class members
-   Int_t       fNdim;        //! Truth and reconstructed dimensions
+   Int_t       fMdim;        //! Reconstructed dimensions
+   Int_t       fTdim;        //! Truth dimensions
    Int_t       fDdim;        //! Derivative for curvature matrix
    Bool_t      fNormalize;   //! Normalize unfolded spectrum to 1
    Int_t       fKReg;        //! Regularisation parameter
