@@ -448,6 +448,7 @@ RooUnfoldT<Hist,Hist2D>::Unfold() const
     _cache._rec(i)= vmeas(i);
   }
   _cache._unfolded= true;
+
 }
 
 template<class Hist,class Hist2D> void
@@ -1000,7 +1001,6 @@ RooUnfoldT<Hist,Hist2D>::EunfoldV(ErrorTreatment withError) const
 
     TVectorD Eunfold_v(_nt);
     if (!UnfoldWithErrors (withError)) return Eunfold_v;
-
     switch(withError){
       case kNoError:
         for (int i=0; i<_nt; i++){
@@ -1435,7 +1435,7 @@ RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>::RunToys(int ntoys
     getParameters(res->Hfakes(),errorParams);
     getParameters(res->Hresponse(),errorParams);
   }
-  
+
   auto* snsh = errorParams.snapshot();
   RooArgList errorParamList(errorParams);
   RooFitResult * prefitResult = RooFitResult::prefitResult(errorParamList);

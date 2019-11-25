@@ -231,15 +231,20 @@ RooUnfoldGPT<Hist,Hist2D>::Unfold() const
   // Calculate the maximum a postiori estimator for the 
   // truth histogram and the corresponding covariance matrix.
   MAPEstimator();
-  MAPCovariance();
 
   // Pass the solutions.
   this->_cache._rec.ResizeTo(this->_nt);
   this->_cache._rec = _specialcache._MAPEst;
-  this->_cache._cov.ResizeTo(this->_nt,this->_nt);
-  this->_cache._cov = _specialcache._MAPCov;
 
   this->_cache._unfolded= true;
+}
+
+template<class Hist, class Hist2D> void
+RooUnfoldGPT<Hist,Hist2D>::GetCov() const
+{
+  MAPCovariance();
+  this->_cache._cov.ResizeTo(this->_nt,this->_nt);
+  this->_cache._cov = _specialcache._MAPCov;
   this->_cache._haveCov= true;
 }
 
@@ -299,7 +304,6 @@ RooUnfoldGPT<Hist,Hist2D>::MLCovariance() const
 
   for (int i = 0; i < this->_nm; i++){
     cov(i,i) = nu(i);
-    std::cout << "Cov: " << cov(i,i) << std::endl;
   }
 
     if (!InvertResponse()) return;
