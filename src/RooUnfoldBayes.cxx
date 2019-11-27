@@ -41,9 +41,9 @@ RooUnfoldBayesT<Hist,Hist2D>::RooUnfoldBayesT (const RooUnfoldBayesT<Hist,Hist2D
 }
 
 template<class Hist,class Hist2D>
-RooUnfoldBayesT<Hist,Hist2D>::RooUnfoldBayesT (const RooUnfoldResponseT<Hist,Hist2D>* res, const Hist* meas,Int_t niter, Bool_t smoothit,
+RooUnfoldBayesT<Hist,Hist2D>::RooUnfoldBayesT (const RooUnfoldResponseT<Hist,Hist2D>* res, const Hist* meas,Int_t niter, Bool_t smoothit, Bool_t handleFakes,
                                 const char* name, const char* title)
-  : _niter(niter), _smoothit(smoothit), RooUnfoldT<Hist,Hist2D> (res, meas, name, title)
+  : _niter(niter), _smoothit(smoothit), _handleFakes(handleFakes), RooUnfoldT<Hist,Hist2D> (res, meas, name, title)
 {
 
   //! Constructor with response matrix object and measured unfolding input histogram.
@@ -134,10 +134,10 @@ RooUnfoldBayesT<Hist,Hist2D>::setup() const
 
   h2m(this->_res->Hresponse(), this->_Nji, this->_overflow);   // don't normalise, which is what this->_res->Mresponse() would give us
 
-  if (this->_res->HasFakes()) {
+  if (this->_res->HasFakes() && this->_handleFakes) {
     TVectorD fakes= this->_res->Vfakes();
     double nfakes= fakes.Sum();
-    if (this->verbose()>=0) std::cout << "Add truth bin for " << nfakes << " fakes" << std::endl;
+    std::cout << "An additional truth bin is added to handle " << nfakes << " fakes." << std::endl;
     this->_nc++;
     this->_nCi.ResizeTo(this->_nc);
     this->_nCi[this->_nc-1]= nfakes;
@@ -506,6 +506,12 @@ void RooUnfoldBayesT<Hist,Hist2D>::SetSmoothing (Bool_t smoothit)
 {
   //! Enable smoothing
   this->_smoothit= smoothit;
+}
+
+template<class Hist, class Hist2D>
+void RooUnfoldBayesT<Hist,Hist2D>::HandleFakes(Bool_t handleFakes)
+{
+  this->_handleFakes = handleFakes;
 }
 
 template<class Hist,class Hist2D>
