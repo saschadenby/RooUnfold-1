@@ -492,7 +492,7 @@ template<class Hist,class Hist2D> void
 RooUnfoldT<Hist,Hist2D>::GetWgt() const
 {
   //! Creates weight matrix
-  //! This may be overridden if it can be computed directly without the need for inverting the matrix
+  //! This may be overridden if it can be computed directly without the need for inverting the matrix 
   if (!_cache._haveCov) GetCov();
   if (!_cache._haveCov) return;
   if (!InvertMatrix (_cache._cov, _cache._wgt, "covariance matrix", _verbose)) return;
@@ -693,8 +693,8 @@ RooUnfoldT<Hist,Hist2D>::UnfoldWithErrors (ErrorTreatment withError, bool getWei
   if(_withError != withError) _cache._haveErrors = false;
   _withError= withError;
   if (getWeights && (withError==kErrors || withError==kCovariance)) {
-      if   (!_cache._haveWgt)      GetWgt();
-      ok= _cache._haveWgt;
+    if   (!_cache._haveWgt)        GetWgt();
+    ok= _cache._haveWgt;
   } else {
     switch (withError) {
     case kErrors:
@@ -1055,6 +1055,8 @@ RooUnfoldT<Hist,Hist2D>::Wunfold(ErrorTreatment withError) const
       default:
         throw std::runtime_error(TString::Format("Error in RooUnfoldT::Wunfold, unrecognised error method '%d'",withError).Data());                
     }
+
+
     return Wunfold_m;
 }
 

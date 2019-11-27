@@ -226,6 +226,8 @@ RooUnfoldSvdT<Hist,Hist2D>::GetWgt() const
   if (this->_dosys) RooUnfoldT<Hist,Hist2D>::GetWgt();   // can't add sys errors to weight, so calculate weight from covariance
   if (!this->_svd) return;
 
+  this->_cache._wgt.ResizeTo(this->_nt, this->_nt);
+
   //Get the covariance matrix for statistical uncertainties on the measured distribution
   this->_cache._wgt = this->_svd->GetXinv();
   

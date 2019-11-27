@@ -409,8 +409,6 @@ def main(args):
   test_truth_RFH = spec.makeHistogram(histograms["truth_test"])
 
   unfold = func.unfolding()
-
-  #unfold.IncludeSystematics()
   
   # Print the unfolding results and compare to a truth histogram.
   unfold.PrintTable(ROOT.cout, test_truth_RFH, ROOT.RooUnfolding.kCovariance)
