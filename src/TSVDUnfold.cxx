@@ -558,67 +558,66 @@ TMatrixD RooUnfoldSvdT<Hist,Hist2D>::SVDUnfold::GetAdetCovMatrix( Int_t ntoys, I
       msg += "Please start again!";
       throw std::runtime_error( msg.Data()) ;
     }
-
-
-   fMatToyMode = true;
-
-   //Now the toys for the detector response matrix
-   TRandom3 random(seed);
-
-   fToymat.ResizeTo(fAdet.GetNrows(),fAdet.GetNcols());
-   TVectorD toymean(nBins(fXini,X));
-
-   for (int i=0; i<ntoys; i++) {    
-      for (Int_t k=0; k<fMdim; k++) {
-         for (Int_t m=0; m<fTdim; m++) {
-	   if (fAdet(k,m)){
-	     if(uncmat)
-	       fToymat(k, m) =  fAdet(k,m)+random.Gaus(0.,(*uncmat)(k,m));
-             else if(fAdetE.GetNrows() == fAdet.GetNrows())
-               fToymat(k, m) = fAdet(k,m)+random.Gaus(0.,fAdetE(k,m));
-             else 
-	       fToymat(k, m) = random.Poisson(fAdet(k,m));
-	   }
-         }
+  
+  fMatToyMode = true;
+  
+  //Now the toys for the detector response matrix
+  TRandom3 random(seed);
+  
+  fToymat.ResizeTo(fAdet.GetNrows(),fAdet.GetNcols());
+  TVectorD toymean(nBins(fXini,X));
+    
+  for (int i=0; i<ntoys; i++) {    
+    for (Int_t k=0; k<fMdim; k++) {
+      for (Int_t m=0; m<fTdim; m++) {
+	if (fAdet(k,m)){
+	  if(uncmat)
+	    fToymat(k, m) =  fAdet(k,m)+random.Gaus(0.,(*uncmat)(k,m));
+	  else if(fAdetE.GetNrows() == fAdet.GetNrows())
+	    fToymat(k, m) = fAdet(k,m)+random.Gaus(0.,fAdetE(k,m));
+	  else 
+	    fToymat(k, m) = random.Poisson(fAdet(k,m));
+	}
       }
+    }
 
-      TVectorD unfres(UnfoldV(GetKReg()));
+    TVectorD unfres(UnfoldV(GetKReg()));
 
-      for (Int_t j=0; j<fTdim; j++) {
+    for (Int_t j=0; j<fTdim; j++) {
         toymean[j] = toymean[j] + unfres(j)/ntoys;
+    }
+  }
+
+  // Reset the random seed
+  random.SetSeed(seed);
+  
+  TMatrixD unfcov(fAdet.GetNrows(),fAdet.GetNcols());
+  
+  for (int i=1; i<=ntoys; i++) {
+    for (Int_t k=0; k<fMdim; k++) {
+      for (Int_t m=0; m<fTdim; m++) {
+	if (fAdet(k,m)){
+	  if(uncmat)
+	    fToymat(k, m) = fAdet(k,m)+random.Gaus(0.,(*uncmat)(k,m));
+	  else if(fAdetE.GetNrows() == fAdet.GetNrows())
+	    fToymat(k, m) = fAdet(k,m)+random.Gaus(0.,fAdetE(k,m));
+	  else 
+	    fToymat(k, m) = random.Poisson(fAdet(k,m));
+	}
       }
-   }
-
-   // Reset the random seed
-   random.SetSeed(seed);
-
-   TMatrixD unfcov(fAdet.GetNrows(),fAdet.GetNcols());
-   
-   for (int i=1; i<=ntoys; i++) {
+    }
+    
+    TVectorD unfres(UnfoldV(GetKReg()));
+    
+    for (Int_t j=0; j<fTdim; j++) {
       for (Int_t k=0; k<fTdim; k++) {
-        for (Int_t m=0; m<fMdim; m++) {
-          if (fAdet(k,m)){
-            if(uncmat)
-              fToymat(k, m) = fAdet(k,m)+random.Gaus(0.,(*uncmat)(k,m));
-            else if(fAdetE.GetNrows() == fAdet.GetNrows())
-              fToymat(k, m) = fAdet(k,m)+random.Gaus(0.,fAdetE(k,m));
-            else 
-              fToymat(k, m) = random.Poisson(fAdet(k,m));
-          }
-        }
+	unfcov(j,k) = unfcov(j,k) + ( (unfres[j] - toymean[j])*(unfres[k] - toymean[k])/(ntoys-1));
       }
+    }
+  }
+  fMatToyMode = kFALSE;
 
-      TVectorD unfres(UnfoldV(GetKReg()));
-
-      for (Int_t j=0; j<fTdim; j++) {
-        for (Int_t k=0; k<fTdim; k++) {
-          unfcov(j,k) = unfcov(j,k) + ( (unfres[j] - toymean[j])*(unfres[k] - toymean[k])/(ntoys-1));
-        }
-      }
-   }
-   fMatToyMode = kFALSE;
-   
-   return unfcov;
+  return unfcov;
 }
 
 //_______________________________________________________________________

@@ -764,13 +764,11 @@ RooUnfoldT<Hist,Hist2D>::PrintTable (std::ostream& o, const Hist* hTrue, ErrorTr
   //! Prints entries from truth, measured, and unfolded data for each bin.
   if (withError==kDefault) withError= _withError;
   if (withError==kDefault) withError= kErrors;
-
   if (!UnfoldWithErrors (withError)) withError= kNoError;
-
   if (!hTrue){
     hTrue = response()->Htruth();
   }
-
+  
   const Hist* hTrainTrue = response()->Htruth();
   const Hist* hTrain = response()->Hmeasured();
   const Hist* hMeas = Hmeasured();

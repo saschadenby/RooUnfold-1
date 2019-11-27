@@ -149,7 +149,6 @@ protected:
   // instance variables
   mutable SVDUnfold* _svd;  //! Implementation in TSVDUnfold object (no streamer)
   mutable Int_t _kreg;
-  mutable Int_t _nb;
 
   mutable const Hist *_meas1d, *_train1d, *_truth1d;
   mutable const Hist2D *_reshist, *_meascov;

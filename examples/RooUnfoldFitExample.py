@@ -407,9 +407,13 @@ def main(args):
   # Create a RooFitHist object as input for the unfolding
   # results printing.
   test_truth_RFH = spec.makeHistogram(histograms["truth_test"])
+
+  unfold = func.unfolding()
+
+  #unfold.IncludeSystematics()
   
   # Print the unfolding results and compare to a truth histogram.
-  func.unfolding().PrintTable(ROOT.cout, test_truth_RFH, ROOT.RooUnfolding.kRooFit)
+  unfold.PrintTable(ROOT.cout, test_truth_RFH, ROOT.RooUnfolding.kCovariance)
 
   # Plot the results.
   #plot_result(histograms["truth_test"], func, True)
