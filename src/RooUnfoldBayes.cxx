@@ -128,7 +128,14 @@ RooUnfoldBayesT<Hist,Hist2D>::setup() const
   this->_nEstj= this->Vmeasured();
 
   this->_nCi.ResizeTo(this->_nt);
-  this->_nCi= this->_res->Vtruth();
+  
+  // If an additional truth distribution is defined then use that as prior
+  // guess. Otherwise, use the truth of the response matrix.
+  if (this->Htruth()){
+    this->_nCi= this->Vtruth();
+  } else {
+    this->_nCi= this->_res->Vtruth();
+  }
 
   this->_Nji.ResizeTo(this->_ne,this->_nt);
 

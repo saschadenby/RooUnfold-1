@@ -237,6 +237,8 @@ RooUnfoldT<Hist,Hist2D>::Cache::Cache() :
   _sigbias(1),
   _vMes(0),
   _eMes(0),
+  _vTruth(0),
+  _vBkg(0),
   _covL(0),
   _covMes(0)
 {
@@ -273,6 +275,8 @@ typename RooUnfoldT<Hist,Hist2D>::Cache& RooUnfoldT<Hist,Hist2D>::Cache::operato
   _sigbias = other._sigbias;
   _vMes = other._vMes;
   _eMes = other._eMes;
+  _vTruth = other._vTruth;
+  _vBkg = other._vBkg;
   _covL = other._covL;
   _covMes = other._covMes;
   return *this;
@@ -284,6 +288,8 @@ RooUnfoldT<Hist,Hist2D>::Cache::~Cache(){
   //! destructor
   delete this->_vMes;
   delete this->_eMes;
+  delete this->_vTruth;
+  delete this->_vBkg;
   delete this->_covMes;
   delete this->_covL;
 }
@@ -344,6 +350,8 @@ RooUnfoldT<Hist,Hist2D>::Init()
   //! initialize an object with zero
   _res= 0;
   _meas= 0;
+  _bkg= 0;
+  _truth= 0;
   _nm= _nt= 0;
   _verbose= 1;
   _overflow= 0;
@@ -381,6 +389,41 @@ RooUnfoldT<Hist,Hist2D>::SetMeasured (const TVectorD& meas, const TVectorD& err)
   _meas = RooUnfolding::createHist<Hist>(meas,GetName(),GetTitle(),var(orig,X));
 }
 
+template<class Hist,class Hist2D> void
+RooUnfoldT<Hist,Hist2D>::SetTruth (const Hist* truth)
+{
+  
+  //! Set truth distribution and errors. RooUnfold does not own the histogram.
+  _truth= clone(truth);
+  _cache = Cache();
+}
+
+
+template<class Hist,class Hist2D> void
+RooUnfoldT<Hist,Hist2D>::SetTruth (const TVectorD& truth, const TVectorD& err)
+{
+  //! Set truth distribution and errors. Should be called after setting response matrix.
+  const Hist* orig = _res->Htruth();
+  _truth = RooUnfolding::createHist<Hist>(truth,GetName(),GetTitle(),var(orig,X));
+}
+
+template<class Hist,class Hist2D> void
+RooUnfoldT<Hist,Hist2D>::SetBkg (const Hist* bkg)
+{
+  
+  //! Set truth distribution and errors. RooUnfold does not own the histogram.
+  _bkg= clone(bkg);
+  _cache = Cache();
+}
+
+
+template<class Hist,class Hist2D> void
+RooUnfoldT<Hist,Hist2D>::SetBkg (const TVectorD& bkg, const TVectorD& err)
+{
+  //! Set truth distribution and errors. Should be called after setting response matrix.
+  const Hist* orig = _res->Htruth();
+  _bkg = RooUnfolding::createHist<Hist>(bkg,GetName(),GetTitle(),var(orig,X));
+}
 
 template<class Hist,class Hist2D> void
 RooUnfoldT<Hist,Hist2D>::SetMeasured (const TVectorD& meas, const TMatrixD& cov)
@@ -911,6 +954,8 @@ RooUnfoldT<Hist,Hist2D>::Dump() const {
   std::cout << "dosys=" <<  _dosys << std::endl;
   std::cout << "res=" <<  _res << std::endl;
   std::cout << "meas=" <<  _meas << std::endl;
+  std::cout << "bkg=" << _bkg << std::endl;
+  std::cout << "truth=" << _truth << std::endl;
   _res->Print();
   _meas->Print();
 }
@@ -1227,6 +1272,34 @@ Hist*               RooUnfoldT<Hist,Hist2D>::Hmeasured()
 }
 
 template<class Hist,class Hist2D> 
+const Hist*               RooUnfoldT<Hist,Hist2D>::Htruth() const
+{
+  //! Measured Distribution as a histogram
+  return _truth;
+}
+
+template<class Hist,class Hist2D> 
+Hist*               RooUnfoldT<Hist,Hist2D>::Htruth()
+{
+  //! Measured Distribution as a histogram
+  return _truth;
+}
+
+template<class Hist,class Hist2D> 
+const Hist*               RooUnfoldT<Hist,Hist2D>::Hbkg() const
+{
+  //! Measured Distribution as a histogram
+  return _bkg;
+}
+
+template<class Hist,class Hist2D> 
+Hist*               RooUnfoldT<Hist,Hist2D>::Hbkg()
+{
+  //! Measured Distribution as a histogram
+  return _bkg;
+}
+
+template<class Hist,class Hist2D> 
 const TVectorD&                RooUnfoldT<Hist,Hist2D>::Vunfold() const
 {
   //! Unfolded (reconstructed) distribution as a vector
@@ -1251,6 +1324,26 @@ const TVectorD&          RooUnfoldT<Hist,Hist2D>::Vmeasured() const
     _cache._vMes = new TVectorD(h2v (_meas, _overflow, this->response()->UseDensityStatus()));
   }
   return *_cache._vMes;
+}
+
+template<class Hist,class Hist2D> 
+const TVectorD&          RooUnfoldT<Hist,Hist2D>::Vtruth() const
+{
+  //! Measured distribution as a vector.
+  if (!_cache._vTruth){
+    _cache._vTruth = new TVectorD(h2v (_truth, _overflow, this->response()->UseDensityStatus()));
+  }
+  return *_cache._vTruth;
+}
+
+template<class Hist,class Hist2D> 
+const TVectorD&          RooUnfoldT<Hist,Hist2D>::Vbkg() const
+{
+  //! Measured distribution as a vector.
+  if (!_cache._vBkg){
+    _cache._vBkg = new TVectorD(h2v (_bkg, _overflow, this->response()->UseDensityStatus()));
+  }
+  return *_cache._vBkg;
 }
 
 template<class Hist,class Hist2D> 
