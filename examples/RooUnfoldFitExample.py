@@ -353,7 +353,7 @@ dict_data['nbkg'] = 0
 
 # Truth/Reco bin count.  
 dict_data['tbins'] = 20  
-dict_data['rbins'] = 30  
+dict_data['rbins'] = 20  
                                
 # How much more MC do we have than data
 dict_data['mcLumiFactor'] = 10         

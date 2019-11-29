@@ -16,6 +16,7 @@
 #pragma link C++ class TUnfoldBinningV17+;
 #pragma link C++ class TUnfoldDensityV17+;
 #pragma link C++ class TUnfoldBinningXMLV17+;
+#pragma link C++ class TUnfoldIterativeEMV17+;
 #ifndef NOTUNFOLD
 #pragma link C++ class RooUnfoldTUnfold+;
 #endif

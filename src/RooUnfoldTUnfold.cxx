@@ -72,6 +72,8 @@ RooUnfoldTUnfoldT<Hist,Hist2D>::Destroy()
   delete _lCurve;
   delete _logTauX;
   delete _logTauY;
+  delete _logTauSURE;
+  delete _df_chi2A;
 }
 
 // template<class Hist,class Hist2D>RooUnfoldTUnfoldT*
@@ -109,6 +111,8 @@ RooUnfoldTUnfoldT<Hist,Hist2D>::CopyData (const RooUnfoldTUnfoldT& rhs)
   _lCurve  = (rhs._lCurve  ? dynamic_cast<TGraph*> (rhs._lCurve ->Clone()) : 0);
   _logTauX = (rhs._logTauX ? dynamic_cast<TSpline*>(rhs._logTauX->Clone()) : 0);
   _logTauY = (rhs._logTauY ? dynamic_cast<TSpline*>(rhs._logTauY->Clone()) : 0);
+  _logTauSURE = (rhs._logTauSURE  ? dynamic_cast<TGraph*> (rhs._logTauSURE ->Clone()) : 0);
+  _df_chi2A = (rhs._df_chi2A  ? dynamic_cast<TGraph*> (rhs._df_chi2A ->Clone()) : 0);
 }
 
 
@@ -116,11 +120,13 @@ template<class Hist,class Hist2D>void
 RooUnfoldTUnfoldT<Hist,Hist2D>::Init()
 {
   tau_set=false;
-  _tau=0;
+  _tau=-1e30;
   _unf=0;
   _lCurve = 0;
   _logTauX = 0;
   _logTauY = 0;
+  _logTauSURE = 0;
+  _df_chi2A = 0;
   GetSettings();
 }
 
@@ -252,7 +258,10 @@ RooUnfoldTUnfoldT<Hist,Hist2D>::Unfold() const
     delete _lCurve;  _lCurve  = 0;
     delete _logTauX; _logTauX = 0;
     delete _logTauY; _logTauY = 0;
-    Int_t bestPoint = _unf->ScanLcurve(nScan,tauMin,tauMax,&_lCurve,&_logTauX,&_logTauY);
+    delete _logTauSURE; _logTauSURE = 0;
+    delete _df_chi2A; _df_chi2A = 0;
+    Int_t bestPoint = _unf->ScanSURE(nScan,tauMin,tauMax,&_logTauSURE,&_df_chi2A,&_lCurve);
+    //Int_t bestPoint = _unf->ScanLcurve(nScan,tauMin,tauMax,&_lCurve,&_logTauX,&_logTauY);
     _tau=_unf->GetTau();  // save value, even if we don't use it unless tau_set
     std::cout <<"Lcurve scan chose tau= "<<_tau<<std::endl<<" at point "<<bestPoint<<std::endl;
   } else {

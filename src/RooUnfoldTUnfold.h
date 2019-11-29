@@ -63,6 +63,8 @@ private:
   mutable   TSpline* _logTauX;
   mutable   TSpline* _logTauY;
   mutable   TGraph*  _lCurve;
+  mutable   TGraph*  _logTauSURE;
+  mutable   TGraph*  _df_chi2A;
 
 public:
 
