@@ -334,7 +334,7 @@ dict_data['xmax'] = 4
                       
 # Smearing parameters.
 dict_data['bias'] = 0.2
-dict_data['sigma'] = 0.85
+dict_data['sigma'] = 0.5
 
 # Efficiency type
 dict_data['eff'] = 'lin'
@@ -346,17 +346,17 @@ dict_data['frac'] = 0.5
 overflow = True          
                                                         
 # Number of events.            
-dict_data['nevents'] = 5000    
+dict_data['nevents'] = 50000    
                                        
 # Constant background bin count        
 dict_data['nbkg'] = 0
 
 # Truth/Reco bin count.  
 dict_data['tbins'] = 20  
-dict_data['rbins'] = 20  
+dict_data['rbins'] = 30  
                                
 # How much more MC do we have than data
-dict_data['mcLumiFactor'] = 10         
+dict_data['mcLumiFactor'] = 1         
 
 
 # ======================== #
@@ -416,7 +416,7 @@ def main(args):
   unfold.PrintTable(ROOT.cout, test_truth_RFH, ROOT.RooUnfolding.kRooFit)
 
   # Plot the results.
-  #plot_result(histograms["truth_test"], func, True)
+  plot_result(histograms["truth_test"], func, True)
 
   
 

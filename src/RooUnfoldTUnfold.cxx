@@ -48,16 +48,16 @@ RooUnfoldTUnfoldT<Hist,Hist2D>::RooUnfoldTUnfoldT (const RooUnfoldTUnfoldT& rhs)
 }
 
 template<class Hist,class Hist2D>
-RooUnfoldTUnfoldT<Hist,Hist2D>::RooUnfoldTUnfoldT (const RooUnfoldResponseT<Hist,Hist2D>* res, const Hist* meas, TUnfold::ERegMode reg, const char* name, const char* title)
-  : RooUnfoldT<Hist,Hist2D> (res, meas, name, title),_reg_method(reg)
+RooUnfoldTUnfoldT<Hist,Hist2D>::RooUnfoldTUnfoldT (const RooUnfoldResponseT<Hist,Hist2D>* res, const Hist* meas, TUnfold::ERegMode reg, Bool_t handleFakes, const char* name, const char* title)
+  : RooUnfoldT<Hist,Hist2D> (res, meas, name, title),_reg_method(reg), _handleFakes(handleFakes)
 {
   // Constructor with response matrix object and measured unfolding input histogram.
   Init();
 }
 
 template<class Hist,class Hist2D>
-RooUnfoldTUnfoldT<Hist,Hist2D>::RooUnfoldTUnfoldT (const RooUnfoldResponseT<Hist,Hist2D>* res, const Hist* meas, Double_t tau, TUnfold::ERegMode reg, const char* name, const char* title)
-  : RooUnfoldT<Hist,Hist2D> (res, meas, name, title),_reg_method(reg)
+RooUnfoldTUnfoldT<Hist,Hist2D>::RooUnfoldTUnfoldT (const RooUnfoldResponseT<Hist,Hist2D>* res, const Hist* meas, Double_t tau, TUnfold::ERegMode reg, Bool_t handleFakes, const char* name, const char* title)
+  : RooUnfoldT<Hist,Hist2D> (res, meas, name, title),_reg_method(reg), _handleFakes(handleFakes)
 {
   // Constructor with response matrix object and measured unfolding input histogram.
   // This one uses a fixed regularisation parameter, tau.
@@ -193,8 +193,7 @@ RooUnfoldTUnfoldT<Hist,Hist2D>::Unfold() const
   }
     
   // Subtract fakes from measured distribution
-  // TODO: Check if the fakes are handled well here.
-  if (this->_res->HasFakes()) {
+  if (this->_res->HasFakes() && _handleFakes) {
     TVectorD fakes= this->_res->Vfakes();
     Double_t fac= this->_res->Vmeasured().Sum();
     if (fac!=0.0) fac=  this->Vmeasured().Sum() / fac;
@@ -204,8 +203,6 @@ RooUnfoldTUnfoldT<Hist,Hist2D>::Unfold() const
     }
   }
 
-  // TODO: Add a line that derives the number of dimensions of the to be
-  // unfolded histogram.
   Int_t ndim = dim(this->_meas);
   TUnfold::ERegMode reg= _reg_method;
   
