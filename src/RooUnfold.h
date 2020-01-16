@@ -35,6 +35,7 @@ public:
   static const Algorithm kDagostini;
   static const Algorithm kIDS;
   static const Algorithm kGP;
+  static const Algorithm kPoisson;
   static const ErrorTreatment kNoError;
   static const ErrorTreatment kErrors;
   static const ErrorTreatment kCovariance;

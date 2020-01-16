@@ -89,6 +89,7 @@
 #include "RooUnfoldInvert.h"
 #include "RooUnfoldBinByBin.h"
 #include "RooUnfoldGP.h"
+#include "RooUnfoldPoisson.h"
 #ifndef NOTUNFOLD
 #include "RooUnfoldTUnfold.h"
 #endif
@@ -117,6 +118,7 @@ template<class Hist,class Hist2D> const typename RooUnfoldT<Hist,Hist2D>::Algori
 template<class Hist,class Hist2D> const typename RooUnfoldT<Hist,Hist2D>::Algorithm RooUnfoldT<Hist,Hist2D>::kDagostini = RooUnfolding::kDagostini;
 template<class Hist,class Hist2D> const typename RooUnfoldT<Hist,Hist2D>::Algorithm RooUnfoldT<Hist,Hist2D>::kIDS = RooUnfolding::kIDS;
 template<class Hist,class Hist2D> const typename RooUnfoldT<Hist,Hist2D>::Algorithm RooUnfoldT<Hist,Hist2D>::kGP = RooUnfolding::kGP; 
+template<class Hist,class Hist2D> const typename RooUnfoldT<Hist,Hist2D>::Algorithm RooUnfoldT<Hist,Hist2D>::kPoisson = RooUnfolding::kPoisson;
 template<class Hist,class Hist2D> const typename RooUnfoldT<Hist,Hist2D>::ErrorTreatment RooUnfoldT<Hist,Hist2D>::kNoError = RooUnfolding::kNoError;
 template<class Hist,class Hist2D> const typename RooUnfoldT<Hist,Hist2D>::ErrorTreatment RooUnfoldT<Hist,Hist2D>::kErrors = RooUnfolding::kErrors;
 template<class Hist,class Hist2D> const typename RooUnfoldT<Hist,Hist2D>::ErrorTreatment RooUnfoldT<Hist,Hist2D>::kCovariance = RooUnfolding::kCovariance;
@@ -154,6 +156,8 @@ RooUnfoldT<Hist,Hist2D>::New (RooUnfolding::Algorithm alg, const RooUnfoldRespon
     4 = kTUnfold:  Unfold with TUnfold
     5 = kInvert:   Unfold using inversion of response matrix
     7 = kIDS:      Unfold using iterative dynamically stabilized (IDS) method
+    8 = kGP:       Unfold using Gaussian Processes(GP)
+    9 = kPoisson:  Unfold using Poisson-based likelihood and Tikhinov regularization
     */
   
   RooUnfoldT<Hist,Hist2D>* unfold(NULL);
@@ -191,6 +195,9 @@ RooUnfoldT<Hist,Hist2D>::New (RooUnfolding::Algorithm alg, const RooUnfoldRespon
   case kGP:
     unfold = new RooUnfoldGPT<Hist,Hist2D> (res,meas);
     break;
+  case kPoisson:
+    unfold = new RooUnfoldPoissonT<Hist,Hist2D> (res,meas);
+    break;    
   case kDagostini:
     cerr << "RooUnfoldDagostini is not available" << endl;
     return 0;
