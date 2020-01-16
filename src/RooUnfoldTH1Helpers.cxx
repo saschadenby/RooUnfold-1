@@ -177,7 +177,7 @@ namespace RooUnfolding {
     for (Int_t j= 0; j < h->GetNbinsY()+2*overflow; ++j) {
       double fac = 1.;
       if (norm){
-        fac= norm->GetBinContent(j)* (correctDensity ? binVolume(norm,j,overflow) : 1);
+        fac= norm->GetBinContent(j + !overflow)* (correctDensity ? binVolume(norm,j,overflow) : 1);
         if (fac != 0.0) fac= 1.0/fac;
       }
       for (Int_t i= 0; i < h->GetNbinsX()+2*overflow; ++i) {

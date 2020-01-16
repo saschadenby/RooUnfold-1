@@ -108,6 +108,8 @@ def algorithm(method):
     alg= ROOT.RooUnfolding.kTUnfold;
   elif method == "ids":
     alg= ROOT.RooUnfolding.kIDS;
+  elif method == "gp":
+    alg= ROOT.RooUnfolding.kGP;
   return alg
 
 def makeAuxWorkspace():

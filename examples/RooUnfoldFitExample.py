@@ -413,7 +413,7 @@ def main(args):
   #unfold.SetTruth(test_truth_RFH)
   
   # Print the unfolding results and compare to a truth histogram.
-  unfold.PrintTable(ROOT.cout, test_truth_RFH, ROOT.RooUnfolding.kRooFit)
+  unfold.PrintTable(ROOT.cout, test_truth_RFH)#, ROOT.RooUnfolding.kRooFit)
 
   # Plot the results.
   plot_result(histograms["truth_test"], func, True)
