@@ -86,7 +86,7 @@ RooUnfoldPoissonT<Hist,Hist2D>::Unfold() const
 
   // Minimize the regularized nllh.
   MinimizeRegLLH();
-
+  
   this->_cache._rec.ResizeTo(this->_nt);  // drop fakes in final bin
   this->_cache._unfolded= true;
   this->_cache._haveCov=  false;
@@ -116,7 +116,7 @@ RooUnfoldPoissonT<Hist,Hist2D>::GetSettings() const
 template<class Hist,class Hist2D> void
 RooUnfoldPoissonT<Hist,Hist2D>::setup() const
 {
-  this->_response.ResizeTo(this->_nt,this->_nt);
+  this->_response.ResizeTo(this->_nm,this->_nt);
   this->_response = this->_res->Mresponse(true);
   this->_data.ResizeTo(this->_nm);
   this->_data = this->Vmeasured();
@@ -182,6 +182,8 @@ RooUnfoldPoissonT<Hist,Hist2D>::TikinovReg(const double* truth) const
 template<class Hist,class Hist2D> Double_t
 RooUnfoldPoissonT<Hist,Hist2D>::RegLLH(const double* truth) const
 {
+  
+  //std::cout << NegativeLLH(truth) << " " << this->_regparm << " " << TikinovReg(truth) << std::endl;
   return NegativeLLH(truth) + this->_regparm*TikinovReg(truth);
 }
 
@@ -207,7 +209,7 @@ RooUnfoldPoissonT<Hist,Hist2D>::MinimizeRegLLH() const
   for (int i = 0; i < _response.GetNcols(); i++){
     step[i] = 1;
     start[i] = _truth_start[i];
-
+    
     std::string s = std::to_string(i);
     std::string x("mu");
     x.append(s);

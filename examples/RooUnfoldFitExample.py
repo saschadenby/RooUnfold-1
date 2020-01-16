@@ -306,6 +306,8 @@ def algorithm(method):
     alg= ROOT.RooUnfolding.kIDS;
   elif method == "gp":
     alg= ROOT.RooUnfolding.kGP;
+  elif method == "ps":
+    alg= ROOT.RooUnfolding.kPoisson;
   else:
     print("The passed unfolding method does not match any of the supported methods. Please pass one of the following methods:")
     print("bayes")
@@ -315,6 +317,7 @@ def algorithm(method):
     print("root")
     print("ids")
     print("gp")
+    print("ps")
     exit(0)
 
   return alg
@@ -343,7 +346,7 @@ dict_data['eff'] = 'lin'
 dict_data['frac'] = 0.5
                                                   
 # Overflow flag.         
-overflow = True          
+overflow = False          
                                                         
 # Number of events.            
 dict_data['nevents'] = 50000    
@@ -416,7 +419,7 @@ def main(args):
   unfold.PrintTable(ROOT.cout, test_truth_RFH)#, ROOT.RooUnfolding.kRooFit)
 
   # Plot the results.
-  plot_result(histograms["truth_test"], func, True)
+  #plot_result(histograms["truth_test"], func, True)
 
   
 
