@@ -1,10 +1,6 @@
 /*! \class RooUnfoldPoissonT
 */
 
-//#define OLDERRS   // restore old (incorrect) error calculation
-//#define OLDERRS2  // restore old (incorrect) systematic error calculation
-//#define OLDMULT   // restore old (slower) matrix multiplications
-
 #include "RooUnfoldPoisson.h"
 #include "RooUnfoldTH1Helpers.h"
 #ifndef NOROOFIT
@@ -18,10 +14,6 @@
 #include "TNamed.h"
 #include "TH1.h"
 #include "TH2.h"
-
-#include "Math/Minimizer.h"
-#include "Math/Factory.h"
-#include "Math/Functor.h"
 
 #include "RooUnfoldHelpers.h"
 #include "RooUnfoldResponse.h"
@@ -84,21 +76,42 @@ RooUnfoldPoissonT<Hist,Hist2D>::Unfold() const
   // Set the start values of the truth bins according to some
   // passed truth histogram -> User should define this! Default response truth.
 
+
+  // Scale the distributions.
+
   // Minimize the regularized nllh.
-  MinimizeRegLLH();
-  
-  this->_cache._rec.ResizeTo(this->_nt);  // drop fakes in final bin
+  _min = MinimizeRegLLH();
+
+  if (_min->Status()){
+    std::cerr << "Minimization did not converge. No unfolded results available.";
+    return;
+  }
+
+
+  this->_cache._rec.ResizeTo(this->_nt);
+
+  if (!getVunfolded()) return;
+
+  this->_cache._rec = this->_unfolded;
   this->_cache._unfolded= true;
-  this->_cache._haveCov=  false;
 }
 
 template<class Hist,class Hist2D> void
 RooUnfoldPoissonT<Hist,Hist2D>::GetCov() const
 {
-    // Get covariance.
 
+  // Check convergence and otherwise return.
+  if (_min->Status()){
+    std::cerr << "Minimization did not converge. No unfolded results available.";
+    return;
+  }
+
+  // Get covariance.
   this->_cache._cov.ResizeTo (this->_nt, this->_nt);
 
+  if (!getMcovariance()) return;
+
+  this->_cache._cov = this->_covariance;
   this->_cache._haveCov= true;
 }
 
@@ -116,12 +129,16 @@ RooUnfoldPoissonT<Hist,Hist2D>::GetSettings() const
 template<class Hist,class Hist2D> void
 RooUnfoldPoissonT<Hist,Hist2D>::setup() const
 {
+  this->_min = NULL;
+  this->_unfolded.ResizeTo(this->_nt);
+  this->_covariance.ResizeTo(this->_nt,this->_nt);
   this->_response.ResizeTo(this->_nm,this->_nt);
   this->_response = this->_res->Mresponse(true);
   this->_data.ResizeTo(this->_nm);
   this->_data = this->Vmeasured();
   this->_truth_start.ResizeTo(this->_nt);
   this->_truth_start = this->_res->Vtruth();
+  this->_RegLLH_factor = 0.0001;
 }
 
 template<class Hist,class Hist2D> void
@@ -182,21 +199,21 @@ RooUnfoldPoissonT<Hist,Hist2D>::TikinovReg(const double* truth) const
 template<class Hist,class Hist2D> Double_t
 RooUnfoldPoissonT<Hist,Hist2D>::RegLLH(const double* truth) const
 {
-  
-  //std::cout << NegativeLLH(truth) << " " << this->_regparm << " " << TikinovReg(truth) << std::endl;
-  return NegativeLLH(truth) + this->_regparm*TikinovReg(truth);
+  // The _RegLLH_factor is used to reduce the function value such that it stays
+  // within machine accuracy limit.
+  return NegativeLLH(truth)*(this->_regparm) + TikinovReg(truth);
 }
 
 
-template<class Hist,class Hist2D> void
+template<class Hist,class Hist2D> ROOT::Math::Minimizer*
 RooUnfoldPoissonT<Hist,Hist2D>::MinimizeRegLLH() const
 {
   ROOT::Math::Minimizer* min = ROOT::Math::Factory::CreateMinimizer("Minuit2", "Migrad");
 
   min->SetMaxFunctionCalls(10000000);
-  min->SetTolerance(0.001);
-  min->SetStrategy(2);
+  min->SetTolerance(0.0001);
   min->SetPrintLevel(1);
+  //min->SetPrecision(0.00000001);
 
 
   ROOT::Math::Functor f(this, &RooUnfoldPoissonT<Hist,Hist2D>::RegLLH,_response.GetNcols());
@@ -222,7 +239,49 @@ RooUnfoldPoissonT<Hist,Hist2D>::MinimizeRegLLH() const
 
   delete[] step;
   delete[] start;
-  delete min;
+  return min;
+}
+
+template<class Hist,class Hist2D> Bool_t
+RooUnfoldPoissonT<Hist,Hist2D>::getVunfolded() const
+{
+
+  if (this->_cache._unfolded) return true;
+
+  if (!_min) {
+    std::cerr << "Minimizer is not yet initialized. Unfolded results is not available.";
+    return false;
+  }
+
+  for (int i = 0; i < this->_nt; i++){
+    _unfolded[i] = (_min->X())[i];
+  }
+
+  if (!_unfolded.NonZeros()) false;
+
+  return true;
+}
+
+template<class Hist,class Hist2D> Bool_t
+RooUnfoldPoissonT<Hist,Hist2D>::getMcovariance() const
+{
+
+  if (this->_cache._haveCov) return true;
+
+  if (!_min) {
+    std::cerr << "Minimizer is not yet initialized. Unfolded results is not available.";
+    return false;
+  }
+  
+  for (int i = 0; i < _covariance.GetNrows(); i++){
+    for (int j = 0; j < _covariance.GetNcols(); j++){
+      _covariance[i][j] = _min->CovMatrix(i,j)/_RegLLH_factor;
+    }
+  }
+  
+  if (!_covariance.NonZeros()) false;
+
+  return true;
 }
 
 

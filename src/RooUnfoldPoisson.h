@@ -1,7 +1,5 @@
 //=====================================================================-*-C++-*-
-//! \class RooUnfoldBayesT
-//! \brief Bayesian unfolding. Just an interface to RooUnfoldBayesImpl.
-//! \author Tim Adye <T.J.Adye@rl.ac.uk>
+//! \class RooUnfoldPoissonT
 //==============================================================================
 
 #ifndef ROOUNFOLDPOISSON_HH
@@ -10,6 +8,10 @@
 #include "RooUnfold.h"
 #include "RooUnfoldResponse.h"
 
+
+#include "Math/Minimizer.h"
+#include "Math/Factory.h"
+#include "Math/Functor.h"
 #include "TVectorD.h"
 #include "TMatrixD.h"
 
@@ -52,17 +54,24 @@ private:
   Double_t TikinovReg(const double* truth) const;
   Double_t RegLLH(const double* truth) const;
 
-  void MinimizeRegLLH() const;
+  ROOT::Math::Minimizer* MinimizeRegLLH() const;
+
+  Bool_t getVunfolded() const;
+  Bool_t getMcovariance() const;
 
   void Init();
   void CopyData (const RooUnfoldPoissonT<Hist,Hist2D>& rhs);
 
 protected:
   // instance variables
+  mutable ROOT::Math::Minimizer* _min;
+  mutable Double_t _RegLLH_factor;
   mutable double _regparm;
   mutable TMatrixD _response;
   mutable TVectorD _data;
   mutable TVectorD _truth_start;
+  mutable TVectorD _unfolded;
+  mutable TMatrixD _covariance;
 
 public:
   ClassDefT (RooUnfoldPoissonT, 1) 

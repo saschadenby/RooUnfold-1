@@ -726,7 +726,6 @@ template<class Hist,class Hist2D> Bool_t
 RooUnfoldT<Hist,Hist2D>::UnfoldWithErrors (ErrorTreatment withError, bool getWeights) const
 {
   //! This method initializes the unfolding with errors.
-
   if (!_cache._unfolded) {
 
     if (_cache._fail) return false;
@@ -743,7 +742,7 @@ RooUnfoldT<Hist,Hist2D>::UnfoldWithErrors (ErrorTreatment withError, bool getWei
   if(_withError != withError) _cache._haveErrors = false;
   _withError= withError;
   if (getWeights && (withError==kErrors || withError==kCovariance)) {
-    if   (!_cache._haveWgt)        GetWgt();
+    if   (!_cache._haveWgt)    GetWgt();
     ok= _cache._haveWgt;
   } else {
     switch (withError) {
@@ -766,7 +765,7 @@ RooUnfoldT<Hist,Hist2D>::UnfoldWithErrors (ErrorTreatment withError, bool getWei
   }
 
   if (!ok) _cache._fail= true;
-  
+
   return ok;
 }
 
@@ -818,7 +817,7 @@ RooUnfoldT<Hist,Hist2D>::PrintTable (std::ostream& o, const Hist* hTrue, ErrorTr
   if (!hTrue){
     hTrue = response()->Htruth();
   }
-  
+
   const Hist* hTrainTrue = response()->Htruth();
   const Hist* hTrain = response()->Hmeasured();
   const Hist* hMeas = Hmeasured();
@@ -1523,7 +1522,6 @@ template<> void
 RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>::RunToys(int ntoys, std::vector<TVectorD>& vx, std::vector<TVectorD>& vxe, std::vector<double>& chi2) const {
   //! run a number of toys, fill the values, errors and chi2 in the
   //! given vectors
-
   const auto* res = this->response();
   RooArgSet errorParams;
   if(this->_dosys != kNoMeasured){
@@ -1701,10 +1699,9 @@ template<> void RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>::G
   _withError = kNoError;
   this->RunToys(this->_NToys,values,etoys,chi2);
   _withError = errortmp;
-  
+
   this->ForceRecalculation();
   this->Unfold();
-
   int n = (int)(values.size());
   _cache._variances.ResizeTo(_nt);
   for (int i=0 ; i<this->_nt ; ++i) {
