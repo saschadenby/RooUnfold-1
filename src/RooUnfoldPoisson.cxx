@@ -82,8 +82,8 @@ RooUnfoldPoissonT<Hist,Hist2D>::Unfold() const
   // Minimize the regularized nllh.
   _min = MinimizeRegLLH();
 
-  if (_min->Status()){
-    std::cerr << "Minimization did not converge. No unfolded results available.";
+  if (_min->Status() && this->_verbose){
+    std::cout << "Regularized negative log-likelihood did not converge. Check input and minimization settings." << std::endl;
     return;
   }
 
@@ -138,7 +138,7 @@ RooUnfoldPoissonT<Hist,Hist2D>::setup() const
   this->_data = this->Vmeasured();
   this->_truth_start.ResizeTo(this->_nt);
   this->_truth_start = this->_res->Vtruth();
-  this->_RegLLH_factor = 0.0001;
+  this->_RegLLH_factor = 0.01;
 }
 
 template<class Hist,class Hist2D> void
@@ -179,7 +179,7 @@ RooUnfoldPoissonT<Hist,Hist2D>::NegativeLLH(const double* truth) const
 
   delete[] nu;
 
-  return func_val;
+  return _RegLLH_factor*func_val;
 }
 
 template<class Hist,class Hist2D> Double_t
@@ -193,7 +193,7 @@ RooUnfoldPoissonT<Hist,Hist2D>::TikinovReg(const double* truth) const
     func_val += der*der;
   }
 
-  return func_val;
+  return _RegLLH_factor*func_val;
 }
 
 template<class Hist,class Hist2D> Double_t
@@ -201,19 +201,20 @@ RooUnfoldPoissonT<Hist,Hist2D>::RegLLH(const double* truth) const
 {
   // The _RegLLH_factor is used to reduce the function value such that it stays
   // within machine accuracy limit.
-  return NegativeLLH(truth)*(this->_regparm) + TikinovReg(truth);
+  return NegativeLLH(truth) + (this->_regparm)*TikinovReg(truth);
 }
 
 
 template<class Hist,class Hist2D> ROOT::Math::Minimizer*
 RooUnfoldPoissonT<Hist,Hist2D>::MinimizeRegLLH() const
 {
-  ROOT::Math::Minimizer* min = ROOT::Math::Factory::CreateMinimizer("Minuit2", "Migrad");
+  ROOT::Math::Minimizer* min = ROOT::Math::Factory::CreateMinimizer("Minuit2", "Minimize");
 
-  min->SetMaxFunctionCalls(10000000);
-  min->SetTolerance(0.0001);
-  min->SetPrintLevel(1);
-  //min->SetPrecision(0.00000001);
+  min->SetMaxFunctionCalls(1000000000);
+  min->SetTolerance(0.01);
+  min->SetPrintLevel(0);
+  min->SetStrategy(3);
+  min->SetPrecision(0.0000000001);
 
 
   ROOT::Math::Functor f(this, &RooUnfoldPoissonT<Hist,Hist2D>::RegLLH,_response.GetNcols());
@@ -224,14 +225,14 @@ RooUnfoldPoissonT<Hist,Hist2D>::MinimizeRegLLH() const
   double* start = new double[_response.GetNcols()];
 
   for (int i = 0; i < _response.GetNcols(); i++){
-    step[i] = 1;
+    step[i] = 0.1;
     start[i] = _truth_start[i];
     
     std::string s = std::to_string(i);
     std::string x("mu");
     x.append(s);
 
-    min->SetVariable(i,x.c_str(),start[i], step[i]);
+    min->SetLowerLimitedVariable(i,x.c_str(),start[i], step[i], 0);
   }
 
   // do the minimization

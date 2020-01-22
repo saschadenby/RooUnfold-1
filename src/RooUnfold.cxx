@@ -1556,21 +1556,58 @@ RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>::RunToys(int ntoys
     }
     ((::FitResultHack*)prefitResult)->setCovariance(setCov);
   }
-  
 
   RooAbsPdf* paramPdf = prefitResult->createHessePdf(errorParams) ;
   RooDataSet* d = paramPdf->generate(errorParams,ntoys) ;
 
+  Int_t failed_toys = 0;
+
   auto errorType = _withError;
   _withError = kDefault;
   for(int i=0; i<ntoys; ++i){
-    errorParams = (*d->get(i)) ;
+    errorParams = (*d->get(i));
     this->ForceRecalculation();
+ 
+    //! add this extra check in case a toy unfolding failed
+    if (this->Vunfold().GetNrows() == 1){
+      failed_toys++;
+      continue;
+    }
+
     vx.push_back(this->Vunfold());
     if(errorType != kNoError){
       vxe.push_back(this->EunfoldV());
       chi2.push_back(this->Chi2 (this->response()->Htruth()));
     }
+  }
+
+  //! set an maximum amount of retries to avoid the retry of toys
+  //! loop 
+  Int_t max_retries = ntoys;
+
+  //! run an extra loop for failed toys.
+  while(failed_toys != 0 && max_retries != 0){
+
+    RooDataSet* d_retry = paramPdf->generate(errorParams,1);
+
+    errorParams = (*d_retry->get(0)) ;
+    this->ForceRecalculation();
+
+    //! add this extra check in case a toy unfolding failed
+    if (this->Vunfold().GetNrows() == 1){
+      max_retries--;
+      delete d_retry;
+      continue;
+    } 
+
+    vx.push_back(this->Vunfold());
+    if(errorType != kNoError){
+      vxe.push_back(this->EunfoldV());
+      chi2.push_back(this->Chi2 (this->response()->Htruth()));
+    }
+
+    failed_toys--;
+    delete d_retry;
   }
 
   _withError =  errorType;

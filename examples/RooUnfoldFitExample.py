@@ -346,7 +346,7 @@ dict_data['eff'] = 'lin'
 dict_data['frac'] = 0.5
                                                   
 # Overflow flag.         
-overflow = False          
+overflow = True
                                                         
 # Number of events.            
 dict_data['nevents'] = 50000    
