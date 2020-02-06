@@ -1554,6 +1554,7 @@ RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>::RunToys(int ntoys
         setCov(idx1,idx2) = val;
       }
     }
+    
     ((::FitResultHack*)prefitResult)->setCovariance(setCov);
   }
 

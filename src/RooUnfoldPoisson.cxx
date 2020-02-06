@@ -226,7 +226,12 @@ RooUnfoldPoissonT<Hist,Hist2D>::MinimizeRegLLH() const
 
   for (int i = 0; i < _response.GetNcols(); i++){
     step[i] = 0.1;
-    start[i] = _truth_start[i];
+    if (!_truth_start[i]){
+      start[i] = 0.00001;
+    } else {
+      start[i] = _truth_start[i];
+    }
+
     
     std::string s = std::to_string(i);
     std::string x("mu");
