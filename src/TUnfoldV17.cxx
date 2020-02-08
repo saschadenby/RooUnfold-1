@@ -118,6 +118,8 @@ constraint, both x and &lambda; are determined.
 #include <map>
 #include <vector>
 
+#include "Math/ProbFunc.h"
+
 //#define DEBUG
 //#define DEBUG_DETAIL
 //#define FORCE_EIGENVALUE_DECOMPOSITION
@@ -4369,4 +4371,188 @@ Int_t TUnfoldV17::ScanSURE
    return iBest;
 }
 
+//*********************************************************************//
+//*********************************************************************//
+// Contribution of JLK and MK starts here                              //
+//*********************************************************************//
+//*********************************************************************//
 
+
+TVectorD TUnfoldV17::ComputeCoverage(TMatrixD *beta, Double_t tau)
+{
+  if(!fVyyInv) {
+    GetInputInverseEmatrix(0);
+    if(fConstraint != kEConstraintNone) {
+      fNdf--;
+    }
+  }
+
+  // calculate bias
+  TMatrixDSparse *AtVyyinv=MultiplyMSparseTranspMSparse(fA,fVyyInv);
+  fEinv=MultiplyMSparseMSparse(AtVyyinv,fA);
+  TMatrixDSparse *lSquared=MultiplyMSparseTranspMSparse(fL,fL);
+  AddMSparse(fEinv,tau*tau,lSquared);
+
+  //         T              2 T   -1
+  // fE = [A  Vyyinv A + tau L L]
+  Int_t rank=0;
+  fE = InvertMSparseSymmPos(fEinv,&rank);
+
+  // calculate linear estimator
+  TMatrixDSparse *EAtVyyinv=MultiplyMSparseMSparse(fE,AtVyyinv);
+  TMatrixDSparse *EAtVyyinvA=MultiplyMSparseMSparse(EAtVyyinv,fA);
+
+  TMatrixDSparse *Unit;
+  Unit=new TMatrixDSparse(*EAtVyyinvA);
+  Unit->UnitMatrix();
+
+  AddMSparse(EAtVyyinvA, -1.0, Unit);
+
+  TMatrixDSparse *biasSparse=MultiplyMSparseM(EAtVyyinvA,beta);
+
+  if (fBiasScale != 0.0) {
+    TMatrixDSparse *lSquaredScaled = &((*lSquared)*=tau*tau);
+    TMatrixD *fX0Scaled = &((*fX0)*=fBiasScale);
+    TMatrixDSparse *taulSquaredfX0=MultiplyMSparseM(lSquaredScaled, fX0Scaled);
+    TMatrixDSparse *EtaulSquaredfX0=MultiplyMSparseMSparse(fE, taulSquaredfX0);
+    AddMSparse(biasSparse, 1.0, EtaulSquaredfX0);
+  }
+
+  Double_t *bias_data = biasSparse->GetMatrixArray();
+
+  // calculate SE
+  TMatrixDSparse *EAtVyyinvVyy = MultiplyMSparseMSparse(EAtVyyinv, fVyy);
+
+  // Transpose EAtVyyinv
+  TMatrixDSparse *EAtVyyinvt = new TMatrixDSparse(EAtVyyinv->GetNcols(),EAtVyyinv->GetNrows());
+  EAtVyyinvt->Transpose(*EAtVyyinv);
+
+
+  TMatrixDSparse *SE = MultiplyMSparseMSparse(EAtVyyinvVyy, EAtVyyinvt);
+  SE->Sqrt();
+
+
+  // extract diagonal elements of SE
+  const Int_t *SE_rows=SE->GetRowIndexArray();
+  const Int_t *SE_cols=SE->GetColIndexArray();
+  const Double_t *SE_data=SE->GetMatrixArray();
+  // SEii: diagonals of SE
+  TVectorD SEii(SE->GetNrows());
+  Int_t nError=0;
+  for(Int_t iA=0;iA<SE->GetNrows();iA++) {
+    for(Int_t indexA=SE_rows[iA];indexA<SE_rows[iA+1];indexA++) {
+      Int_t jA=SE_cols[indexA];
+      if(iA==jA) {
+	if(!(SE_data[indexA]>=0.0)) nError++;
+	SEii(iA)=SE_data[indexA];
+      }
+    }
+  }
+
+  Int_t dim = fXToHist.GetSize() - 2;
+  // dim should equal the # of bins in TRUE space
+  // Subtracts 2 because in TUnfold constructor,
+  // 2 is added to the # of bins in TRUE space
+  // for overflow purpose
+
+  TVectorD Coverage_probability(dim);
+
+  for(Int_t i=0; i<dim; i++) {
+    Coverage_probability(i) = ROOT::Math::normal_cdf(bias_data[i]/SEii(i)+1)
+      - ROOT::Math::normal_cdf(bias_data[i]/SEii(i)-1);
+  }
+  return Coverage_probability;
+}
+
+TVectorD TUnfoldV17::ComputeCoverage(TH1 *hist_beta, Double_t tau)
+{
+  // converting TH1 hist_beta to TMatrixD beta
+  TMatrixD *beta;
+  beta = new TMatrixD(GetNx(), 1);
+  for (Int_t i = 0; i < GetNx(); i++) {
+    (*beta) (i, 0) = hist_beta->GetBinContent(fXToHist[i]);
+  }
+
+  TVectorD Coverage_probability = ComputeCoverage(beta, tau);
+  return Coverage_probability;
+}
+
+Double_t TUnfoldV17::UndersmoothTau(Double_t tau, Double_t epsilon, Int_t max_iter)
+{
+  if(tau <= 0) {
+    Error("UndersmoothedUnfolding::UndersmoothTau", "Tau should be strictly positive");
+    return std::numeric_limits<double>::infinity();
+  }
+  if(epsilon <= 0) {
+    Error("UndersmoothedUnfolding::UndersmoothTau", "Tolerance should be strictly positive");
+    return std::numeric_limits<double>::infinity();
+  }
+  if(max_iter <= 0) {
+    Error("UndersmoothedUnfolding::UndersmoothTau", "Max number of iteration should be strictly positive");
+    return std::numeric_limits<double>::infinity();
+  }
+
+  Double_t nominalCoverage = ROOT::Math::normal_cdf(1) - ROOT::Math::normal_cdf(-1);
+
+  //Double_t scaling = sqrt(0.95);
+  Double_t scaling = 0.90;
+
+  Int_t num_iter = 0;
+  Int_t fixed = 0;
+  Double_t coverages[2]={0.0};
+
+  TMatrixD *fXHat = 0;
+  TMatrixD *fXHatPrev = 0;
+
+  do {
+    if (fixed != 1) {
+      fXHatPrev = fXHat;
+
+      TMatrixDSparse *AtVyyinv=MultiplyMSparseTranspMSparse(fA,fVyyInv);
+      TMatrixDSparse *rhs=MultiplyMSparseM(AtVyyinv,fY);
+      TMatrixDSparse *lSquared=MultiplyMSparseTranspMSparse(fL,fL);
+      if (fBiasScale != 0.0) {
+        TMatrixDSparse *rhs2=MultiplyMSparseM(lSquared,fX0);
+	AddMSparse(rhs, tau*tau * fBiasScale ,rhs2);
+	DeleteMatrix(&rhs2);
+      }
+      fEinv=MultiplyMSparseMSparse(AtVyyinv,fA);
+      AddMSparse(fEinv,tau*tau,lSquared);
+      Int_t rank=0;
+      fE = InvertMSparseSymmPos(fEinv,&rank);
+      TMatrixDSparse *xSparse=MultiplyMSparseMSparse(fE,rhs);
+      fXHat = new TMatrixD(*xSparse);
+      DeleteMatrix(&rhs);
+      DeleteMatrix(&xSparse);
+      //std::cout << "Obtained new BetaHat" << std::endl;
+    }
+
+    TVectorD computedCoverage = ComputeCoverage(fXHat, tau);
+    coverages[0] = coverages[1];
+    coverages[1] = computedCoverage.Min();
+    Info("UndersmoothTau", "Current computed coverage: %lf", coverages[1]);
+
+    if (coverages[0] > coverages[1]) {
+      Info("UndersmoothTau", "Computed coverage decreased\nPrevious: %lf, Now: %lf",
+	   coverages[0], coverages[1]);
+
+      fixed = 1;
+      fXHat = fXHatPrev;
+      TVectorD computedCoverage = ComputeCoverage(fXHat, tau);
+      coverages[1] = computedCoverage.Min();
+    }
+    tau = tau * scaling;
+    Info("UndersmoothTau", "Decreasing tau to %lf", tau);
+
+    num_iter = num_iter+1;
+  } while (coverages[1] < nominalCoverage-epsilon && num_iter<max_iter);
+  tau = tau / scaling;
+  Info("UndersmoothTau", "Obtained estimated coverage: %lf", coverages[1]);
+  return tau;
+}
+
+//*********************************************************************//
+//*********************************************************************//
+// Contribution of JLK and MK ends here                              //
+//*********************************************************************//
+//*********************************************************************//

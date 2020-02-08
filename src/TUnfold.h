@@ -310,6 +310,15 @@ public:
    Double_t GetRhoI(TH1 *rhoi,const Int_t *binMap=0,TH2 *invEmat=0) const;
    void GetFoldedOutput(TH1 *folded,const Int_t *binMap=0) const;
 
+   //////////////////////////////////////////////////////////////////////////////////////////
+   //////////////////////////////////////////////////////////////////////////////////////////
+   // Implemented by Junhung Lyle Kim and Mikael Kuusela                                   //
+   TVectorD ComputeCoverage(TMatrixD *beta, Double_t tau);                                 //
+   TVectorD ComputeCoverage(TH1 *hist_beta, Double_t tau);                                 //
+   Double_t UndersmoothTau(Double_t tau_init, Double_t epsilon=0.01, Int_t max_iter=1000); //
+   //////////////////////////////////////////////////////////////////////////////////////////
+   //////////////////////////////////////////////////////////////////////////////////////////
+
    double GetDF(void) const; // effective number of degrees of freedom
    double GetSURE(void) const; // Stein's unbiased risk estimator
 
