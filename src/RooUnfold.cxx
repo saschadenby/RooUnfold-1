@@ -417,8 +417,7 @@ RooUnfoldT<Hist,Hist2D>::SetTruth (const TVectorD& truth, const TVectorD& err)
 template<class Hist,class Hist2D> void
 RooUnfoldT<Hist,Hist2D>::SetBkg (const Hist* bkg)
 {
-  
-  //! Set truth distribution and errors. RooUnfold does not own the histogram.
+  //! Set background distribution and errors. RooUnfold does not own the histogram.
   _bkg= clone(bkg);
   _cache = Cache();
 }
@@ -487,7 +486,6 @@ RooUnfoldT<Hist,Hist2D>::SetResponse (const RooUnfoldResponseT<Hist,Hist2D>* res
 template<class Hist,class Hist2D> void
 RooUnfoldT<Hist,Hist2D>::Unfold() const
 {
-
   //! Dummy unfolding - just copies input
   cout << "********************** " << ClassName() << ": dummy unfolding - just copy input **********************" << endl;
 
@@ -1558,17 +1556,16 @@ RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>::RunToys(int ntoys
     ((::FitResultHack*)prefitResult)->setCovariance(setCov);
   }
 
-  RooAbsPdf* paramPdf = prefitResult->createHessePdf(errorParams) ;
-  RooDataSet* d = paramPdf->generate(errorParams,ntoys) ;
+  RooAbsPdf* paramPdf = prefitResult->createHessePdf(errorParams);
+  RooDataSet* d = paramPdf->generate(errorParams,ntoys);
 
   Int_t failed_toys = 0;
-
   auto errorType = _withError;
   _withError = kDefault;
   for(int i=0; i<ntoys; ++i){
     errorParams = (*d->get(i));
     this->ForceRecalculation();
- 
+
     //! add this extra check in case a toy unfolding failed
     if (this->Vunfold().GetNrows() == 1){
       failed_toys++;

@@ -261,12 +261,11 @@ RooUnfoldTUnfoldT<Hist,Hist2D>::Unfold() const
     //Int_t bestPoint = _unf->ScanLcurve(nScan,tauMin,tauMax,&_lCurve,&_logTauX,&_logTauY);
     _tau=_unf->GetTau();  // save value, even if we don't use it unless tau_set
     std::cout <<"Lcurve scan chose tau= "<<_tau<<std::endl<<" at point "<<bestPoint<<std::endl;
-  } else {
-    _unf->DoUnfold(_tau);
+    
+    // Added the undersmoothing method developed by Junhyung Lyle Kim and Mikael Kuusela
+    _tau = _unf->UndersmoothTau(_tau, 0.01, 1000);
   }
-  
-  // Added the undersmoothing method developed by Junhyung Lyle Kim and Mikael Kuusela
-  _tau = _unf->UndersmoothTau(_tau, 0.01, 1000);
+
   _unf->DoUnfold(_tau);
 
   TH1F reco("_cache._rec","reconstructed dist",this->_nt,0.0,this->_nt);
