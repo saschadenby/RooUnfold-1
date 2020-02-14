@@ -1732,7 +1732,9 @@ template<> void RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>::G
   std::vector<double> chi2;
   auto errortmp = _withError;
   _withError = kNoError;
+
   this->RunToys(this->_NToys,values,etoys,chi2);
+
   _withError = errortmp;
 
   this->ForceRecalculation();
