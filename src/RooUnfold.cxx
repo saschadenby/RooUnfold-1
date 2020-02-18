@@ -80,6 +80,7 @@
 #include "TDecompChol.h"
 #include "TRandom.h"
 #include "TMath.h"
+#include "Math/ProbFunc.h"
 
 #include "RooUnfoldResponse.h"
 #include "RooUnfoldErrors.h"
@@ -1108,6 +1109,37 @@ RooUnfoldT<Hist,Hist2D>::Wunfold(ErrorTreatment withError) const
 
     return Wunfold_m;
 }
+
+// !The coverage calculation is based on Mikael Kuusela's PhD thesis p. 84 
+// !paragraph 6.4.2. The assummptions for this closed form probability solution
+// !are that the estimator is a linear function of the observed data and that
+// !the observed bin counts follow a Gaussian distribution.
+template<class Hist,class Hist2D> TVectorD
+RooUnfoldT<Hist,Hist2D>::CoverageProbV(TVectorD& bias, TVectorD& se) const
+{
+  
+  // // Check if bias is calculated. Do so if not.
+  // if (!_cache._haveBias){
+  //   this->CalculateBias(RooUnfolding::kBiasAsimov,50);
+  // }
+
+  // TVectorD bias(_cache._bias);
+  // TVectorD se(this->EunfoldV());
+
+  TVectorD coverage(se.GetNrows());
+  TVectorD vtruth(this->_res->Vtruth());
+
+  for (int i = 0; i < coverage.GetNrows(); i++){
+    if (se(i)){
+      coverage(i) = ROOT::Math::normal_cdf(vtruth(i)*bias(i)/se(i) + 1) - ROOT::Math::normal_cdf(vtruth(i)*bias(i)/se(i) - 1);
+    } else {
+      coverage(i) = 0;
+    }
+  }
+
+  return coverage;
+}
+
 
 template<class Hist,class Hist2D> Int_t
 RooUnfoldT<Hist,Hist2D>::InvertMatrix(const TMatrixD& mat, TMatrixD& inv, const char* name, Int_t verbose)
