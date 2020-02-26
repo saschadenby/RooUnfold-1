@@ -98,7 +98,9 @@ public:
   virtual TVectorD   EunfoldV (RooUnfolding::ErrorTreatment witherror=RooUnfolding::kErrors) const;
   virtual TMatrixD   Wunfold  (RooUnfolding::ErrorTreatment witherror=RooUnfolding::kCovariance) const;
 
-  virtual TVectorD   CoverageProbV(TVectorD& bias, TVectorD& se) const;
+  virtual TVectorD   CoverageProbV(Int_t sigma=1) const;
+  virtual TVectorD   ScanCoverage(TVectorD& regparms, Int_t bin = -1, Int_t sigma=1) const;
+  virtual TVectorD   ScanBias2Var(TVectorD& regparms, Int_t bin = -1) const;
 
   virtual Int_t      verbose() const;
   virtual void       SetVerbose (Int_t level);

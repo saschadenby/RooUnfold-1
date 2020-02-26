@@ -1114,30 +1114,111 @@ RooUnfoldT<Hist,Hist2D>::Wunfold(ErrorTreatment withError) const
 // !paragraph 6.4.2. The assummptions for this closed form probability solution
 // !are that the estimator is a linear function of the observed data and that
 // !the observed bin counts follow a Gaussian distribution.
+
+// !The input argument defines the confidence level with 1 sigma indicating
+// !a confidence level of 0.6827, 2 sigma 0.9545 and 3 sigma 0.9973.
+
+// !The output is a vector which contains the coverage probability for each bin.
 template<class Hist,class Hist2D> TVectorD
-RooUnfoldT<Hist,Hist2D>::CoverageProbV(TVectorD& bias, TVectorD& se) const
+RooUnfoldT<Hist,Hist2D>::CoverageProbV(Int_t sigma) const
 {
   
-  // // Check if bias is calculated. Do so if not.
-  // if (!_cache._haveBias){
-  //   this->CalculateBias(RooUnfolding::kBiasAsimov,50);
-  // }
+  // Check if bias is calculated. Do so if not.
+  if (!_cache._haveBias){
+    this->CalculateBias(RooUnfolding::kBiasAsimov,100);
+  }
 
-  // TVectorD bias(_cache._bias);
-  // TVectorD se(this->EunfoldV());
+  TVectorD bias(_cache._bias);
+  TVectorD se(this->EunfoldV(RooUnfolding::kRooFit));
 
   TVectorD coverage(se.GetNrows());
   TVectorD vtruth(this->_res->Vtruth());
 
+  if (sigma < 1){
+    std::cout << "Pass a positive integer to define the confidence interval" << std::endl;
+    return coverage;
+  }
+
   for (int i = 0; i < coverage.GetNrows(); i++){
+
     if (se(i)){
-      coverage(i) = ROOT::Math::normal_cdf(vtruth(i)*bias(i)/se(i) + 1) - ROOT::Math::normal_cdf(vtruth(i)*bias(i)/se(i) - 1);
+      coverage(i) = ROOT::Math::normal_cdf(vtruth(i)*bias(i)/se(i) + sigma) - ROOT::Math::normal_cdf(vtruth(i)*bias(i)/se(i) - sigma);
     } else {
       coverage(i) = 0;
     }
   }
-
+  
   return coverage;
+}
+
+
+//! Scan the coverage probability for a given set of regularisation parameter values.
+//! One can either do so for a specified bin or averaging over all bins(bin=-1).
+//! One can also specify the confidence level(sigma).
+template<class Hist,class Hist2D> TVectorD
+RooUnfoldT<Hist,Hist2D>::ScanCoverage(TVectorD& regparms, Int_t bin, Int_t sigma) const
+{
+  TVectorD coverageprobs(regparms.GetNrows());
+  
+  for (int i = 0; i < regparms.GetNrows(); i++){
+    
+    auto* toy_unfold = this->New(this->GetAlgorithm(),this->response(),this->Hmeasured(),regparms(i));
+    
+    TVectorD cov(toy_unfold->CoverageProbV(sigma));
+    
+    if (bin > 0 && bin < cov.GetNrows()){
+      coverageprobs(i) = cov(bin);
+    } else {
+      coverageprobs(i) = cov.Sum() / cov.GetNrows();
+    }
+
+    delete toy_unfold;
+  }
+  
+  return coverageprobs;
+}
+
+//! Scan the coverage probability for a given set of regularisation parameter values.
+//! One can either do so for a specified bin or averaging over all bins(bin=-1).
+//! One can also specify the confidence level(sigma).
+template<class Hist,class Hist2D> TVectorD
+RooUnfoldT<Hist,Hist2D>::ScanBias2Var(TVectorD& regparms, Int_t bin) const
+{
+  TVectorD bias2var(regparms.GetNrows());
+  
+  for (int i = 0; i < regparms.GetNrows(); i++){
+    
+    auto* toy_unfold = this->New(this->GetAlgorithm(),this->response(),this->Hmeasured(),regparms(i));
+    
+    //! Calculate the bias.
+    toy_unfold->CalculateBias(RooUnfolding::kBiasAsimov,100);
+  
+    //! Get the unfolded distribution.
+    TVectorD unfold(toy_unfold->Vunfold());
+
+    //! Get the bias.
+    TVectorD bias(toy_unfold->Vbias());
+
+    //! Get the error on the unfolded result.
+    TVectorD se(toy_unfold->EunfoldV(RooUnfolding::kRooFit));
+    
+    if (bin > 0 && bin < bias.GetNrows()){
+      bias2var(i) = bias(bin)*bias(bin) + (se(bin)/unfold(bin))*(se(bin)/unfold(bin));
+    } else {
+      
+      Double_t bias2varsum = 0;
+
+      for (int j = 0; j < bias.GetNrows(); j++){
+	bias2varsum += bias(j)*bias(j) + (se(j)/unfold(j))*(se(j)/unfold(j));
+      }
+
+      bias2var(i) = bias2varsum / bias.GetNrows();
+    }
+
+    delete toy_unfold;
+  }
+  
+  return bias2var;
 }
 
 
@@ -1387,8 +1468,9 @@ const TVectorD&          RooUnfoldT<Hist,Hist2D>::Vbias() const
 {
   //! Bias distribution as a vector.
   if (!_cache._haveBias){
-    throw std::runtime_error("calculate bias before attempting to retrieve it!");
+    this->CalculateBias(RooUnfolding::kBiasAsimov,100);
   }
+
   return _cache._bias;
 }
 
