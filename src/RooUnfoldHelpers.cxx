@@ -394,7 +394,7 @@ namespace RooUnfolding {
       for(size_t i=0; i<n; ++i){
         if(fabs(mat(i,i)) < t){
           bool ok = false;
-          for(size_t j=0; j<n; ++i){
+          for(size_t j=0; j<n; ++j){
             if(i==j) continue;
             if(fabs(mat(i,j)) > t) ok = true;
             if(fabs(mat(j,i)) > t) ok = true;
