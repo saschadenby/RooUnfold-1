@@ -226,14 +226,14 @@ RooUnfoldSvdT<Hist,Hist2D>::SVDUnfold::~SVDUnfold()
 }
 
 namespace {
-  void sanitize(TMatrixD& m,double eps){
+  void sanitizeNaN(TMatrixD& m,double eps){
     for(int i=0; i<m.GetNrows(); ++i){
       for(int j=0; j<m.GetNcols(); ++j){
         if(std::isnan(m(i,j))) m(i,j) = eps;
       }
     }
   }
-  void sanitize(TVectorD& v,double eps){
+  void sanitizeNaN(TVectorD& v,double eps){
     for(int j=0; j<v.GetNrows(); ++j){
       if(std::isnan(v(j))) v(j) = eps;
     }
@@ -259,8 +259,8 @@ TVectorD RooUnfoldSvdT<Hist,Hist2D>::SVDUnfold::UnfoldV( Int_t kreg )
    TVectorD vbini(h2v(fBini));
    TVectorD vxini(h2v(fXini));
 
-   sanitize(mB,eps);
-   sanitize(vberr,eps);
+   ::sanitizeNaN(mB,eps);
+   ::sanitizeNaN(vberr,eps);
 
    if (fMatToyMode) mA = fToymat;
    else        mA=fAdet;

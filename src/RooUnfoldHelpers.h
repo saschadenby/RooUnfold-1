@@ -124,6 +124,7 @@ namespace RooUnfolding {
   TMatrixD* squareMatrix (const TMatrixD& matrix);
   void resizeVector (TVectorD& vec, Int_t n);
   void squareMatrix (TMatrixD& matrix);
+  bool sanitize(TMatrixD& mat,double t = 1e-9);  
   TMatrixD& ABAT (const TMatrixD& a, const TMatrixD& b, TMatrixD& c);
   TMatrixD& ABAT (const TMatrixD& a, const TVectorD& b, TMatrixD& c);
   template<class Hist> RooUnfolding::Variable<Hist> var(const Hist* h, Dimension d);

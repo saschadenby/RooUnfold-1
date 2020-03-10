@@ -978,18 +978,24 @@ namespace RooUnfolding { // section 2: non-trivial helpers
     size_t nx = nBins(h,X);
     size_t ny = nBins(h,Y);
     m.ResizeTo(nx,ny);
+    bool needSanitization = !norm;
     for(size_t j=0; j<ny; ++j){
       double fac = 1.;
       if (norm){
         int b = bin(norm,j,overflow);
         fac= binContent(norm,b,overflow) * (correctDensity ? binVolume(norm,b,overflow) : 1);
-        if (fac != 0.0) fac= 1.0/fac;
+        if (fac != 0.0){
+          fac= 1.0/fac;
+        } else {
+          needSanitization = true;
+        }          
       }
       for(size_t i=0; i<nx; ++i){
         int b = bin(h,i,j,overflow);
         m(i,j) = binContent(h,b,overflow) * fac * (correctDensity ? binVolume(h,b,overflow) : 1);
       }
     }
+    if(needSanitization) sanitize(m);
   }
   template<> void h2meNorm<RooUnfolding::RooFitHist>  (const RooUnfolding::RooFitHist* h, TMatrixD& m, const RooUnfolding::RooFitHist* norm, bool overflow, bool correctDensity){
     // sets Matrix to errors of bins in a 2D input histogram
