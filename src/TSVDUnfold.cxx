@@ -297,8 +297,8 @@ TVectorD RooUnfoldSvdT<Hist,Hist2D>::SVDUnfold::UnfoldV( Int_t kreg )
    sanitize(vberr,eps);
 
    if (fMatToyMode) mA = fToymat;
-   else        mA=fAdet;
-   
+   else        mA=fAdet;   
+
    // Fill and invert the second derivative matrix
    FillCurvatureMatrix( mCurv, mC );
 
