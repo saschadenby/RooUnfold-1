@@ -73,6 +73,14 @@ void RooUnfoldExample()
     if (x!=cutdummy) hMeas->Fill(x);
   }
 
+  for(size_t j=0; j<40; ++j){
+    for(size_t i=0; i<40; ++i){
+      std::cout << response.Hresponse()->GetBinContent(j,i) << " ";
+    }
+    std::cout << std::endl;
+  }
+  exit(0);
+  
   cout << "==================================== UNFOLD ===================================" << endl;
   RooUnfoldBayes   unfold (&response, hMeas, 4);    // OR
 //RooUnfoldSvd     unfold (&response, hMeas, 20);   // OR

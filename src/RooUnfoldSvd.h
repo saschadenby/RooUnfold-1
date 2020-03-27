@@ -19,6 +19,7 @@ public:
 
    SVDUnfold( const Hist* bdat, const Hist* bini, const Hist* xini, const Hist2D* Adet );
    SVDUnfold( const Hist* bdat, const TMatrixD& Bcov, const Hist* bini, const Hist* xini, const Hist2D* Adet );
+   SVDUnfold( const Hist* bdat, const TMatrixD& Bcov, const Hist* bini, const Hist* xini, const TMatrixD& Mdet, const TMatrixD& MdetE );    
    SVDUnfold( const SVDUnfold& other );
 
    // Destructor
@@ -66,8 +67,8 @@ public:
    const TMatrixD& GetBCov() const;
 
 private: 
-   
-   // Helper functions for vector and matrix operations
+
+    // Helper functions for vector and matrix operations
    void            FillCurvatureMatrix( TMatrixD& tCurv, TMatrixD& tC ) const;
    static Double_t GetCurvature       ( const TVectorD& vec, const TMatrixD& curv );
 

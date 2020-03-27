@@ -80,68 +80,7 @@ using namespace RooUnfolding;
 
 //_______________________________________________________________________
 template<class Hist,class Hist2D>
-RooUnfoldSvdT<Hist,Hist2D>::SVDUnfold::SVDUnfold( const Hist *bdat, const Hist *bini, const Hist *xini, const Hist2D *Adet )
-  : 
-    fNdim       (nBins(bdat,X)),
-    fDdim       (2),
-    fNormalize  (kFALSE),
-    fKReg       (-1),
-    fDHist      (NULL),
-    fBdat       (bdat),
-    fBini       (bini),
-    fXini       (xini),
-    fAdet       (h2m(Adet)),
-    fToyMode    (kFALSE),
-    fMatToyMode (kFALSE)
-{
-   //! Constructor
-   //! Initialisation of unfolding
-   //! "bdat" - measured data distribution (number of events)
-   //! "Bcov" - covariance matrix for measured data distribution
-   //! "bini" - reconstructed MC distribution (number of events)
-   //! "xini" - truth MC distribution (number of events)
-   //! "Adet" - detector response matrix (number of events)
-
-  if(sumW2N(Adet)){
-    h2me<Hist2D>(Adet,fAdet);
-  }
-
-  // Alternative constructor
-  // User provides data and MC test spectra, as well as detector response matrix, diagonal covariance matrix of measured spectrum built from the uncertainties on measured spectrum
-  if (fNdim != nBins(bini,X) || 
-      fNdim != nBins(xini,X) ||
-      fNdim != nBins(Adet,X) ||
-      fNdim != nBins(Adet,Y)) {
-    TString msg = "All histograms must have equal dimension.\n";
-    msg += Form( "  Found: dim(bdat)=%i\n",    nBins(bdat,X) );
-    msg += Form( "  Found: dim(bini)=%i\n",    nBins(bini,X) );
-    msg += Form( "  Found: dim(xini)=%i\n",    nBins(xini,X) );
-    msg += Form( "  Found: dim(Adet)=%i,%i\n", nBins(Adet,X), nBins(Adet,Y) );
-    msg += "Please start again!";
-    
-    throw std::runtime_error( msg.Data() );
-  }
-
-  fSVHist.ResizeTo(fNdim);
-  fXtau.ResizeTo(fNdim,fNdim);
-  fXinv.ResizeTo(fNdim,fNdim);
-  fBcov.ResizeTo(fNdim,fNdim);
-   
-  for(int i=1; i<=nBins(fBdat,X); i++){
-    fBcov(i,i) =  binError(fBdat,i,false)*binError(fBdat,i,false);
-    for(int j=1; j<=nBins(fBdat,X); j++){
-      if(i==j) continue;
-      fBcov[i][j] = 0.;
-    }
-  }
-  // Get the input histos
-  fDdim = 2; // This is the derivative used to compute the curvature matrix
-}
-
-
-//_______________________________________________________________________
-template<class Hist,class Hist2D>
-RooUnfoldSvdT<Hist,Hist2D>::SVDUnfold::SVDUnfold( const Hist *bdat, const TMatrixD& Bcov, const Hist *bini, const Hist *xini, const Hist2D *Adet )
+RooUnfoldSvdT<Hist,Hist2D>::SVDUnfold::SVDUnfold( const Hist *bdat, const TMatrixD& Bcov, const Hist *bini, const Hist *xini, const TMatrixD& Mdet, const TMatrixD& MdetE)
   :
   fNdim       (nBins(bdat,X)),
      fDdim       (2),
@@ -152,29 +91,26 @@ RooUnfoldSvdT<Hist,Hist2D>::SVDUnfold::SVDUnfold( const Hist *bdat, const TMatri
      fBcov       (Bcov), 
      fBini       (bini),
      fXini       (xini),
-     fAdet       (h2m(Adet)), 
+     fAdet       (Mdet),
+     fAdetE      (MdetE),
      fToyMode    (kFALSE),
-     fMatToyMode (kFALSE) 
+     fMatToyMode (kFALSE)
 {
-  if(sumW2N(Adet)){
-    h2me<Hist2D>(Adet,fAdetE);
-  }
-  
    // Default constructor
    // Initialisation of SVDUnfold
    // User provides data and MC test spectra, as well as detector response matrix and the covariance matrix of the measured distribution
   if (fNdim != nBins(bini,X) || 
       fNdim != nBins(xini,X) ||
-       fNdim != Bcov.GetNrows() ||
-       fNdim != Bcov.GetNcols() ||
-      fNdim != nBins(Adet,X) ||
-      fNdim != nBins(Adet,Y)) {
+      fNdim != Bcov.GetNrows() ||
+      fNdim != Bcov.GetNcols() ||
+      fNdim != fAdet.GetNrows() ||
+      fNdim != fAdet.GetNcols()) {
       TString msg = "All histograms must have equal dimension.\n";
       msg += Form( "  Found: dim(bdat)=%i\n",    nBins(bdat,X) );
       msg += Form( "  Found: dim(Bcov)=%i,%i\n", Bcov.GetNrows(), Bcov.GetNcols() );
       msg += Form( "  Found: dim(bini)=%i\n",    nBins(bini,X) );
       msg += Form( "  Found: dim(xini)=%i\n",    nBins(xini,X) );
-      msg += Form( "  Found: dim(Adet)=%i,%i\n", nBins(Adet,X), nBins(Adet,Y) );
+      msg += Form( "  Found: dim(Adet)=%i,%i\n", fAdet.GetNrows(), fAdet.GetNcols() );
       msg += "Please start again!";
 
       throw std::runtime_error(msg.Data());
@@ -186,6 +122,17 @@ RooUnfoldSvdT<Hist,Hist2D>::SVDUnfold::SVDUnfold( const Hist *bdat, const TMatri
   
   // Get the input histos
   fDdim = 2; // This is the derivative used to compute the curvature matrix
+}
+
+  
+//_______________________________________________________________________
+template<class Hist,class Hist2D>
+RooUnfoldSvdT<Hist,Hist2D>::SVDUnfold::SVDUnfold( const Hist *bdat, const TMatrixD& Bcov, const Hist *bini, const Hist *xini, const Hist2D *Adet ) :
+  SVDUnfold(bdat,Bcov,bini,xini,h2m(Adet),h2me(Adet)) 
+{
+  if(!sumW2N(Adet)){
+    fAdetE *= 0.;
+  }
 }
 
 //_______________________________________________________________________

@@ -670,7 +670,7 @@ RooUnfoldT<Hist,Hist2D>::UnfoldWithErrors (ErrorTreatment withError, bool getWei
   if (!_cache._unfolded) {
 
     if (_cache._fail) return false;
-
+    
     this->Unfold();
 
     if (!_cache._unfolded) {
@@ -1220,9 +1220,15 @@ Hist*               RooUnfoldT<Hist,Hist2D>::Hmeasured()
 template<class Hist,class Hist2D> 
 const TVectorD&                RooUnfoldT<Hist,Hist2D>::Vunfold() const
 {
+
+      this->_res->Vtruth().Print();              
+      this->_res->Vmeasured().Print();
+      this->_res->Mresponse().Print();              
+  
   //! Unfolded (reconstructed) distribution as a vector
   if (!_cache._unfolded) {
     if (!_cache._fail){
+      
       this->Unfold();
     }
     if (!_cache._unfolded) {
