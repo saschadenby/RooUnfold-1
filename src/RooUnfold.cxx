@@ -433,7 +433,6 @@ RooUnfoldT<Hist,Hist2D>::SetResponse (const RooUnfoldResponseT<Hist,Hist2D>* res
 template<class Hist,class Hist2D> void
 RooUnfoldT<Hist,Hist2D>::Unfold() const
 {
-
   //! Dummy unfolding - just copies input
   cout << "********************** " << ClassName() << ": dummy unfolding - just copy input **********************" << endl;
 
@@ -666,7 +665,6 @@ template<class Hist,class Hist2D> Bool_t
 RooUnfoldT<Hist,Hist2D>::UnfoldWithErrors (ErrorTreatment withError, bool getWeights) const
 {
   //! This method initializes the unfolding with errors.
-
   if (!_cache._unfolded) {
 
     if (_cache._fail) return false;
@@ -810,7 +808,6 @@ RooUnfoldT<Hist,Hist2D>::Hunfold (ErrorTreatment withError)
     2: Errors from the square root of of the covariance matrix given by the unfolding
     3: Errors from the square root of the covariance matrix from the variation of the results in toy MC tests
     */
-
   if (!UnfoldWithErrors (withError)) withError= kNoError;
   const Hist* t = _res->Htruth();
   if (!_cache._unfolded){
@@ -1220,11 +1217,6 @@ Hist*               RooUnfoldT<Hist,Hist2D>::Hmeasured()
 template<class Hist,class Hist2D> 
 const TVectorD&                RooUnfoldT<Hist,Hist2D>::Vunfold() const
 {
-
-      this->_res->Vtruth().Print();              
-      this->_res->Vmeasured().Print();
-      this->_res->Mresponse().Print();              
-  
   //! Unfolded (reconstructed) distribution as a vector
   if (!_cache._unfolded) {
     if (!_cache._fail){
