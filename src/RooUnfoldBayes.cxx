@@ -130,7 +130,8 @@ RooUnfoldBayesT<Hist,Hist2D>::setup() const
   this->_nCi.ResizeTo(this->_nt);
   this->_nCi= this->_res->Vtruth();
 
-  this->_Nji = this->_res->Mresponse(false); // don't normalise
+  this->_Nji.ResizeTo(this->_ne,this->_nt);
+  this->_Nji = this->_res->Mresponse(false);
 
   if (this->_res->HasFakes()) {
     TVectorD fakes= this->_res->Vfakes();
