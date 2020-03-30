@@ -80,7 +80,8 @@ private:
    static void     RegularisedSymMatInvert( TMatrixDSym& mat, Double_t eps = 1e-3 );
    
    // Class members
-   Int_t       fNdim;        //! Truth and reconstructed dimensions
+   Int_t       fMdim;        //! Reconstructed dimensions
+   Int_t       fTdim;        //! Truth dimensions
    Int_t       fDdim;        //! Derivative for curvature matrix
    Bool_t      fNormalize;   //! Normalize unfolded spectrum to 1
    Int_t       fKReg;        //! Regularisation parameter
@@ -149,7 +150,6 @@ protected:
   // instance variables
   mutable SVDUnfold* _svd;  //! Implementation in TSVDUnfold object (no streamer)
   mutable Int_t _kreg;
-  mutable Int_t _nb;
 
   mutable const Hist *_meas1d, *_train1d, *_truth1d;
   mutable const Hist2D *_reshist, *_meascov;

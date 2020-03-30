@@ -132,10 +132,10 @@ template<> void RooUnfoldSvdT<TH1,TH2>::PrepareHistograms() const {
   TH1* train1d= ::histNoOverflow (this->_res->Hmeasured(), this->_overflow);
   TH1* truth1d= ::histNoOverflow (this->_res->Htruth(),    this->_overflow);
   TH2* reshist= this->_res->HresponseNoOverflow();
-  RooUnfolding::resize (meas1d,  this->_nb);
-  RooUnfolding::resize (train1d, this->_nb);
-  RooUnfolding::resize (truth1d, this->_nb);
-  RooUnfolding::resize (reshist, this->_nb, this->_nb);
+  RooUnfolding::resize (meas1d,  this->_nm);
+  RooUnfolding::resize (train1d, this->_nm);
+  RooUnfolding::resize (truth1d, this->_nt);
+  RooUnfolding::resize (reshist, this->_nm, this->_nt);
 
   // Subtract fakes from measured distribution
   if (this->_res->HasFakes()) {
@@ -168,11 +168,9 @@ RooUnfoldSvdT<Hist,Hist2D>::Unfold() const
     std::cerr << "RooUnfoldSvdT invalid kreg: " << this->_kreg << std::endl;
     return;
   }
-
-  this->_nb= this->_nm > this->_nt ? this->_nm : this->_nt;
  
-  if (this->_kreg > this->_nb) {
-    std::cerr << "RooUnfoldSvdT invalid kreg=" << this->_kreg << " with " << this->_nb << " bins" << std::endl;
+  if (this->_kreg > this->_nm) {
+    std::cerr << "RooUnfoldSvdT invalid kreg=" << this->_kreg << " with " << this->_nm << " bins" << std::endl;
     return;
   }
 
@@ -185,7 +183,7 @@ RooUnfoldSvdT<Hist,Hist2D>::Unfold() const
   if(!this->_train1d) throw std::runtime_error("no train1d given!");
   if(!this->_truth1d) throw std::runtime_error("no truth1d given!");
   if(!this->_reshist) throw std::runtime_error("no reshist given!");
-
+  
   this->_svd= new SVDUnfold (this->_meas1d, cov, this->_train1d, this->_truth1d, this->_reshist);
 
   this->_cache._rec.ResizeTo (this->_nt);
@@ -206,15 +204,18 @@ RooUnfoldSvdT<Hist,Hist2D>::GetCov() const
 {
   //! Get covariance matrix
   if (!this->_svd) return;
-  this->_cache._cov.ResizeTo(this->_nb,this->_nb);
+  this->_cache._cov.ResizeTo(this->_nt,this->_nt);
   //Get the covariance matrix for statistical uncertainties on the measured distribution
   if (this->_dosys!=2) this->_cache._cov = this->_svd->GetXtau();
   //Get the covariance matrix for statistical uncertainties on the response matrix
   //Uses Poisson or Gaussian-distributed toys, depending on response matrix histogram's Sumw2 setting.
 
-  if (this->_dosys){
-    add(this->_cache._cov,this->_svd->GetAdetCovMatrix (this->_NToys));
-  }
+  // Disabled for now. The new error handling should include the statistical uncertainties on the response
+  // matrix.
+  // if (this->_dosys){
+  //   add(this->_cache._cov,this->_svd->GetAdetCovMatrix (this->_NToys));
+  // }
+
   this->_cache._haveCov= true;
 }
 
@@ -224,6 +225,8 @@ RooUnfoldSvdT<Hist,Hist2D>::GetWgt() const
   //! Get weight matrix
   if (this->_dosys) RooUnfoldT<Hist,Hist2D>::GetWgt();   // can't add sys errors to weight, so calculate weight from covariance
   if (!this->_svd) return;
+
+  this->_cache._wgt.ResizeTo(this->_nt, this->_nt);
 
   //Get the covariance matrix for statistical uncertainties on the measured distribution
   this->_cache._wgt = this->_svd->GetXinv();

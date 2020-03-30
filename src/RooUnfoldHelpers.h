@@ -19,7 +19,8 @@ namespace RooUnfolding {
     kInvert,             //   RooUnfoldInvert
     kDagostini,          //   RooUnfoldDagostini
     kIDS,                //   RooUnfoldIds
-    kGP                  //   RooUnfoldGP
+    kGP,                 //   RooUnfoldGP
+    kPoisson             //   RooUnfoldPoisson
   };
 
   enum ErrorTreatment {  // Error treatment:
