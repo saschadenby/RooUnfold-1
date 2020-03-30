@@ -94,33 +94,32 @@ RooUnfoldSvdT<Hist,Hist2D>::SVDUnfold::SVDUnfold( const Hist *bdat, const TMatri
   fXini       (xini),
   fAdet       (Mdet),
   fAdetE      (MdetE),
-     fToyMode    (kFALSE),
+  fToyMode    (kFALSE),
   fMatToyMode (kFALSE)
 {
-  // Default constructor
-  // Initialisation of SVDUnfold
-  // User provides data and MC test spectra, as well as detector response matrix and the covariance matrix of the measured distribution
-  if (fNdim != nBins(bini,X) || 
-      fNdim != nBins(xini,X) ||
-      fNdim != Bcov.GetNrows() ||
-      fNdim != Bcov.GetNcols() ||
-      fNdim != fAdet.GetNrows() ||
-      fNdim != fAdet.GetNcols()) {
-      TString msg = "All histograms must have equal dimension.\n";
-      msg += Form( "  Found: dim(bdat)=%i\n",    nBins(bdat,X) );
-      msg += Form( "  Found: dim(Bcov)=%i,%i\n", Bcov.GetNrows(), Bcov.GetNcols() );
-      msg += Form( "  Found: dim(bini)=%i\n",    nBins(bini,X) );
-      msg += Form( "  Found: dim(xini)=%i\n",    nBins(xini,X) );
-      msg += Form( "  Found: dim(Adet)=%i,%i\n", fAdet.GetNrows(), fAdet.GetNcols() );
-      msg += "Please start again!";
-      
-      throw std::runtime_error(msg.Data());
+
+  if (fMdim != nBins(bini,X) || 
+      fTdim != nBins(xini,X) ||
+      fMdim != Bcov.GetNrows() ||
+      fMdim != Bcov.GetNcols() ||
+      fMdim != fAdet.GetNrows() ||
+      fTdim != fAdet.GetNcols()) {
+    TString msg = "All histograms must have equal dimension.\n";
+    msg += Form( "  Found: dim(bdat)=%i\n",    nBins(bdat,X) );
+    msg += Form( "  Found: dim(Bcov)=%i,%i\n", Bcov.GetNrows(), Bcov.GetNcols() );
+    msg += Form( "  Found: dim(bini)=%i\n",    nBins(bini,X) );
+    msg += Form( "  Found: dim(xini)=%i\n",    nBins(xini,X) );
+    msg += Form( "  Found: dim(Adet)=%i,%i\n", fAdet.GetNrows(), fAdet.GetNcols() );
+    msg += "Please start again!";
+
+    throw std::runtime_error(msg.Data());
   }
 
   fSVHist.ResizeTo(fTdim);
   fXtau.ResizeTo(fTdim,fTdim);
   fXinv.ResizeTo(fTdim,fTdim);
-  
+  fBcov.ResizeTo(fMdim,fMdim);
+   
   // Get the input histos
   fDdim = 2; // This is the derivative used to compute the curvature matrix
 }
