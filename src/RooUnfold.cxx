@@ -1871,7 +1871,7 @@ RooUnfoldT<TH1,TH2>::RunBiasDataToys(int ntoys, std::vector<TVectorD>& vbias) co
   this->ForceRecalculation();  
 }
 
-
+template<> void
 RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>::RunBiasDataToys(int ntoys, std::vector<TVectorD>& vbias) const {
   //! run a number of primary toys on truth level. fold and unfold
   //! each of these toys. fill the differences w.r.t. the nominal into
