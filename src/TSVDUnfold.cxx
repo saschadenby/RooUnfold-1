@@ -88,10 +88,10 @@ RooUnfoldSvdT<Hist,Hist2D>::SVDUnfold::SVDUnfold( const Hist *bdat, const TMatri
   fNormalize  (kFALSE),
   fKReg       (-1),
   fDHist      (NULL),
-  fBdat       (bdat), 
+  fBdat       (h2v(bdat)),
   fBcov       (Bcov), 
-  fBini       (bini),
-  fXini       (xini),
+  fBini       (h2v(bini)),
+  fXini       (h2v(xini)),
   fAdet       (Mdet),
   fAdetE      (MdetE),
   fToyMode    (kFALSE),
@@ -124,7 +124,56 @@ RooUnfoldSvdT<Hist,Hist2D>::SVDUnfold::SVDUnfold( const Hist *bdat, const TMatri
   // Get the input histos
   fDdim = 2; // This is the derivative used to compute the curvature matrix
 }
+
+//_______________________________________________________________________
+template<class Hist,class Hist2D>
+RooUnfoldSvdT<Hist,Hist2D>::SVDUnfold::SVDUnfold( const TVectorD& bdat, const TMatrixD& bcov, const TVectorD& bini, const TVectorD& xini, const TMatrixD& Mdet, const TMatrixD& MdetE)
+  :
+  fMdim       (bdat.GetNrows()),
+  fTdim       (xini.GetNrows()),
+  fDdim       (2),
+  fNormalize  (kFALSE),
+  fKReg       (-1),
+  fDHist      (NULL),
+  fBdat       (bdat),
+  fBcov       (bcov),
+  fBini       (bini),
+  fXini       (xini),
+  fAdet       (Mdet),
+  fAdetE      (MdetE),
+  fToyMode    (kFALSE),
+  fMatToyMode (kFALSE)
+{
+
+
+  if (fMdim != bini.GetNrows() || 
+      fTdim != xini.GetNrows() ||
+      fMdim != bcov.GetNrows() ||
+      fMdim != bcov.GetNcols() ||
+      fMdim != fAdet.GetNrows() ||
+      fTdim != fAdet.GetNcols()) {
+    TString msg = "All histograms must have equal dimension.\n";
+    msg += Form( "  Found: dim(bdat)=%i\n",    bdat.GetNrows() );
+    msg += Form( "  Found: dim(bcov)=%i,%i\n", bcov.GetNrows(), bcov.GetNcols() );
+    msg += Form( "  Found: dim(bini)=%i\n",    bini.GetNrows() );
+    msg += Form( "  Found: dim(xini)=%i\n",    xini.GetNrows() );
+    msg += Form( "  Found: dim(Adet)=%i,%i\n", fAdet.GetNrows(), fAdet.GetNcols() );
+    msg += "Please start again!";
+
+    throw std::runtime_error(msg.Data());
+  }
+
+
+  fSVHist.ResizeTo(fTdim);
+  fXtau.ResizeTo(fTdim,fTdim);
+  fXinv.ResizeTo(fTdim,fTdim);
+  fBcov.ResizeTo(fMdim,fMdim);
+   
+  // Get the input histos
+  fDdim = 2; // This is the derivative used to compute the curvature matrix
+}
   
+
 //_______________________________________________________________________
 template<class Hist,class Hist2D>
 RooUnfoldSvdT<Hist,Hist2D>::SVDUnfold::SVDUnfold( const Hist *bdat, const TMatrixD& Bcov, const Hist *bini, const Hist *xini, const Hist2D *Adet ) :
@@ -202,10 +251,16 @@ TVectorD RooUnfoldSvdT<Hist,Hist2D>::SVDUnfold::UnfoldV( Int_t kreg )
 
    // Copy histogams entries into vector
    if (fToyMode) { vb = fToyhisto; vberr = fToyhistoE; }
-   else          { h2v( fBdat,     vb ); h2ve( fBdat,     vberr ); }
+   else          { 
+     vb = fBdat; 
+     for (int i = 0; i < fMdim; i++){
+       vberr = fBcov[i][i];
+     }
+   }
 
-   TVectorD vbini(h2v(fBini));
-   TVectorD vxini(h2v(fXini));
+   TVectorD vbini = fBini;
+   TVectorD vxini = fXini;
+
 
    ::sanitizeNaN(mB,eps);
    ::sanitizeNaN(vberr,eps);
@@ -276,9 +331,9 @@ TVectorD RooUnfoldSvdT<Hist,Hist2D>::SVDUnfold::UnfoldV( Int_t kreg )
    Uort.Transpose(Uort);
    TVectorD vd(Uort*vb);
 
-   if (!fToyMode && !fMatToyMode) {
-     fDHist = createHist<Hist>(vd,name(fBdat),title(fBdat),vars(fBdat),false);
-   }
+   // if (!fToyMode && !fMatToyMode) {
+   //   fDHist = createHist<Hist>(vd,name(fBdat),title(fBdat),vars(fBdat),false);
+   // }
 
    // Damping coefficient
    Int_t k = GetKReg()-1; 
@@ -348,13 +403,13 @@ TVectorD RooUnfoldSvdT<Hist,Hist2D>::SVDUnfold::UnfoldV( Int_t kreg )
 }
 
 //_______________________________________________________________________
-template<class Hist,class Hist2D>
-Hist* RooUnfoldSvdT<Hist,Hist2D>::SVDUnfold::Unfold( Int_t kreg )
-{
+// template<class Hist,class Hist2D>
+// Hist* RooUnfoldSvdT<Hist,Hist2D>::SVDUnfold::Unfold( Int_t kreg )
+// {
 
-  TVectorD vx(UnfoldV(kreg));
-  return createHist<Hist>(vx,"unfoldingresult",title(fBdat),vars(fBdat),false);
-}
+//   TVectorD vx(UnfoldV(kreg));
+//   return createHist<Hist>(vx,"unfoldingresult",title(fBdat),vars(fBdat),false);
+// }
 
 //_______________________________________________________________________
 template<class Hist,class Hist2D>
@@ -395,8 +450,12 @@ TMatrixD RooUnfoldSvdT<Hist,Hist2D>::SVDUnfold::GetUnfoldCovMatrix( const TMatri
    TMatrixD Lt(TMatrixD::kTransposed,L);
    TRandom3 random(seed);
 
-   h2v(fBdat,fToyhisto);
-   h2ve(fBdat,fToyhistoE);   
+   fToyhisto = fBdat;
+   fToyhistoE = fBdat;
+   for (int i = 0; i < fToyhistoE.GetNrows(); i++){
+     fToyhistoE[i] = fBcov[i][i];
+   }
+
    TVectorD toymean(fMdim);
 
    // Get the mean of the toys first
@@ -411,8 +470,8 @@ TMatrixD RooUnfoldSvdT<Hist,Hist2D>::SVDUnfold::GetUnfoldCovMatrix( const TMatri
 
       // Add the mean value offsets and store the results
       for (int j=0; j<fMdim; j++) {
-        fToyhisto[j] = binContent(fBdat,j,false)+g(j-1);
-        fToyhistoE[j] = binContent(fBdat,j,false);
+	fToyhisto[j] = fBdat[j]+g(j-1);
+        fToyhistoE[j] = fBcov[j][j];
       }
 
       TVectorD unfres(UnfoldV(GetKReg()));
@@ -439,8 +498,8 @@ TMatrixD RooUnfoldSvdT<Hist,Hist2D>::SVDUnfold::GetUnfoldCovMatrix( const TMatri
 
       // Add the mean value offsets and store the results
       for (int j=0; j<fMdim; j++) {
-        fToyhisto[j] = binContent(fBdat,j,false)+g(j-1);
-        fToyhistoE[j] = binError(fBdat,j,false);
+	fToyhisto[j] = fBdat[j]+g(j-1);
+        fToyhistoE[j] = fBcov[j][j];
       }
       TVectorD unfres(UnfoldV(GetKReg()));
       
@@ -479,7 +538,7 @@ TMatrixD RooUnfoldSvdT<Hist,Hist2D>::SVDUnfold::GetAdetCovMatrix( Int_t ntoys, I
   TRandom3 random(seed);
   
   fToymat.ResizeTo(fAdet.GetNrows(),fAdet.GetNcols());
-  TVectorD toymean(nBins(fXini,X));
+  TVectorD toymean(fXini.GetNrows());
     
   for (int i=0; i<ntoys; i++) {    
     for (Int_t k=0; k<fMdim; k++) {

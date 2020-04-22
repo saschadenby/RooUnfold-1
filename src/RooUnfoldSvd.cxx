@@ -175,8 +175,6 @@ RooUnfoldSvdT<Hist,Hist2D>::Unfold() const
   }
 
   this->PrepareHistograms();
-  
-  const TMatrixD& cov(this->GetMeasuredCov());
 
   if (this->_verbose>=1) std::cout << "SVD init " << nBins(this->_reshist,X) << " x " << nBins(this->_reshist,Y) << " bins, kreg=" << this->_kreg << std::endl;
   if(!this->_meas1d) throw std::runtime_error("no meas1d given!");
@@ -184,7 +182,7 @@ RooUnfoldSvdT<Hist,Hist2D>::Unfold() const
   if(!this->_truth1d) throw std::runtime_error("no truth1d given!");
   if(!this->_reshist) throw std::runtime_error("no reshist given!");
   
-  this->_svd= new SVDUnfold (this->_meas1d, cov, this->_train1d, this->_truth1d, this->_reshist);
+  this->_svd= new SVDUnfold (this->Vmeasured(), this->GetMeasuredCov(), this->_res->Vmeasured(), this->_res->Vtruth(), this->_res->Mresponse(false), this->_res->Eresponse(false));
 
   this->_cache._rec.ResizeTo (this->_nt);
   this->_cache._rec = this->_svd->UnfoldV (this->_kreg);

@@ -18,6 +18,7 @@ public:
 public:
 
    SVDUnfold( const Hist* bdat, const Hist* bini, const Hist* xini, const Hist2D* Adet );
+   SVDUnfold( const TVectorD& bdat, const TMatrixD& Bcov, const TVectorD& bini, const TVectorD& xini, const TMatrixD& Mdet, const TMatrixD& MdetE );
    SVDUnfold( const Hist* bdat, const TMatrixD& Bcov, const Hist* bini, const Hist* xini, const Hist2D* Adet );
    SVDUnfold( const Hist* bdat, const TMatrixD& Bcov, const Hist* bini, const Hist* xini, const TMatrixD& Mdet, const TMatrixD& MdetE );    
    SVDUnfold( const SVDUnfold& other );
@@ -31,7 +32,7 @@ public:
 
    // Do the unfolding
    // "kreg"   - number of singular values used (regularisation)
-   Hist*    Unfold       ( Int_t kreg );
+   //Hist*    Unfold       ( Int_t kreg );
    TVectorD    UnfoldV       ( Int_t kreg );    
 
    // Determine for given input error matrix covariance matrix of unfolded 
@@ -91,10 +92,11 @@ private:
    TMatrixD       fXinv;        //! Computed inverse of covariance matrix
 
    // Input histos
-   const Hist* fBdat;        // measured distribution (data)
+
+   const TVectorD fBdat;        // measured distribution (data)
    TMatrixD fBcov;        // covariance matrix of measured distribution (data)
-   const Hist* fBini;        // reconstructed distribution (MC)
-   const Hist* fXini;        // truth distribution (MC)
+   const TVectorD fBini;        // reconstructed distribution (MC)
+   const TVectorD fXini;        // truth distribution (MC)
    TMatrixD fAdet;        // Detector response matrix
    TMatrixD fAdetE;      
 
