@@ -128,6 +128,7 @@ public:
   double RunToy(TVectorD& x, TVectorD& xe) const;
   void RunToys(int ntoys, std::vector<TVectorD>& x, std::vector<TVectorD>& xe, std::vector<double>& chi2) const;
   void RunBiasAsimovToys(int ntoys, std::vector<TVectorD>& vbias) const;
+  void RunBiasDataToys(int ntoys, std::vector<TVectorD>& vbias) const;
   
   void Print(Option_t* opt="") const;
   void Dump() const;    

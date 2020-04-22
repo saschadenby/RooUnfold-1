@@ -702,9 +702,38 @@ RooUnfoldT<Hist,Hist2D>::CalculateBias(RooUnfolding::BiasMethod method, Int_t nt
       double var = fabs(sum2 - sum*mean)/(n-1);
       // standard error on the mean      
       _cache._sigbias(i) = sqrt(var/n);
+    }  
+  } else if(method == RooUnfolding::kBiasData){
+    std::vector<TVectorD> bias;
+    //! In this implementation toys are being thrown
+    //! around the observed data. This data is then
+    //! unfolded, the difference between the result
+    //! and the truth is normalized with the truth
+    //! and taken as bias.
+    
+    this->RunBiasDataToys(ntoys,bias);
+    _cache._bias.ResizeTo(_nt);
+    _cache._sigbias.ResizeTo(_nt);
+    for (int i = 0; i < _nt; ++i){
+      double sum = 0;
+      double sum2 = 0;
+      const size_t n = bias.size();
+      for(size_t j=0; j<n; ++j){
+	// linear sum - used to calculate mean
+	sum += bias[j][i];
+	// square sum - used to calculate variance
+	sum2 += bias[j][i]*bias[j][i];        
+      }
+      // explicitly calculate and store mean
+      double mean = sum/n;
+      _cache._bias(i) = mean;
+      // variance = 1/(n-1) * sum (x-mean)**2 = 1/(n-1) * ( sum(x**2) - 1/n * sum(x)**2 ) = 1/(n-1) * ( sum(x**2) - mean * sum(x)**2 )
+      double var = fabs(sum2 - sum*mean)/(n-1);
+      // standard error on the mean      
+      _cache._sigbias(i) = sqrt(var/n);      
     }
   }
-  
+    
   delete asimov;
   delete toyFactory;
   
@@ -1823,6 +1852,118 @@ RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>::RunBiasAsimovToys
   
 //  this->ForceRecalculation();
 }
+
+template<> void
+RooUnfoldT<TH1,TH2>::RunBiasDataToys(int ntoys, std::vector<TVectorD>& vbias) const {
+  //! run a number of primary toys on truth level. fold and unfold
+  //! each of these toys. fill the differences w.r.t. the nominal into
+  //! the given bias vector  
+  const auto* res = this->response();
+  for(int i=0; i<ntoys; ++i){
+    this->ForceRecalculation();
+    this->Vmeasured();
+    RooUnfolding::randomize(*_cache._vMes,this->rnd);
+
+    TVectorD vtruth(res->Vtruth());
+    RooUnfolding::randomize(*this->_cache._vMes,this->rnd);
+    vbias.push_back(vtruth - this->Vunfold());
+  }
+  this->ForceRecalculation();  
+}
+
+
+RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>::RunBiasDataToys(int ntoys, std::vector<TVectorD>& vbias) const {
+  //! run a number of primary toys on truth level. fold and unfold
+  //! each of these toys. fill the differences w.r.t. the nominal into
+  //! the given bias vector
+  
+  const auto* res = this->response();
+  RooArgSet errorParams;
+  if(this->_dosys != kNoMeasured){
+    getParameters(this->Hmeasured(),errorParams);
+  }
+
+  TVectorD vtruth(res->Vtruth());
+
+  auto* snsh = errorParams.snapshot();
+  RooArgList errorParamList(errorParams);
+  RooFitResult * prefitResult = RooFitResult::prefitResult(errorParamList);
+
+  RooAbsPdf* paramPdf = prefitResult->createHessePdf(errorParams);
+  RooDataSet* d = paramPdf->generate(errorParams,ntoys);
+
+  Int_t failed_toys = 0;
+  auto errorType = _withError;
+  _withError = kDefault;
+  for(int i=0; i<ntoys; ++i){
+    errorParams = (*d->get(i));
+    this->ForceRecalculation();
+
+    //! add this extra check in case a toy unfolding failed
+    if (this->Vunfold().GetNrows() == 1){
+      failed_toys++;
+      continue;
+    }
+
+    TVectorD vunfolded(this->Vunfold());
+
+    TVectorD bias(vunfolded.GetNrows());
+    for(int b=0; b<vunfolded.GetNrows(); ++b){
+      if(vtruth[b] > 0){
+	bias[b] = (vtruth[b]-vunfolded[b])/vtruth[b];
+      } else {
+	bias[b] = 0;
+      }
+    }
+    vbias.push_back(bias);
+  }
+
+  //! set an maximum amount of retries to avoid the retry of toys
+  //! loop 
+  Int_t max_retries = ntoys;
+
+  //! run an extra loop for failed toys.
+  while(failed_toys != 0 && max_retries != 0){
+
+    RooDataSet* d_retry = paramPdf->generate(errorParams,1);
+
+    errorParams = (*d_retry->get(0)) ;
+    this->ForceRecalculation();
+
+    //! add this extra check in case a toy unfolding failed
+    if (this->Vunfold().GetNrows() == 1){
+      max_retries--;
+      delete d_retry;
+      continue;
+    } 
+
+    TVectorD vunfolded(this->Vunfold());
+    
+    TVectorD bias(vunfolded.GetNrows());
+    for(int b=0; b<vunfolded.GetNrows(); ++b){
+      if(vtruth[b] > 0){
+	bias[b] = (vtruth[b]-vunfolded[b])/vtruth[b];
+      } else {
+	bias[b] = 0;
+      }
+    }
+    vbias.push_back(bias);
+
+    failed_toys--;
+    delete d_retry;
+  }
+
+  _withError =  errorType;
+  
+  errorParams = *snsh;
+  delete snsh;
+  delete prefitResult;
+  delete paramPdf;
+  delete d;
+  
+  this->ForceRecalculation();
+}
+
 
 
 template<class Hist, class Hist2D> double
