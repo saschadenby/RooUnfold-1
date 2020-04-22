@@ -1504,7 +1504,7 @@ const TVectorD&          RooUnfoldT<Hist,Hist2D>::Vbkg() const
 }
 
 template<class Hist,class Hist2D> 
-const TVectorD&          RooUnfoldT<Hist,Hist2D>::Vbias() const
+const TVectorD          RooUnfoldT<Hist,Hist2D>::Vbias() const
 {
   //! Bias distribution as a vector.
   if (!_cache._haveBias){
@@ -1515,7 +1515,7 @@ const TVectorD&          RooUnfoldT<Hist,Hist2D>::Vbias() const
 }
 
 template<class Hist,class Hist2D> 
-const TVectorD&          RooUnfoldT<Hist,Hist2D>::Ebias() const
+const TVectorD          RooUnfoldT<Hist,Hist2D>::Ebias() const
 {
   //! Bias errors as a vector.
   if (!_cache._haveBias){
@@ -1933,8 +1933,7 @@ RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>::RunBiasDataToys(i
   RooDataSet* d = paramPdf->generate(errorParams,ntoys);
 
   Int_t failed_toys = 0;
-  auto errorType = _withError;
-  _withError = kDefault;
+
   for(int i=0; i<ntoys; ++i){
     errorParams = (*d->get(i));
     this->ForceRecalculation();
@@ -1992,8 +1991,6 @@ RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>::RunBiasDataToys(i
     failed_toys--;
     delete d_retry;
   }
-
-  _withError =  errorType;
   
   errorParams = *snsh;
   delete snsh;

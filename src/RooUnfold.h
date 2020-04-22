@@ -90,8 +90,8 @@ public:
   const    TVectorD& Emeasured() const;   // Measured distribution errors as a TVectorD
   const    TVectorD& Vtruth() const;   // Truth distribution as a TVectorD
   const    TVectorD& Vbkg() const;   // Background distribution as a TVectorD
-  const    TVectorD& Vbias() const;   // Bias distribution as a TVectorD
-  const    TVectorD& Ebias() const;   // Bias distribution errors as a TVectorD
+  const    TVectorD Vbias() const;   // Bias distribution as a TVectorD
+  const    TVectorD Ebias() const;   // Bias distribution errors as a TVectorD
   const    TMatrixD& GetMeasuredCov() const;   // Measured distribution covariance matrix
 
   virtual const TVectorD&  Vunfold() const;

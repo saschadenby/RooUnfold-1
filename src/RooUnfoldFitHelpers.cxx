@@ -1216,11 +1216,23 @@ namespace RooUnfolding {
     }
     return outvars;
   }
+  std::vector<Variable<TH2>> convertTH2(const std::vector<Variable<RooUnfolding::RooFitHist> >& vars){
+    std::vector<Variable<TH2> > outvars;
+    for(auto var:vars){
+      auto v = var._var;
+      outvars.push_back(RooUnfolding::Variable<TH2>(::nBins(v),::min(v),::max(v),v->GetName()));
+    }
+    return outvars;
+  }
   TH1* convertTH1(const TVectorD& values, const TVectorD& errors, const RooUnfolding::RooFitHist* hist){
     return RooUnfolding::createHist<TH1>(values,errors,hist->GetName(),hist->GetTitle(),RooUnfolding::convertTH1(RooUnfolding::vars(hist)));
   }
   TH1* convertTH1(const TVectorD& values, const RooUnfolding::RooFitHist* hist){
     return RooUnfolding::createHist<TH1>(values,hist->GetName(),hist->GetTitle(),RooUnfolding::convertTH1(RooUnfolding::vars(hist)));
+  }
+  TH2* convertTH2(const TMatrixD& values, const TMatrixD& errors, const RooUnfolding::RooFitHist* hist){
+    std::vector<Variable<TH2> > outvars = RooUnfolding::convertTH2(RooUnfolding::vars(hist));
+    return RooUnfolding::createHist<TH2>(values,errors,hist->GetName(),hist->GetTitle(),outvars.at(0),outvars.at(1));
   }
 }
 
