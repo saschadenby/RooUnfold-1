@@ -45,6 +45,7 @@ public:
   static const BiasMethod kBiasAsimov;
   static const BiasMethod kBiasEstimator;
   static const BiasMethod kBiasClosure;
+  static const BiasMethod kBiasData;
   
   // Standard methods
 
