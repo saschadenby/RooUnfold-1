@@ -130,6 +130,7 @@ template<class Hist,class Hist2D> const typename RooUnfoldT<Hist,Hist2D>::BiasMe
 template<class Hist,class Hist2D> const typename RooUnfoldT<Hist,Hist2D>::BiasMethod RooUnfoldT<Hist,Hist2D>::kBiasEstimator = RooUnfolding::kBiasEstimator;
 template<class Hist,class Hist2D> const typename RooUnfoldT<Hist,Hist2D>::BiasMethod RooUnfoldT<Hist,Hist2D>::kBiasClosure = RooUnfolding::kBiasClosure;
 template<class Hist,class Hist2D> const typename RooUnfoldT<Hist,Hist2D>::BiasMethod RooUnfoldT<Hist,Hist2D>::kBiasData = RooUnfolding::kBiasData;
+template<class Hist,class Hist2D> const typename RooUnfoldT<Hist,Hist2D>::BiasMethod RooUnfoldT<Hist,Hist2D>::kBiasTruth = RooUnfolding::kBiasTruth;
 
 using namespace RooUnfolding;
 
@@ -741,8 +742,10 @@ RooUnfoldT<Hist,Hist2D>::CalculateBias(RooUnfolding::BiasMethod method, Int_t nt
       // standard error on the mean      
       _cache._sigbias(i) = sqrt(var/n);      
     }
-  }
+  } else if (method == RooUnfolding::kBiasTruth){
     
+    
+  }   
   delete asimov;
   delete toyFactory;
   

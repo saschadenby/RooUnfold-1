@@ -42,7 +42,8 @@ namespace RooUnfolding {
     kBiasEstimator,
     kBiasClosure,
     kBiasAsimov,
-    kBiasData
+    kBiasData,
+    kBiasTruth
   };
   
   enum Dimension { X=0, Y=1, Z=2 };
