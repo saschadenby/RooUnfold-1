@@ -743,9 +743,68 @@ RooUnfoldT<Hist,Hist2D>::CalculateBias(RooUnfolding::BiasMethod method, Int_t nt
       _cache._sigbias(i) = sqrt(var/n);      
     }
   } else if (method == RooUnfolding::kBiasTruth){
+    _cache._bias.ResizeTo(_nt);
+    _cache._sigbias.ResizeTo(_nt);
+
+    if (!hTrue) {
+      std::cout << "CalculateBias - RooUnfolding::kBiasTruth - Please pass a truth distribution to initialize the bias estimation." << std::endl;
+      delete asimov;
+      delete toyFactory;
+      return;
+    }
     
+    //! Convert the truth histogram to a vector.
+    TVectorD vtruth( h2v( hTrue, this->_overflow, this->response()->UseDensityStatus() ));
+
+    //! Forward fold the truth histogram.
+    TVectorD vreco(this->response()->Vfolded(vtruth));
+
+    //! An array that will contain all the unfolded toys.
+    std::vector<TVectorD> munfolded;
+
+    TVectorD var_unfolded(_nt);
+
     
+    //! Throw toys around the forward folded histogram.
+    for (int i = 0; i < ntoys; i++){
+      
+      toyFactory->_cache._vMes = new TVectorD(vreco);
+      toyFactory->_cache._unfolded = false;
+      //! Get a new histogram by sampling from Poisson distributions.
+      RooUnfolding::randomize(*(toyFactory->_cache._vMes), this->rnd);
+
+      //! Unfold.
+      TVectorD vunfolded(toyFactory->Vunfold());
+
+      //! Sum the unfolded histogram to be averaged later.
+      for (int b = 0; b < vunfolded.GetNrows(); b++){
+	_cache._bias(b) += vunfolded(b);
+      }
+
+      //! Save the unfolded result for the sample variance.
+      munfolded.push_back(vunfolded);
+    }
+    
+    for (int i = 0; i < var_unfolded.GetNrows(); i++){
+    
+      //! Divide to get the average of the unfolded histograms.
+      _cache._bias(i) = _cache._bias(i) / ntoys;
+
+      //! Calculate the sample variance of the unfolded histograms.
+      for (int j = 0; j < ntoys; j++){
+	var_unfolded(i) += (munfolded[j][i] - _cache._bias(i)) * (munfolded[j][i] - _cache._bias(i));
+      }
+      var_unfolded(i) = var_unfolded(i) / (ntoys - 1);
+
+      //! Estimate the bias with the average of the unfolded histograms.
+      _cache._bias(i) = _cache._bias(i) - vtruth(i);
+
+      // std::cout << "Bin " << i << std::endl;
+      // std::cout << "Bias estimate = " << _cache._bias(i) << std::endl;
+      // std::cout << "Standard deviation of the truth estimates = " << sqrt(var_unfolded(i)) << std::endl; 
+    }
   }   
+
   delete asimov;
   delete toyFactory;
   
@@ -1166,13 +1225,19 @@ RooUnfoldT<Hist,Hist2D>::CoverageProbV(Int_t sigma) const
   
   TVectorD orig_bias(_cache._bias);
 
-  // Calculate the bias.
-  this->CalculateBias(RooUnfolding::kBiasAsimov,100,0,false);
-
   TVectorD bias(_cache._bias);
   TVectorD se(this->EunfoldV(RooUnfolding::kRooFit));
 
   TVectorD coverage(se.GetNrows());
+
+  // Calculate the bias if needed.
+  if (!this->_cache._haveBias){
+    //this->CalculateBias(RooUnfolding::kBiasAsimov,100,0,false);
+    std::cout << "Please call CalculateBias before calculating the coverage probability." << std::endl;
+    return coverage;
+  }
+
+
   TVectorD vtruth(this->_res->Vtruth());
 
   if (sigma < 1){
@@ -1722,7 +1787,7 @@ RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>::RunToys(int ntoys
   for(int i=0; i<ntoys; ++i){
     errorParams = (*d->get(i));
     this->ForceRecalculation();
-
+    
     //! add this extra check in case a toy unfolding failed
     if (this->Vunfold().GetNrows() == 1){
       failed_toys++;
@@ -1747,7 +1812,7 @@ RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>::RunToys(int ntoys
 
     errorParams = (*d_retry->get(0)) ;
     this->ForceRecalculation();
-
+  
     //! add this extra check in case a toy unfolding failed
     if (this->Vunfold().GetNrows() == 1){
       max_retries--;
@@ -1796,6 +1861,7 @@ RooUnfoldT<TH1,TH2>::RunBiasAsimovToys(int ntoys, std::vector<TVectorD>& vbias, 
       this->_cache._vMes = new TVectorD(res->Vfolded(res->Vtruth()));
 
       RooUnfolding::randomize(*this->_cache._vMes,this->rnd);
+      this->_cache._unfolded = false;
       TVectorD vunfolded(this->Vunfold());
       TVectorD bias(vunfolded.GetNrows());
       for(int b=0; b<vunfolded.GetNrows(); ++b){
@@ -1853,7 +1919,9 @@ RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>::RunBiasAsimovToys
       TVectorD toytruth(vtruth);
       RooUnfolding::randomize(toytruth,this->rnd);
       this->_cache._vMes = new TVectorD(mres*toytruth);
+      this->_cache._unfolded = false;
       TVectorD vunfolded(this->Vunfold());
+
       TVectorD bias(vunfolded.GetNrows());
       for(int b=0; b<vunfolded.GetNrows(); ++b){
         if(vtruth[b] > 0){
@@ -1895,7 +1963,7 @@ RooUnfoldT<TH1,TH2>::RunBiasDataToys(int ntoys, std::vector<TVectorD>& vbias, Bo
     RooUnfolding::randomize(*_cache._vMes,this->rnd);
 
     TVectorD vtruth(res->Vtruth());
-
+    this->_cache._unfolded = false;
     TVectorD vunfolded(this->Vunfold());
     TVectorD bias(vunfolded.GetNrows());
     for(int b=0; b<vunfolded.GetNrows(); ++b){
@@ -1940,7 +2008,7 @@ RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>::RunBiasDataToys(i
   for(int i=0; i<ntoys; ++i){
     errorParams = (*d->get(i));
     this->ForceRecalculation();
-
+    this->_cache._unfolded = false;
     //! add this extra check in case a toy unfolding failed
     if (this->Vunfold().GetNrows() == 1){
       failed_toys++;
