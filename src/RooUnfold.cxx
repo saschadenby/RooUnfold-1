@@ -752,10 +752,10 @@ RooUnfoldT<Hist,Hist2D>::CalculateBias(RooUnfolding::BiasMethod method, Int_t nt
       delete toyFactory;
       return;
     }
-    
+
     //! Convert the truth histogram to a vector.
     TVectorD vtruth( h2v( hTrue, this->_overflow, this->response()->UseDensityStatus() ));
-
+    
     //! Forward fold the truth histogram.
     TVectorD vreco(this->response()->Vfolded(vtruth));
 
@@ -808,7 +808,7 @@ RooUnfoldT<Hist,Hist2D>::CalculateBias(RooUnfolding::BiasMethod method, Int_t nt
   delete asimov;
   delete toyFactory;
   
-  _cache._haveBias=true;
+  this->_cache._haveBias=true;
 }
 
 template<class Hist,class Hist2D> void
@@ -1223,12 +1223,9 @@ template<class Hist,class Hist2D> TVectorD
 RooUnfoldT<Hist,Hist2D>::CoverageProbV(Int_t sigma) const
 {
   
-  TVectorD orig_bias(_cache._bias);
-
   TVectorD bias(_cache._bias);
-  TVectorD se(this->EunfoldV(RooUnfolding::kRooFit));
 
-  TVectorD coverage(se.GetNrows());
+  TVectorD coverage(_cache._bias.GetNrows());
 
   // Calculate the bias if needed.
   if (!this->_cache._haveBias){
@@ -1237,6 +1234,7 @@ RooUnfoldT<Hist,Hist2D>::CoverageProbV(Int_t sigma) const
     return coverage;
   }
 
+  TVectorD se(this->EunfoldV(RooUnfolding::kRooFit));
 
   TVectorD vtruth(this->_res->Vtruth());
 
@@ -1254,7 +1252,6 @@ RooUnfoldT<Hist,Hist2D>::CoverageProbV(Int_t sigma) const
     }
   }
   
-  _cache._bias = orig_bias;
   return coverage;
 }
 
