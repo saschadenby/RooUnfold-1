@@ -2093,6 +2093,7 @@ template<> void RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>::G
   std::vector<double> chi2;
   auto errortmp = _withError;
   _withError = kNoError;
+
   auto havebias = this->_cache._haveBias;
   TVectorD bias(this->_cache._bias);
   TVectorD sigbias(this->_cache._sigbias);
@@ -2118,8 +2119,14 @@ template<> void RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>::G
     _cache._variances(i) = sum2/(n-1);
   }
   _cache._haveBias = havebias;
-  _cache._bias.ResizeTo(_nt);
-  _cache._sigbias.ResizeTo(_nt);
+
+  if (bias.GetNrows() > 1){
+    _cache._bias.ResizeTo(_nt);    
+  }
+  if (sigbias.GetNrows() > 1){
+    _cache._sigbias.ResizeTo(_nt);
+  }
+
   _cache._bias = bias;
   _cache._sigbias = sigbias;
   _cache._haveErrors= true;
