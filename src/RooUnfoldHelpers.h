@@ -45,6 +45,12 @@ namespace RooUnfolding {
     kBiasData,
     kBiasTruth
   };
+
+  enum BiasError {
+    kBiasSD,
+    kBiasSDM,
+    kBiasRMS
+  };
   
   enum Dimension { X=0, Y=1, Z=2 };
   template<class Hist> struct Variable;

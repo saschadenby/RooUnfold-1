@@ -26,6 +26,7 @@ public:
   typedef RooUnfolding::Algorithm Algorithm;
   typedef RooUnfolding::ErrorTreatment ErrorTreatment;
   typedef RooUnfolding::BiasMethod BiasMethod;
+  typedef RooUnfolding::BiasError BiasError;
   static const Algorithm kNone;
   static const Algorithm kBayes;
   static const Algorithm kSVD;
@@ -47,6 +48,9 @@ public:
   static const BiasMethod kBiasClosure;
   static const BiasMethod kBiasData;
   static const BiasMethod kBiasTruth;
+  static const BiasError kBiasSD;
+  static const BiasError kBiasSDM;
+  static const BiasError kBiasRMS;
   
   // Standard methods
 
@@ -92,7 +96,7 @@ public:
   const    TVectorD& Vtruth() const;   // Truth distribution as a TVectorD
   const    TVectorD& Vbkg() const;   // Background distribution as a TVectorD
   const    TVectorD Vbias() const;   // Bias distribution as a TVectorD
-  const    TVectorD Ebias() const;   // Bias distribution errors as a TVectorD
+  const    TVectorD Ebias(Int_t E_type=0) const;   // Bias distribution errors as a TVectorD
   const    TMatrixD& GetMeasuredCov() const;   // Measured distribution covariance matrix
 
   virtual const TVectorD&  Vunfold() const;
@@ -177,7 +181,9 @@ protected:
     Bool_t   _haveErrors;    // have _variances
     Bool_t   _haveBias;      // have _bias
     TVectorD _bias;          // Estimated bias on each truth bin
-    TVectorD _sigbias;       // SD of the bias
+    TVectorD _sdbias;        // SD of the bias on each truth bin
+    TVectorD _sdmbias;       // SD of the mean of the bias on each truth bin
+    TVectorD _rmsbias;       // Root mean squared on each bin
     TVectorD _rec;           // Reconstructed distribution
     TMatrixD _cov;           // Reconstructed distribution covariance
     TMatrixD _wgt;           // Reconstructed distribution weights (inverse of _cov)
