@@ -1613,7 +1613,7 @@ const TVectorD          RooUnfoldT<Hist,Hist2D>::Vbias() const
 }
 
 template<class Hist,class Hist2D> 
-const TVectorD          RooUnfoldT<Hist,Hist2D>::Ebias(Int_t E_type) const
+const TVectorD          RooUnfoldT<Hist,Hist2D>::Ebias(RooUnfolding::BiasError E_type) const
 {
   //! Bias errors as a vector.
   if (!_cache._haveBias){

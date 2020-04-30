@@ -96,7 +96,7 @@ public:
   const    TVectorD& Vtruth() const;   // Truth distribution as a TVectorD
   const    TVectorD& Vbkg() const;   // Background distribution as a TVectorD
   const    TVectorD Vbias() const;   // Bias distribution as a TVectorD
-  const    TVectorD Ebias(Int_t E_type=0) const;   // Bias distribution errors as a TVectorD
+  const    TVectorD Ebias(RooUnfolding::BiasError E_type=RooUnfolding::kBiasSDM) const;   // Bias distribution errors as a TVectorD
   const    TMatrixD& GetMeasuredCov() const;   // Measured distribution covariance matrix
 
   virtual const TVectorD&  Vunfold() const;
