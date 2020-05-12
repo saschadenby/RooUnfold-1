@@ -39,11 +39,8 @@ namespace RooUnfolding {
   };
 
   enum BiasMethod { // Method of bias calculation
-    kBiasEstimator,
-    kBiasClosure,
-    kBiasAsimov,
-    kBiasData,
-    kBiasTruth
+    kBiasToys,
+    kBiasRooFitToys
   };
 
   enum BiasError {

@@ -43,11 +43,8 @@ public:
   static const ErrorTreatment kCovToy;
   static const ErrorTreatment kDefault;
   static const ErrorTreatment kRooFit;
-  static const BiasMethod kBiasAsimov;
-  static const BiasMethod kBiasEstimator;
-  static const BiasMethod kBiasClosure;
-  static const BiasMethod kBiasData;
-  static const BiasMethod kBiasTruth;
+  static const BiasMethod kBiasToys;
+  static const BiasMethod kBiasRooFitToys;
   static const BiasError kBiasSD;
   static const BiasError kBiasSDM;
   static const BiasError kBiasRMS;
