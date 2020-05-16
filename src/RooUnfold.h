@@ -40,9 +40,11 @@ public:
   static const ErrorTreatment kNoError;
   static const ErrorTreatment kErrors;
   static const ErrorTreatment kCovariance;
-  static const ErrorTreatment kCovToy;
+  static const ErrorTreatment kErrorsToys;
+  static const ErrorTreatment kCovToys;
+  static const ErrorTreatment kErrorsRooFitToys;
+  static const ErrorTreatment kCovRooFitToys;
   static const ErrorTreatment kDefault;
-  static const ErrorTreatment kRooFit;
   static const BiasMethod kBiasToys;
   static const BiasMethod kBiasRooFitToys;
   static const BiasError kBiasSD;
@@ -119,8 +121,8 @@ public:
   virtual void       SetRegParm (Double_t parm);
   virtual Double_t   GetRegParm() const; // Get Regularisation Parameter
   Double_t Chi2 (const Hist* hTrue,RooUnfolding::ErrorTreatment DoChi2=RooUnfolding::kCovariance) const;
-  virtual void CalculateBias(RooUnfolding::BiasMethod method, Int_t ntoys = 50, const Hist* hTrue = 0, Bool_t relative=true) const; // Estimate bias
-  virtual void CalculateBias(Int_t ntoys = 50, const Hist* hTrue = 0, Bool_t relative=true) const; // Estimate bias by throwing toys.
+  virtual void CalculateBias(RooUnfolding::BiasMethod method, Int_t ntoys = 50, const Hist* hTrue = 0) const; // Estimate bias
+  virtual void CalculateBias(Int_t ntoys = 50, const Hist* hTrue = 0) const; // Estimate bias by throwing toys.
 
   RooUnfolding::Algorithm GetAlgorithm() const;
   Double_t GetMinParm() const;
@@ -128,9 +130,8 @@ public:
   Double_t GetStepSizeParm() const;
   Double_t GetDefaultParm() const;
   double RunToy(TVectorD& x, TVectorD& xe) const;
-  void RunToys(int ntoys, std::vector<TVectorD>& x, std::vector<TVectorD>& xe, std::vector<double>& chi2) const;
-  void RunBiasAsimovToys(int ntoys, std::vector<TVectorD>& vbias, Bool_t relative = true) const;
-  void RunBiasDataToys(int ntoys, std::vector<TVectorD>& vbias, Bool_t relative = true) const;
+  void RunRooFitToys(int ntoys, std::vector<TVectorD>& vx, std::vector<TVectorD>& vxe, std::vector<double>& chi2) const;
+  void RunToys(int ntoys, std::vector<TVectorD>& vx, std::vector<TVectorD>& vxe, std::vector<double>& chi2) const;
   
   void Print(Option_t* opt="") const;
   void Dump() const;    
@@ -154,9 +155,16 @@ private:
 
 protected:
   // cache 
+  virtual void GetErrors() const; // Get 
   virtual void GetCov() const; // Get covariance matrix using errors on measured distribution
-  virtual void GetErrors() const;
-  virtual void GetErrorsCovariance() const;
+  virtual void GetErrorsToys() const;
+  virtual void GetCovToys() const;
+  virtual void GetErrorsRooFitToys() const;
+  virtual void GetCovRooFitToys() const;
+
+  void GetSampleVar(std::vector<TVectorD>& munfolded) const;
+  void GetSampleCov(std::vector<TVectorD>& munfolded) const;
+
   virtual void GetSettings() const;
   virtual void GetErrMat() const; // Get covariance matrix using errors from residuals on reconstructed distribution
   virtual void GetWgt() const; // Get weight matrix using errors on measured distribution
