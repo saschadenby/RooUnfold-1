@@ -518,12 +518,14 @@ RooUnfoldT<Hist,Hist2D>::GetErrors() const
   if(this->_withError != kErrors){
     throw std::runtime_error("unknown error propagation method!");
   }
+
   if (!_cache._haveCov) GetCov();
   if (!_cache._haveCov) return;
   _cache._variances.ResizeTo(_nt);
   for (Int_t i= 0; i < _nt; i++) {
     _cache._variances(i)= _cache._cov(i,i);
   }
+  _cache._haveCov = false;
   _cache._haveErrors= true;
 }
 
@@ -534,9 +536,12 @@ RooUnfoldT<Hist,Hist2D>::GetCov() const
   const TMatrixD& covmeas(GetMeasuredCov());
   Int_t nb= std::min(_nm,_nt);
   _cache._cov.ResizeTo (_nt, _nt);
-  for (int i=0; i<nb; i++)
-    for (int j=0; j<nb; j++)
+  for (int i=0; i<nb; i++){
+    for (int j=0; j<nb; j++){
       _cache._cov(i,j)= covmeas(i,j);
+    }
+  }
+  
   _cache._haveCov= true;
 }
 
@@ -703,7 +708,7 @@ RooUnfoldT<Hist,Hist2D>::UnfoldWithErrors (ErrorTreatment withError, bool getWei
       return false;
     }
   }
-
+  
   Bool_t ok;
   if(_withError != withError) _cache._haveErrors = false;
   _withError= withError;
@@ -984,6 +989,7 @@ RooUnfoldT<Hist,Hist2D>::Eunfold(ErrorTreatment withError) const
     2: Errors from the covariance matrix given by the unfolding
     3: Errors from the covariance matrix from the variation of the results in toy MC tests
     */
+  
     if (!UnfoldWithErrors (withError)) return TMatrixD(_nt,_nt);
 
     switch(withError){
@@ -1009,7 +1015,7 @@ RooUnfoldT<Hist,Hist2D>::Eunfold(ErrorTreatment withError) const
       break;
     case kCovToys:
     case kCovRooFitToys:
-      return _cache._err_mat;
+      return _cache._cov;
       break;
     default:
       throw std::runtime_error(TString::Format("Error in RooUnfoldT::Wunfold, unrecognised error method '%d'",withError).Data());                      
@@ -1055,6 +1061,7 @@ RooUnfoldT<Hist,Hist2D>::EunfoldV(ErrorTreatment withError) const
       default:
         throw std::runtime_error(TString::Format("Error in RooUnfoldT::EunfoldV, unrecognised error method '%d'",withError).Data());        
     }
+
     return Eunfold_v;
 }
 
@@ -1112,7 +1119,7 @@ RooUnfoldT<Hist,Hist2D>::CoverageProbV(Int_t sigma) const
 
   // Calculate the bias if needed.
   if (!this->_cache._haveBias){
-    //this->CalculateBias(RooUnfolding::kBiasAsimov,100,0,false);
+    this->CalculateBias(RooUnfolding::kBiasToys,100,0);
     std::cout << "Please call CalculateBias before calculating the coverage probability." << std::endl;
     return coverage;
   }
@@ -1454,7 +1461,7 @@ const TVectorD          RooUnfoldT<Hist,Hist2D>::Vbias() const
 {
   //! Bias distribution as a vector.
   if (!_cache._haveBias){
-    this->CalculateBias(RooUnfolding::kBiasToys,100);
+    throw std::runtime_error("calculate bias before attempting to retrieve it!");
   }
 
   return _cache._bias;
@@ -1776,7 +1783,10 @@ RooUnfoldT<Hist, Hist2D>::GetErrorsToys() const
   Int_t ntoys = this->_NToys;
 
   this->RunToys(ntoys, munfolded, etoys, chi2);
-  
+
+  GetSampleVar(munfolded);
+
+  _cache._haveErrors = true;
 }
 
 template<class Hist, class Hist2D> void
@@ -1787,12 +1797,12 @@ RooUnfoldT<Hist,Hist2D>::GetCovToys() const
   std::vector<TVectorD> munfolded, etoys;
   std::vector<double> chi2;
   Int_t ntoys = this->_NToys;
-
-  this->RunToys(ntoys, munfolded, etoys, chi2);
   
+  this->RunToys(ntoys, munfolded, etoys, chi2);
+
   GetSampleCov(munfolded);
 
-  _cache._have_err_mat=true;
+  _cache._haveCov = true;
 }
 
 template<> void
@@ -1850,7 +1860,7 @@ RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>::GetCovRooFitToys(
   _cache._sdbias = sdbias;
   _cache._sdmbias = sdmbias;
   _cache._rmsbias = rmsbias;
-  _cache._have_err_mat=true;
+  _cache._haveCov=true;
 }
 
 
@@ -1940,26 +1950,33 @@ template<class Hist, class Hist2D> void
 RooUnfoldT<Hist,Hist2D>::GetSampleCov(std::vector<TVectorD>& munfolded) const
 {
   //! Get covariance matrix from the variation of the results in toy MC tests
-  _cache._err_mat.ResizeTo(_nt,_nt);
-  
+  _cache._cov.ResizeTo(_nt,_nt);
+
   Int_t ntoys = munfolded.size();
 
-  TVectorD xisum (_nt);
-  TMatrixD xijsum(_nt,_nt);
-  
-  for (Int_t k = 0; k < ntoys; k++){
-    for (Int_t i = 0; i< _nt; i++){
-      
-      Double_t xi = munfolded[k][i];
-      xisum[i] += xi;
-      for (Int_t j=0; j<_nt; j++) xijsum(i,j) += xi * munfolded[k][j];
+  TVectorD mu_av(_nt);
+
+  //! Loop over the unfolded results.
+  for (int i=0 ; i<this->_nt ; ++i) {
+    
+    double sum = 0;
+   
+    for (int j=0 ; j<ntoys ; ++j) {
+      sum += munfolded[j][i];
+    }
+
+    mu_av(i) = sum/ntoys;
+  }
+
+  for (int i = 0; i <this->_nt; i++){
+    for (int j = 0; j <this->_nt; j++){
+      double sum = 0;
+      for (int k = 0; k < ntoys; k++){
+	sum += (munfolded[k][i] - mu_av(i))*(munfolded[k][j] - mu_av(j));
+      }
+      _cache._cov(i,j) = sum/(ntoys - 1);
     }
   }
-  for (Int_t i=0; i<_nt; i++){
-    for (Int_t j=0; j<_nt; j++){
-      _cache._err_mat(i,j)= (xijsum(i,j) - (xisum[i]*xisum[j])/ntoys) / (ntoys-1);
-    }
-  } 
 }
 
 
