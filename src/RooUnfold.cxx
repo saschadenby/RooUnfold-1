@@ -1119,7 +1119,7 @@ RooUnfoldT<Hist,Hist2D>::CoverageProbV(Int_t sigma) const
 
   // Calculate the bias if needed.
   if (!this->_cache._haveBias){
-    this->CalculateBias(RooUnfolding::kBiasToys,100,0);
+    //this->CalculateBias(RooUnfolding::kBiasToys,100,0);
     std::cout << "Please call CalculateBias before calculating the coverage probability." << std::endl;
     return coverage;
   }
@@ -1613,21 +1613,33 @@ RooUnfoldT<TH1,TH2>::RunRooFitToys(int ntoys, std::vector<TVectorD>& vx, std::ve
 
 template<> void
 RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>::RunRooFitToys(int ntoys, std::vector<TVectorD>& vx, std::vector<TVectorD>& vxe, std::vector<double>& chi2) const {
+    
+  //! Create un unfolding instance with the reconstructed histogram
+  //! set as the measured histogram.
+  RooUnfolding::RooFitHist* asimov = RooUnfolding::asimovClone(this->response()->Hmeasured(),this->response()->UseDensityStatus());
+  auto* toyFactory = this->New(this->GetAlgorithm(),this->response(),asimov,GetRegParm());
+  toyFactory->SetVerbose(0);
 
   //! run a number of toys, fill the values, errors and chi2 in the
   //! given vectors
-  const auto* res = this->response();
+  const auto* res = toyFactory->response();
   RooArgSet errorParams;
+
+  //! Get nuisance parameters corresponding to the stat. uncertainties
+  //! on the asimov data.
   if(this->_dosys != kNoMeasured){
-    getParameters(this->Hmeasured(),errorParams);
+    getParameters(toyFactory->Hmeasured(),errorParams);
   }
+  
+  //! Get all other possible systematic and statistical uncertainties.
   if(this->_dosys == kAll){
     getParameters(res->Hmeasured(),errorParams);
+    getParameters(res->Hresponse(),errorParams);
     getParameters(res->Htruth(),errorParams);
     getParameters(res->Hfakes(),errorParams);
-    getParameters(res->Hresponse(),errorParams);
   }
 
+  //! Save the parameter values.
   auto* snsh = errorParams.snapshot();
   RooArgList errorParamList(errorParams);
   RooFitResult * prefitResult = RooFitResult::prefitResult(errorParamList);
@@ -1656,7 +1668,12 @@ RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>::RunRooFitToys(int
   // }
 
   RooRandom::randomGenerator()->SetSeed(0);
+
+  //! Create a multidimensional pdf of which each nuisance parameter
+  //! represents one dimension.
   RooAbsPdf* paramPdf = prefitResult->createHessePdf(errorParams);
+
+  //! Sample new values for these nuisance parameters.
   RooDataSet* d = paramPdf->generate(errorParams,ntoys);
 
   Int_t failed_toys = 0;
@@ -1664,18 +1681,22 @@ RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>::RunRooFitToys(int
   _withError = kDefault;
   for(int i=0; i<ntoys; ++i){
     errorParams = (*d->get(i));
-    this->ForceRecalculation();
-    
+    toyFactory->ForceRecalculation();
+
     //! add this extra check in case a toy unfolding failed
-    if (this->Vunfold().GetNrows() == 1){
+    if (toyFactory->Vunfold().GetNrows() == 1){
       failed_toys++;
       continue;
     }
 
-    vx.push_back(this->Vunfold());
+    //! Save the unfolded result.
+    vx.push_back(toyFactory->Vunfold());
     if(errorType != kNoError){
-      vxe.push_back(this->EunfoldV(RooUnfolding::kErrors));
-      chi2.push_back(this->Chi2 (this->response()->Htruth(), RooUnfolding::kErrors));
+
+      //! Save the errors and chi2. Note thtat the errors are
+      //! calculated here with the method specific estimation.
+      vxe.push_back(toyFactory->EunfoldV(RooUnfolding::kErrors));
+      chi2.push_back(toyFactory->Chi2 (toyFactory->response()->Htruth(), RooUnfolding::kErrors));
     }
   }
 
@@ -1689,19 +1710,19 @@ RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>::RunRooFitToys(int
     RooDataSet* d_retry = paramPdf->generate(errorParams,1);
 
     errorParams = (*d_retry->get(0)) ;
-    this->ForceRecalculation();
+    toyFactory->ForceRecalculation();
   
     //! add this extra check in case a toy unfolding failed
-    if (this->Vunfold().GetNrows() == 1){
+    if (toyFactory->Vunfold().GetNrows() == 1){
       max_retries--;
       delete d_retry;
       continue;
     } 
 
-    vx.push_back(this->Vunfold());
+    vx.push_back(toyFactory->Vunfold());
     if(errorType != kNoError){
-      vxe.push_back(this->EunfoldV(RooUnfolding::kErrors));
-      chi2.push_back(this->Chi2 (this->response()->Htruth(), RooUnfolding::kErrors));
+      vxe.push_back(toyFactory->EunfoldV(RooUnfolding::kErrors));
+      chi2.push_back(toyFactory->Chi2 (toyFactory->response()->Htruth(), RooUnfolding::kErrors));
     }
 
     failed_toys--;
@@ -1715,8 +1736,8 @@ RooUnfoldT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>::RunRooFitToys(int
   delete prefitResult;
   delete paramPdf;
   delete d;
-  
-  this->ForceRecalculation();
+  delete asimov;
+  delete toyFactory;
 }
 
 template<class Hist, class Hist2D> void
