@@ -157,10 +157,10 @@ protected:
   // cache 
   virtual void GetErrors() const; // Get 
   virtual void GetCov() const; // Get covariance matrix using errors on measured distribution
-  virtual void GetErrorsToys() const;
-  virtual void GetCovToys() const;
-  virtual void GetErrorsRooFitToys() const;
-  virtual void GetCovRooFitToys() const;
+  void GetErrorsToys() const;
+  void GetCovToys() const;
+  void GetErrorsRooFitToys() const;
+  void GetCovRooFitToys() const;
 
   void GetSampleVar(std::vector<TVectorD>& munfolded) const;
   void GetSampleCov(std::vector<TVectorD>& munfolded) const;
