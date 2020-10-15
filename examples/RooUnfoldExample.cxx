@@ -19,7 +19,7 @@ using std::endl;
 #include "TCanvas.h"
 
 #include "RooUnfoldResponse.h"
-#include "RooUnfoldBayes.h"
+#include "RooUnfoldBlobel.h"
 //#include "RooUnfoldSvd.h"
 //#include "RooUnfoldTUnfold.h"
 //#include "RooUnfoldIds.h"
@@ -74,8 +74,8 @@ void RooUnfoldExample()
   }
 
   cout << "==================================== UNFOLD ===================================" << endl;
-  RooUnfoldBayes   unfold (&response, hMeas, 4);    // OR
-//RooUnfoldSvd     unfold (&response, hMeas, 20);   // OR
+  RooUnfoldBlobel  unfold (&response, hMeas, 4);    // OR
+  //RooUnfoldSvd     unfold (&response, hMeas, 20);   // OR
 //RooUnfoldTUnfold unfold (&response, hMeas);       // OR
 //RooUnfoldIds     unfold (&response, hMeas, 1);
 

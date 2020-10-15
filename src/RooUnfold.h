@@ -35,6 +35,7 @@ public:
   static const Algorithm kInvert;
   static const Algorithm kDagostini;
   static const Algorithm kIDS;
+  static const Algorithm kBlobel;
   static const Algorithm kGP;
   static const Algorithm kPoisson;
   static const ErrorTreatment kNoError;

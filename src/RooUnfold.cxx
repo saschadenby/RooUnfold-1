@@ -86,6 +86,7 @@
 #include "RooUnfoldResponse.h"
 #include "RooUnfoldErrors.h"
 // Need subclasses just for RooUnfold::New()
+#include "RooUnfoldBlobel.h"
 #include "RooUnfoldBayes.h"
 #include "RooUnfoldSvd.h"
 #include "RooUnfoldInvert.h"
@@ -134,7 +135,7 @@ template<class Hist,class Hist2D> const typename RooUnfoldT<Hist,Hist2D>::BiasMe
 template<class Hist,class Hist2D> const typename RooUnfoldT<Hist,Hist2D>::BiasError RooUnfoldT<Hist,Hist2D>::kBiasSD = RooUnfolding::kBiasSD;
 template<class Hist,class Hist2D> const typename RooUnfoldT<Hist,Hist2D>::BiasError RooUnfoldT<Hist,Hist2D>::kBiasSDM = RooUnfolding::kBiasSDM;
 template<class Hist,class Hist2D> const typename RooUnfoldT<Hist,Hist2D>::BiasError RooUnfoldT<Hist,Hist2D>::kBiasRMS = RooUnfolding::kBiasRMS;
-
+template<class Hist,class Hist2D> const typename RooUnfoldT<Hist,Hist2D>::Algorithm RooUnfoldT<Hist,Hist2D>::kBlobel = RooUnfolding::kBlobel;
 using namespace RooUnfolding;
 
 template<class Hist,class Hist2D>
@@ -184,6 +185,10 @@ RooUnfoldT<Hist,Hist2D>::New (RooUnfolding::Algorithm alg, const RooUnfoldRespon
 
   case kBinByBin:
     unfold= new RooUnfoldBinByBinT<Hist,Hist2D> (res, meas);
+    break;
+
+  case kBlobel:
+    unfold= new RooUnfoldBlobelT<Hist,Hist2D> (res,meas);
     break;
 
   case kTUnfold:
