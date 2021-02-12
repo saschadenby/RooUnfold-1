@@ -3,158 +3,157 @@
 
 #include "RooUnfold.h"
 #include "RooUnfoldResponse.h"
+#ifndef ROOT_TObject
+#include "TObject.h"
+#endif
+#ifndef ROOT_TMatrixD
+#include "TMatrixD.h"
+#endif
+#ifndef ROOT_TVectorD
+#include "TVectorD.h"
+#endif
+#ifndef ROOT_TMatrixDSym
+#include "TMatrixDSym.h"
+#endif
+// #include "RooUnfoldHelpers.h"
 
-#include "RooUnfoldHelpers.h"
+class RooUnfoldResponse;
+class TH1;
+class TH1D;
+class TH2D;
 
-template<class Hist, class Hist2D>
-class RooUnfoldBlobelT : public RooUnfoldT<Hist,Hist2D> {
+class RooUnfoldBlobel : public RooUnfold {
+
+
 public:
-  class RooUnfoldBlobel {
 
-public:
+  RooUnfoldBlobel(); // default constructor
+  RooUnfoldBlobel (const char*    name, const char*    title); // named constructor
+  RooUnfoldBlobel (const TString& name, const TString& title); // named constructor
+  RooUnfoldBlobel (const RooUnfoldBlobel& rhs); // copy constructor
+  virtual ~RooUnfoldBlobel(); // destructor
+  RooUnfoldBlobel& operator= (const RooUnfoldBlobel& rhs); // assignment operator
+  virtual RooUnfoldBlobel* Clone (const char* newname= 0) const;
 
-    RooUnfoldBlobel( const Hist* bdat, const Hist* bini, const Hist* xini, const Hist2D* Adet );
-    RooUnfoldBlobel( const TVectorD& bdat, const TMatrixD& Bcov, const TVectorD& bini, const TVectorD& xini, const TMatrixD& Mdet, const TMatrixD& MdetE );
-    RooUnfoldBlobel( const Hist* bdat, const TMatrixD& Bcov, const Hist* bini, const Hist* xini, const Hist2D* Adet );
-    RooUnfoldBlobel( const Hist* bdat, const TMatrixD& Bcov, const Hist* bini, const Hist* xini, const TMatrixD& Mdet, const TMatrixD& MdetE );
-    RooUnfoldBlobel( const RooUnfoldBlobel& other );
 
-    // Destructor
-    virtual ~RooUnfoldBlobel();
 
-    // Set option to normalize unfolded spectrum to unit area
-    // "normalize" - switch
-    void     SetNormalize ( Bool_t normalize ) { fNormalize = normalize; }
+    RooUnfoldBlobel (const RooUnfoldResponse* res, const TH1* meas, Int_t kreg= 0,
+                  const char* name= 0, const char* title= 0);
+    // compatibility constructor
+    RooUnfoldBlobel (const RooUnfoldResponse* res, const TH1* meas, Int_t kreg, Int_t ntoyssvd,
+                  const char* name= 0, const char* title= 0);
 
-    // Do the unfolding
-    // "kreg"   - number of singular values used (regularisation)
-    //Hist*    Unfold       ( Int_t kreg );
-    TVectorD    UnfoldV       ( Int_t kreg );
 
-    // Determine for given input error matrix covariance matrix of unfolded
-    // spectrum from toy simulation
-    // "cov"    - covariance matrix on the measured spectrum, to be propagated
-    // "ntoys"  - number of pseudo experiments used for the propagation
-    // "seed"   - seed for pseudo experiments
-    TMatrixD    GetUnfoldCovMatrix( const TMatrixD& cov, Int_t ntoys, Int_t seed = 1 );
+    void SetKterm (Int_t kreg);
+    Int_t GetKterm() const;
+    virtual void  SetRegParm (Double_t parm);
+    virtual Double_t GetRegParm() const;
+    virtual void Reset();
 
-    // Determine covariance matrix of unfolded spectrum from finite statistics in
-    // response matrix
-    // "ntoys"  - number of pseudo experiments used for the propagation
-    // "seed"   - seed for pseudo experiments
-    // "uncmat" - matrix containing the uncertainty on the detector matrix elements if different from purely statistical without any weights
-    TMatrixD    GetAdetCovMatrix( Int_t ntoys, Int_t seed=1, const TMatrixD* uncmat=0 );
 
-    // Regularisation parameter
-    Int_t    GetKReg() const { return fKReg; }
 
-    // Obtain the distribution of |d| (for determining the regularization)
-    Hist*    GetD() const;
 
-    // Obtain the computed regularized covariance matrix
-    const TMatrixD&    GetXtau() const;
+protected:
+  void Assign (const RooUnfoldBlobel& rhs);
+  // virtual void PrepareHistograms();
+  virtual void Unfold();
+  virtual void GetCov();
+  virtual void GetWgt();
+  virtual void GetSettings();
 
-    // Obtain the computed inverse of the covariance matrix
-    const TMatrixD&    GetXinv() const;
 
-    //Obtain the covariance matrix on the data
-    const TMatrixD& GetBCov() const;
-
-  private:
-
-    // Helper functions for vector and matrix operations
-    void            FillCurvatureMatrix( TMatrixD& tCurv, TMatrixD& tC ) const;
-    static Double_t GetCurvature       ( const TVectorD& vec, const TMatrixD& curv );
-
-    // Helper functions
-    static TMatrixD MatDivVec( const TMatrixD& mat, const TVectorD& vec, Int_t zero=0 );
-    static TVectorD CompProd ( const TVectorD& vec1, const TVectorD& vec2 );
-
-    static TVectorD VecDiv                 ( const TVectorD& vec1, const TVectorD& vec2, Int_t zero = 0 );
-    static void     RegularisedSymMatInvert( TMatrixDSym& mat, Double_t eps = 1e-3 );
-
-    // Class members
-    Int_t       fMdim;        //! Reconstructed dimensions
-    Int_t       fTdim;        //! Truth dimensions
-    Int_t       fDdim;        //! Derivative for curvature matrix
-    Bool_t      fNormalize;   //! Normalize unfolded spectrum to 1
-    Int_t       fKReg;        //! Regularisation parameter
-    Hist*       fDHist;       //! Distribution of d (for checking regularization)
-    TVectorD       fSVHist;      //! Distribution of singular values
-    TMatrixD       fXtau;        //! Computed regularized covariance matrix
-    TMatrixD       fXinv;        //! Computed inverse of covariance matrix
-
-    // Input histos
-
-    const TVectorD fBdat;        // measured distribution (data)
-    TMatrixD fBcov;        // covariance matrix of measured distribution (data)
-    const TVectorD fBini;        // reconstructed distribution (MC)
-    const TVectorD fXini;        // truth distribution (MC)
-    TMatrixD fAdet;        // Detector response matrix
-    TMatrixD fAdetE;
-
-    // Evaluation of covariance matrices
-    TVectorD       fToyhisto;    //! Toy MC histogram
-    TVectorD       fToyhistoE;    //! Toy MC histogram
-    TMatrixD       fToymat;      //! Toy MC detector response matrix
-    TMatrixD       fToymatE;      //! Toy MC detector response matrix
-    Bool_t      fToyMode;     //! Internal switch for covariance matrix propagation
-    Bool_t      fMatToyMode;  //! Internal switch for evaluation of statistical uncertainties from response matrix
-  };
-
- public:
-
-  // Standard methods
-
-  RooUnfoldBlobelT(); // default constructor
-  RooUnfoldBlobelT (const char*    name, const char*    title); // named constructor
-  RooUnfoldBlobelT (const TString& name, const TString& title); // named constructor
-  RooUnfoldBlobelT (const RooUnfoldBlobelT<Hist,Hist2D>& rhs); // copy constructor
-  virtual ~RooUnfoldBlobelT(); // destructor
-  RooUnfoldBlobelT<Hist,Hist2D>& operator= (const RooUnfoldBlobelT<Hist,Hist2D>& rhs); // assignment operator
-
-  // Special constructors
-
-  RooUnfoldBlobelT (const RooUnfoldResponseT<Hist,Hist2D>* res, const Hist* meas, Int_t kreg= 0,
-		    const char* name= 0, const char* title= 0);
-  // compatibility constructor
-  RooUnfoldBlobelT (const RooUnfoldResponseT<Hist,Hist2D>* res, const Hist* meas, Int_t kreg, Int_t ntoyssvd,
-		    const char* name= 0, const char* title= 0);
-
-  void SetKterm (Int_t kreg);
-  Int_t GetKterm() const;
-  virtual void  SetRegParm (Double_t parm);
-  virtual Double_t GetRegParm() const;
-  virtual void Reset();
-
- protected:
-  void Assign (const RooUnfoldBlobelT<Hist,Hist2D>& rhs); // implementation of assignment operator
-  virtual void Unfold() const override;
-  virtual void GetCov() const override;
-  virtual void GetWgt() const override;
-  virtual void GetSettings() const override;
-
- private:
+private:
   void Init();
   void Destroy();
-  void CopyData (const RooUnfoldBlobelT<Hist,Hist2D>& rhs);
-  void PrepareHistograms() const;
+  void CopyData (const RooUnfoldBlobel& rhs);
 
- protected:
-  // instance variables
-  mutable Int_t _kreg;
-  mutable const Hist *_meas1d, *_train1d, *_truth1d;
-  mutable const Hist2D *_reshist, *_meascov;
+protected:
+  //instance variables
+  // TBlobelUnfold* _bru;
+  // Class members
+  Int_t       _kreg;        //! Reconstructed dimensions
+  Int_t       _nb;        //! Truth dimensions
 
- public:
-  ClassDefT (RooUnfoldBlobelT, 1) // Blobel Unfolding (interface to TBlobelUnfold)
-    };
+  // Input histos    Bool_t      fMatToyMode;  //! Internal switch for evaluation of statistical uncertainties from response matrix
+  TH1D *_meas1d, *_train1d, *_truth1d;
+  TH2D *_reshist, *_meascov;
+
+  //Matrix to be used
+  TH2D *Hessian;
+
+public:
+  ClassDef (RooUnfoldBlobel, 1)
+
+};
+inline
+RooUnfoldBlobel::RooUnfoldBlobel()
+  : RooUnfold()
+{
+  // Default constructor. Use Setup() to prepare for unfolding.
+  Init();
+}
+
+inline
+RooUnfoldBlobel::RooUnfoldBlobel (const char* name, const char* title)
+  : RooUnfold(name,title)
+{
+  // Basic named constructor. Use Setup() to prepare for unfolding.
+  Init();
+}
+
+inline
+RooUnfoldBlobel::RooUnfoldBlobel (const TString& name, const TString& title)
+  : RooUnfold(name,title)
+{
+  // Basic named constructor. Use Setup() to prepare for unfolding.
+  Init();
+}
+
+inline
+RooUnfoldBlobel& RooUnfoldBlobel::operator= (const RooUnfoldBlobel& rhs)
+{
+  // Assignment operator for copying RooUnfoldBlobel settings.
+  Assign(rhs);
+  return *this;
+}
+
+inline
+RooUnfoldBlobel::~RooUnfoldBlobel()
+{
+  Destroy();
+}
 
 
-typedef RooUnfoldBlobelT<TH1,TH2> RooUnfoldBlobel;
-#ifndef NOROOFIT
+inline
+void RooUnfoldBlobel::SetKterm (Int_t kreg)
+{
+  // Set regularisation parameter
+  _kreg= kreg;
+}
 
-typedef RooUnfoldBlobelT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist> RooFitUnfoldBlobel;
-#endif
+
+inline
+Int_t RooUnfoldBlobel::GetKterm() const
+{
+  // Return regularisation parameter
+  return _kreg;
+}
+
+// inline void RooUnfoldBlobel::SetNtoysSVD (Int_t ntoyssvd) {_NToys=ntoyssvd;}  // no longer used
+// inline Int_t RooUnfoldBlobel::GetNtoysSVD() const { return _NToys; }  // no longer used
+
+inline
+void  RooUnfoldBlobel::SetRegParm (Double_t parm)
+{
+  // Set regularisation parameter
+  SetKterm(Int_t(parm+0.5));
+}
+
+inline
+Double_t RooUnfoldBlobel::GetRegParm() const
+{
+  // Return regularisation parameter
+  return GetKterm();
+}
 
 #endif

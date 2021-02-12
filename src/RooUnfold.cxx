@@ -97,6 +97,7 @@
 #include "RooUnfoldErrors.h"
 // Need subclasses just for RooUnfold::New()
 #include "RooUnfoldBayes.h"
+#include "RooUnfoldBlobel.h"
 #include "RooUnfoldSvd.h"
 #include "RooUnfoldInvert.h"
 #include "RooUnfoldBinByBin.h"
@@ -149,6 +150,9 @@ RooUnfold* RooUnfold::New (Algorithm alg, const RooUnfoldResponse* res, const TH
       break;
     case kBayes:
       unfold= new RooUnfoldBayes    (res, meas);
+      break;
+    case kBlobel:
+      unfold= new RooUnfoldBlobel   (res, meas);
       break;
     case kSVD:
       unfold= new RooUnfoldSvd      (res, meas);
@@ -644,7 +648,7 @@ void RooUnfold::PrintTable (std::ostream& o, const TH1* hTrainTrue, const TH1* h
   if (meas_test_tot>0.0 && meas_train_tot>0.0) toterr= sqrt(meas_test_tot)*true_train_tot/meas_train_tot;
   o << ' ' << setw(8) << meas_test_tot << setprecision(1)
     << ' ' << setw(8) << unf_tot;
-  if (withError) 
+  if (withError)
   o << ' ' << setw(9) << toterr;
   o << ' ' << setw(8) << unf_tot-true_test_tot;
   if(withError && toterr>0.0)

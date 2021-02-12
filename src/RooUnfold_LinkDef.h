@@ -9,6 +9,7 @@
 #pragma link C++ class RooUnfoldSvd-;
 #pragma link C++ class RooUnfoldBinByBin+;
 #pragma link C++ class RooUnfoldResponse-;
+#pragma link C++ class RooUnfoldBlobel+;
 #pragma link C++ class RooUnfoldErrors+;
 #pragma link C++ class RooUnfoldParms+;
 #pragma link C++ class RooUnfoldInvert+;

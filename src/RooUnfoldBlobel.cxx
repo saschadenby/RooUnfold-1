@@ -14,382 +14,293 @@
 
 #include "RooUnfoldHelpers.h"
 #include "RooUnfoldResponse.h"
-#include "RooUnfoldTH1Helpers.h"
-#include "RooUnfoldFitHelpers.h"
+// #include "RooUnfoldTH1Helpers.h"
+// #include "RooUnfoldFitHelpers.h"
 
 using namespace RooUnfolding;
 
-template<class Hist,class Hist2D>
-RooUnfoldBlobelT<Hist,Hist2D>::RooUnfoldBlobelT (const RooUnfoldBlobelT<Hist,Hist2D>& rhs)
-  : RooUnfoldT<Hist,Hist2D> (rhs)
+using std::cout;
+using std::cerr;
+using std::endl;
+
+ClassImp(RooUnfoldBlobel)
+
+RooUnfoldBlobel::RooUnfoldBlobel (const RooUnfoldBlobel& rhs)
+  : RooUnfold (rhs)
 {
   //duplicate constructor
   Init();
   CopyData (rhs);
 }
 
-template<class Hist,class Hist2D>
-RooUnfoldBlobelT<Hist,Hist2D>::RooUnfoldBlobelT (const RooUnfoldResponseT<Hist,Hist2D>* res, const Hist* meas, Int_t kreg,
-						 const char* name, const char* title)
-  : RooUnfoldT<Hist,Hist2D> (res, meas, name, title), _kreg(kreg ? kreg : res->GetNbinsTruth()/2)
+RooUnfoldBlobel::RooUnfoldBlobel (const RooUnfoldResponse* res, const TH1* meas, Int_t kreg,
+                            const char* name, const char* title)
+  : RooUnfold (res, meas, name, title), _kreg(kreg ? kreg : res->GetNbinsTruth()/2)
 {
   //! Constructor with response matrix object and measured unfolding input histogram.
   //! The regularisation parameter is kreg.
   Init();
 }
 
-template<class Hist,class Hist2D> void
-RooUnfoldBlobelT<Hist,Hist2D>::Reset()
+RooUnfoldBlobel::RooUnfoldBlobel (const RooUnfoldResponse* res, const TH1* meas, Int_t kreg, Int_t ntoyssvd,
+                            const char* name, const char* title)
+  : RooUnfold (res, meas, name, title), _kreg(kreg ? kreg : res->GetNbinsTruth()/2)
+{
+  //! Constructor with old ntoys argument. No longer required, left over from svd, kept for posterity
+  Init();
+  _NToys = ntoyssvd;
+}
+
+RooUnfoldBlobel*
+RooUnfoldBlobel::Clone (const char* newname) const
+{
+  RooUnfoldBlobel* unfold= new RooUnfoldBlobel(*this);
+  if (newname && strlen(newname)) unfold->SetName(newname);
+  return unfold;
+}
+
+void
+RooUnfoldBlobel::Reset()
 {
   // destroy and re-initialize this object
   Destroy();
   Init();
-  RooUnfoldT<Hist,Hist2D>::Reset();
+  RooUnfold::Reset();
 }
 
-template<class Hist,class Hist2D> void
-RooUnfoldBlobelT<Hist,Hist2D>::Destroy()
+void
+RooUnfoldBlobel::Destroy()
 {
   //! delete all members of this object
-  delete this->_meas1d;
-  delete this->_train1d;
-  delete this->_truth1d;
-  delete this->_reshist;
+  delete _meas1d;
+  delete _train1d;
+  delete _truth1d;
+  delete _reshist;
 }
 
-template<class Hist,class Hist2D> void
-RooUnfoldBlobelT<Hist,Hist2D>::Init()
+void
+RooUnfoldBlobel::Init()
 {
   //! initialize this object with zero values
-  this->_meas1d= this->_train1d= this->_truth1d= 0;
-  this->_reshist= this->_meascov= 0;
+  _meas1d= _train1d= _truth1d= 0;
+  _reshist= _meascov= 0;
+  Hessian = 0;
   GetSettings();
 }
 
-template<class Hist,class Hist2D> void
-RooUnfoldBlobelT<Hist,Hist2D>::Assign (const RooUnfoldBlobelT<Hist,Hist2D>& rhs)
+void
+RooUnfoldBlobel::Assign (const RooUnfoldBlobel& rhs)
 {
   //! assign data from another instance
-  RooUnfoldT<Hist,Hist2D>::Assign (rhs);
+  RooUnfold::Assign (rhs);
   CopyData (rhs);
 }
 
-template<class Hist,class Hist2D> void
-RooUnfoldBlobelT<Hist,Hist2D>::CopyData (const RooUnfoldBlobelT<Hist,Hist2D>& rhs)
+void
+RooUnfoldBlobel::CopyData (const RooUnfoldBlobel& rhs)
 {
   //! copy data from another instance
-  this->_kreg= rhs._kreg;
+  _kreg= rhs._kreg;
 }
 
-
-template<class Hist,class Hist2D> void RooUnfoldBlobelT<Hist,Hist2D>::PrepareHistograms() const{
-  //! fill all the histogram members
-  this->_meas1d = this->_meas;
-  this->_train1d= this->_res->Hmeasured();
-  this->_truth1d= this->_res->Htruth();
-  this->_reshist= this->_res->Hresponse();
-}
-
-namespace{
-  TH1* histNoOverflow(const TH1* hist, bool overflow){
-    return createHist<TH1>(h2v(hist,overflow),h2ve(hist,overflow),name(hist),title(hist),vars(hist),overflow);
-  }
-  void subtract(TH1* hist, const TVectorD& vec, double fac){
-    for (Int_t i= 1; i<=hist->GetNbinsX()+1; i++){
-      hist->SetBinContent (i, hist->GetBinContent(i)-(fac*vec[i-1]));
-    }
-  }
-}
-template<> void RooUnfoldBlobelT<TH1,TH2>::PrepareHistograms() const {
-  //! fill all the histogram members
-  TH1* meas1d = ::histNoOverflow (this->_meas,             this->_overflow);
-  TH1* train1d= ::histNoOverflow (this->_res->Hmeasured(), this->_overflow);
-  TH1* truth1d= ::histNoOverflow (this->_res->Htruth(),    this->_overflow);
-  TH2* reshist= this->_res->HresponseNoOverflow();
-  RooUnfolding::resize (meas1d,  this->_nm);
-  RooUnfolding::resize (train1d, this->_nm);
-  RooUnfolding::resize (truth1d, this->_nt);
-  RooUnfolding::resize (reshist, this->_nm, this->_nt);
-
-  // Subtract fakes from measured distribution
-  if (this->_res->HasFakes()) {
-    TVectorD fakes(this->_res->Vfakes());
-    Double_t fac= this->_res->Vmeasured().Sum();
-    if (fac!=0.0) fac=  this->Vmeasured().Sum() / fac;
-    if (this->_verbose>=1) std::cout << "Subtract " << fac*fakes.Sum() << " fakes from measured distribution" << std::endl;
-    ::subtract(meas1d,fakes,fac);
-  }
-
-  delete this->_meas1d  ;
-  delete this->_train1d ;
-  delete this->_truth1d ;
-  delete this->_reshist ;
-
-  this->_meas1d  = meas1d  ;
-  this->_train1d = train1d;
-  this->_truth1d = truth1d;
-  this->_reshist = reshist ;
-}
-
-template<class Hist,class Hist2D> void
-RooUnfoldBlobelT<Hist,Hist2D>::Unfold() const
+void
+RooUnfoldBlobel::Unfold()
 {
   //! perform the unfolding
-  if (this->_res->GetDimensionTruth() != 1 || this->_res->GetDimensionMeasured() != 1) {
-    std::cerr << "RooUnfoldBlobelT may not work very well for multi-dimensional distributions" << std::endl;
+  if (_res->GetDimensionTruth() != 1 || _res->GetDimensionMeasured() != 1) {
+    std::cerr << "RooUnfoldBlobel may not work very well for multi-dimensional distributions" << std::endl;
   }
-  if (this->_res->GetDimensionTruth() != this->_res->GetDimensionMeasured()){
-    std::cerr << "RooUnfoldBlobelT may not work very well for distributions of different sizes" << std::endl;
+  if (_res->GetDimensionTruth() != _res->GetDimensionMeasured()){
+    std::cerr << "RooUnfoldBlobel may not work very well for distributions of different sizes" << std::endl;
   }
-  if (this->_kreg < 0) {
-    std::cerr << "RooUnfoldBlobelT invalid kreg: " << this->_kreg << std::endl;
+  if (_kreg < 0) {
+    std::cerr << "RooUnfoldBlobel invalid kreg: " << _kreg << std::endl;
     return;
   }
+  _nb= _nm > _nt ? _nm : _nt;
 
-  this->PrepareHistograms();
+  if (_kreg > _nb) {
+    cerr << "RooUnfoldSvd invalid kreg=" << _kreg << " with " << _nb << " bins" << endl;
+    return;
+  }
+  // this->PrepareHistograms();
 
-  if (this->_verbose>=1) std::cout << "RUN(Blobel) init " << nBins(this->_reshist,X) << " x " << nBins(this->_reshist,Y) << " bins, kreg=" << this->_kreg << std::endl;
-  if(!this->_meas1d) throw std::runtime_error("no meas1d given!");
-  if(!this->_train1d) throw std::runtime_error("no train1d given!");
-  if(!this->_truth1d) throw std::runtime_error("no truth1d given!");
-  if(!this->_reshist) throw std::runtime_error("no reshist given!");
+  Bool_t oldstat= TH1::AddDirectoryStatus();
+  TH1::AddDirectory (kFALSE);
+  _meas1d=  HistNoOverflow (_meas,             _overflow);
+  _train1d= HistNoOverflow (_res->Hmeasured(), _overflow);
+  _truth1d= HistNoOverflow (_res->Htruth(),    _overflow);
+  _reshist= _res->HresponseNoOverflow();
+  Resize (_meas1d,  _nb);
+  Resize (_train1d, _nb);
+  Resize (_truth1d, _nb);
+  Resize (_reshist, _nb, _nb);
+  if (_res->FakeEntries()) {
+    TVectorD fakes= _res->Vfakes();
+    Double_t fac= _res->Vmeasured().Sum();
+    if (fac!=0.0) fac=  Vmeasured().Sum() / fac;
+    if (_verbose>=1) cout << "Subtract " << fac*fakes.Sum() << " fakes from measured distribution" << endl;
+    for (Int_t i= 1; i<=_nm; i++)
+      _meas1d->SetBinContent (i, _meas1d->GetBinContent(i)-(fac*fakes[i-1]));
+  }
+  // if (_verbose>=1) std::cout << "RUN(Blobel) init " << nBins(_reshist) << " x " << nBins(_reshist) << " bins, kreg=" << _kreg << std::endl;
+  if(!_meas1d) throw std::runtime_error("no meas1d given!");
+  if(!_train1d) throw std::runtime_error("no train1d given!");
+  if(!_truth1d) throw std::runtime_error("no truth1d given!");
+  if(!_reshist) throw std::runtime_error("no reshist given!");
 
-  //Find Hessian of Response Matrix
-  Int_t Hess_a = 0;
-  Hess_a = nBins(this->_reshist,X);
-  Int_t Hess_b = 0;
-  Hess_b = nBins(this->_reshist,Y);
-  TMatrixD Hessian(Hess_a,Hess_a);
-  // for(int i = 0; i < Hess_a; i++){
-  //   for(int j = 0; j < Hess_a; j++){
-  //     Hessian[i][j] = 0;
+
+  _nb= _nm > _nt ? _nm : _nt;
+
+  //set up expected values given _reshist
+  TVectorD expected(_nb);
+  for(int i = 0; i < _nb; i++){
+    for(int j = 0; j < _nb; j++){
+      expected(i) += (_reshist->GetBinContent(i,j) * _meas1d->GetBinContent(j));
+    }
+  }
+
+  //set up discrete curvature vector using elements of response histogram
+  TVectorD curve(_nb);
+  for(int i = 0; i < _nb; i++){
+    if(i == 0){
+      curve(i) = ((-2.0)* _meas1d->GetBinContent(i) + _meas1d->GetBinContent(i+1));
+    } else if(i == (_nb - 1)){
+      curve(i) = ((-2.0)* _meas1d->GetBinContent(i) + _meas1d->GetBinContent(i-1));
+    } else{
+      curve(i) = (_meas1d->GetBinContent(i-1) + _meas1d->GetBinContent(i+1) - ((-2.0)*_meas1d->GetBinContent(i)));
+    }
+  }
+
+  //set up loss function
+  // TVectorD LogL(_nb);
+  double Likelihood = 0.0;
+  for(int i = 0; i < _nb; i++){
+    double bin_content = _meas1d->GetBinContent(i);
+    double product = 0.0;
+    if(bin_content == 0){
+      product = 0.0;
+    } else{
+      product = expected(i) * log(bin_content);
+    }
+    cout << "product is: " << product << endl;
+    Likelihood += (bin_content - product);
+  }
+  cout << "Likelihood is: " << Likelihood << endl;
+  //first find objective function of response and observed
+
+  //then find  gradient, right now f represents target histogram
+  TVectorD target(_nb);
+  for(int i = 0; i < _nb; i++){
+    target(i) = 1.0;
+  }
+  TVectorD _grad(_nb);
+  for(int i = 0; i < _nb; i++){
+    for(int j = 0; j < _nb; j++){
+      double denomenator = 0.0;
+      for(int k = 0; k < _nb; k++){
+        denomenator += _reshist->GetBinContent(j,k)*target(k);
+      }
+      cout << "Denomenator is: " << denomenator << endl;
+      _grad(i) += _reshist->GetBinContent(j,i) -
+      (_meas1d->GetBinContent(j)*_reshist->GetBinContent(j,i)) /
+      denomenator;
+    }
+  }
+  _grad.Print();
+  //now hessian
+  TMatrixD _hess(_nb,_nb);
+  for(int i = 0; i < _nb; i++){
+    for(int j = 0; j < _nb; j++){
+      _hess(i,j) = 0.0;
+    }
+  }
+  for(int i = 0; i < _nb; i++){
+    for(int j = 0; j < _nb; j++){
+      _hess(i,j) = 0.0;
+    }
+  }
+  // _hess.Print();
+
+      // def maxl_H(f): # compute the gradient at an estimate f
+      //     res = np.zeros((len(f), len(f)))
+      //     for i1 in range(len(f)):
+      //       for i2 in range(len(f)):
+      //         res[i1,i2] = np.sum(
+      //           [ g[j]*R[j,i1]*R[j,i2] / pow(np.dot(R[j,:], f), 2) for j in range(len(g)) ]
+      //         )
+      //     return res
+  //then create Tikhonov matrix
+
+  //Covariance is given by inverse of Hessian
+}
+
+void
+RooUnfoldBlobel::GetCov()
+{
+  return;
+//   if (!_svd) return;
+//   Bool_t oldstat= TH1::AddDirectoryStatus();
+//   TH1::AddDirectory (kFALSE);
+//
+//   TH2D *unfoldedCov= 0, *adetCov= 0;
+//   //Get the covariance matrix for statistical uncertainties on the measured distribution
+//   if (_dosys!=2) unfoldedCov= _svd->GetXtau();
+//   //Get the covariance matrix for statistical uncertainties on the response matrix
+//   //Uses Poisson or Gaussian-distributed toys, depending on response matrix histogram's Sumw2 setting.
+//   if (_dosys)        adetCov= _svd->GetAdetCovMatrix (_NToys);
+//
+//   _cov.ResizeTo (_nt, _nt);
+//   for (Int_t i= 0; i<_nt; i++) {
+//     for (Int_t j= 0; j<_nt; j++) {
+//       Double_t v  = 0;
+//       if (unfoldedCov) v  = unfoldedCov->GetBinContent(i+1,j+1);
+//       if (adetCov)     v += adetCov    ->GetBinContent(i+1,j+1);
+//       _cov(i,j)= v;
+//     }
+//   }
+//
+//   delete adetCov;
+// #ifdef TSVDUNFOLD_LEAK
+//   delete unfoldedCov;
+// #endif
+//   TH1::AddDirectory (oldstat);
+//
+//   _haveCov= true;
+}
+
+void
+RooUnfoldBlobel::GetWgt()
+{
+  return;
+  // //! Get weight matrix
+  // if (_dosys) RooUnfold::GetWgt();   // can't add sys errors to weight, so calculate weight from covariance
+  // if (!_svd) return;
+  // Bool_t oldstat= TH1::AddDirectoryStatus();
+  // TH1::AddDirectory (kFALSE);
+  //
+  // //Get the covariance matrix for statistical uncertainties on the measured distribution
+  // TH2D* unfoldedWgt= _svd->GetXinv();
+  //
+  // _wgt.ResizeTo (_nt, _nt);
+  // for (Int_t i= 0; i<_nt; i++) {
+  //   for (Int_t j= 0; j<_nt; j++) {
+  //     _wgt(i,j)= unfoldedWgt->GetBinContent(i+1,j+1);
   //   }
   // }
 
-  //create inverted response matrix for hessian
-  const Hist2D reshist_inv;
-  reshist_inv = this->reshist;
-  Double_t det1;
-  reshist_inv.Invert(det1);
-
-  for(int i = 0; i < Hess_a; i++){
-    for(int j = 0; j < Hess_a; j++){
-      Double_t value, dot;
-      for(int k = 0; k < Hess_b; k++){
-        for(int l = 0; l < Hess_b; l++){
-          dot += this->_reshist[k][l] * this->_meas1d[l];
-        }
-        value += this->_truth1d[i] * this->_reshist[k][i] * this->_reshist[k][j] / (dot * dot);
-        dot = 0.0;
-      }
-      Hessian[i][j] = value;
-    }
- }}
-
-  //convert hessian into diagonalization and basis matrixes
-  Hist2D Basis(Hess_a, Hess_a);
-  Hist2D Diagonal(Hess_a, Hess_a);
-  Hist2D Last(Hess_a, Hess_a);
-  Hist2D Final(Hess_a, Hess_a);
-  for(int i = 0; i < Hess_a; i++){
-    for(int j = 0; j < Hess_a; j++){
-      Basis[i][j] = 0.0;
-      Last[i][j] = 0.0;
-      Diagonal[i][j] = 0.0;
-      Final[i][j] = 0.0;
-    }
-  }
-
-  //apply hessian decomposition to reco distribution
-  for(int i = 0; i < Hess_a; i++){
-    Double_t temp_value = 0.0;
-    for(int j = 0; j < Hess_a; j++){
-      temp_value += Final[i][j] * this->_meas1d[j];
-    }
-    this->_train1d[i] = temp_value;
-  }
-
-
-// //establish eigen library object matrix in order to perform eigen function
-// Eigen::Matrix<double, Hess_a, Hess_a> Eigenvalues;
-
-// //convert Hessian
-// for(int i = 0; i < Hess_a; i++){
-//   for(int j = 0; j < Hess_a; j++){
-//     Eigenvalues(i,j) = Hessian[i][j];
-//   }
-//  }
+// #ifdef TSVDUNFOLD_LEAK
+//   delete unfoldedWgt;
+// #endif
+//   TH1::AddDirectory (oldstat);
 //
-// //find eigenvalues
-// Eigen::SelfAdjointEigenSolver<Matrix<double, Hess_a, Hess_a>> eigensolver(Eigenvalues);
-// if (eigensolver.info() != Success) abort();
-// Eigen::VectorXcd eivals = eigensolver.eigenvalues();
-// for(int i = 0; i < Hess_a; i++){
-//   Diagonal[i][i] = eivals(i);
-//  }
-//
-// //Now find eigenvectors
-// for(int i = 0; i < Hess_a; i++){
-//   Eigen::VectorXcd eivals = eigensolver.eigenvectors().col(i);
-//   for(int j = 0; j < Hess_a; j++){
-//     Basis_vals[i][j] = eivals(j);
-//     Last[j][i] = eivals(j);
-//   }
-//  }
-//
-// //calculate final product of these three to apply to the distribution
-// double Stepping_Stone[Hess_a][Hess_a];
-// for(int i = 0; i < Hess_a; i++){
-//   for(int j = 0; j < Hess_a; j++){
-//     Stepping_Stone[i][j] = 0.0;
-//   }
-//  }
-// for (int i = 0; i < Hess_a; i++) {
-//   for (int  j= 0; j < Hess_a; j++) {
-//     for (int k = 0; k < Hess_a; k++) {
-//       Stepping_Stone[i][j] += Basis_vals[i][k] * Diagonal[k][j];
-//     }
-//   }
-//  }
-// for (int i = 0; i < Hess_a; i++) {
-//   for (int  j= 0; j < Hess_a; j++) {
-//     for (int k = 0; k < Hess_a; k++) {
-//       Final[i][j] += Stepping_Stone[i][k] * Diagonal[k][j];
-//     }
-//   }
-//  }
-//
-// double truth_array[Hess_a];
-// for(int i = 0; i < Hess_a; i++){
-//   truth_array[i] = 0.0;
-//  }
-//
-// //apply hessian decomposition to reco distribution
-// for(int i = 0; i < Hess_a; i++){
-//   double temp_value = 0.0;
-//   for(int j = 0; j < Hess_a; j++){
-//     temp_value += Final[i][j] * this->_meas1d[j];
-//   }
-//   truth_array[i] = temp_value;
-//  }
-
-TVectorD final_values(truth_array);
-this->Vtruth() = final_values;
-
-  if (this->_verbose>=2) {
-    printTable (std::cout, h2v(this->_truth1d), h2v(this->_train1d), h2v(this->_meas1d), this->_cache._rec);
-    TMatrixD resmat(h2m(this->_reshist));
-    printMatrix(resmat,"BlobelUnfold response matrix");
-  }
-
-  this->_cache._unfolded= true;
-  this->_cache._haveCov=  false;
+//   _haveWgt= true;
 }
 
-template<class Hist,class Hist2D> void
-RooUnfoldBlobelT<Hist,Hist2D>::GetCov() const
-{
-  //! Get covariance matrix, need to figure out still
-  this->_cache._haveCov= true;
-  return;
+void
+RooUnfoldBlobel::GetSettings(){
+    _minparm=0;
+    _maxparm= _meas ? _meas->GetNbinsX() : 0;
+    _stepsizeparm=1;
+    _defaultparm=_maxparm/2;
 }
-
-template<class Hist,class Hist2D> void
-RooUnfoldBlobelT<Hist,Hist2D>::GetWgt() const
-{
-  //! Get weight matrix
-  if (this->_dosys) RooUnfoldT<Hist,Hist2D>::GetWgt();
-  if (!this->_svd) return;
-
-  this->_cache._wgt.ResizeTo(this->_nt, this->_nt);
-
-  this->_cache._wgt = this->_svd->GetXinv();
-
-  this->_cache._haveWgt= true;
-}
-
-
-template<class Hist,class Hist2D> void
-RooUnfoldBlobelT<Hist,Hist2D>::GetSettings() const {
-  this->_cache._minparm=0;
-  this->_cache._maxparm= this->_meas ? nBins(this->_meas,X) : 0;
-  this->_cache._stepsizeparm=1;
-  this->_cache._defaultparm=this->_cache._maxparm/2;
-}
-
-template<class Hist,class Hist2D>
-RooUnfoldBlobelT<Hist,Hist2D>::RooUnfoldBlobelT()
-  : RooUnfoldT<Hist,Hist2D>()
-{
-  //! Default constructor. Use Setup() to prepare for unfolding.
-  Init();
-}
-
-template<class Hist,class Hist2D>
-RooUnfoldBlobelT<Hist,Hist2D>::RooUnfoldBlobelT (const char* name, const char* title)
-  : RooUnfoldT<Hist,Hist2D>(name,title)
-{
-  //! Basic named constructor. Use Setup() to prepare for unfolding.
-  Init();
-}
-
-template<class Hist,class Hist2D>
-RooUnfoldBlobelT<Hist,Hist2D>::RooUnfoldBlobelT (const TString& name, const TString& title)
-  : RooUnfoldT<Hist,Hist2D>(name,title)
-{
-  //! Basic named constructor. Use Setup() to prepare for unfolding.
-  Init();
-}
-
-template<class Hist,class Hist2D>
-RooUnfoldBlobelT<Hist,Hist2D>& RooUnfoldBlobelT<Hist,Hist2D>::operator= (const RooUnfoldBlobelT<Hist,Hist2D>& rhs)
-{
-  //! Assignment operator for copying RooUnfoldSvdT settings.
-  Assign(rhs);
-  return *this;
-}
-
-template<class Hist,class Hist2D>
-RooUnfoldBlobelT<Hist,Hist2D>::~RooUnfoldBlobelT()
-{
-  Destroy();
-}
-
-
-template<class Hist,class Hist2D> void
-RooUnfoldBlobelT<Hist,Hist2D>::SetKterm (Int_t kreg)
-{
-  //! Set regularisation parameter
-  this->_kreg= kreg;
-}
-
-
-template<class Hist,class Hist2D> Int_t
-RooUnfoldBlobelT<Hist,Hist2D>::GetKterm() const
-{
-  //! Return regularisation parameter
-  return this->_kreg;
-}
-
-template<class Hist,class Hist2D> void
-RooUnfoldBlobelT<Hist,Hist2D>::SetRegParm (Double_t parm)
-{
-  //! Set regularisation parameter
-  SetKterm(parm);
-}
-
-template<class Hist,class Hist2D> Double_t
-RooUnfoldBlobelT<Hist,Hist2D>::GetRegParm() const
-{
-  //! Return regularisation parameter
-  return GetKterm();
-}
-
-template class RooUnfoldBlobelT<TH1,TH2>;
-ClassImp (RooUnfoldBlobel)
-
-#ifndef NOROOFIT
-typedef RooUnfoldBlobelT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist> RooFitUnfoldBlobel;
-template class RooUnfoldBlobelT<RooUnfolding::RooFitHist,RooUnfolding::RooFitHist>;
-ClassImp (RooFitUnfoldBlobel)
-#endif

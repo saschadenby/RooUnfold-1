@@ -29,6 +29,7 @@ public:
     kBayes,              //   RooUnfoldBayes
     kSVD,                //   RooUnfoldSvd
     kBinByBin,           //   RooUnfoldBinByBin
+    kBlobel,             //   RooUnfoldBlobel
     kTUnfold,            //   RooUnfoldTUnfold
     kInvert,             //   RooUnfoldInvert
     kDagostini,          //   RooUnfoldDagostini
