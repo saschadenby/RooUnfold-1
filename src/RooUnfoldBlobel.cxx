@@ -183,10 +183,10 @@ RooUnfoldBlobel::Unfold()
     } else{
       product = expected(i) * log(bin_content);
     }
-    cout << "product is: " << product << endl;
+    // cout << "product is: " << product << endl;
     Likelihood += (bin_content - product);
   }
-  cout << "Likelihood is: " << Likelihood << endl;
+  // cout << "Likelihood is: " << Likelihood << endl;
   //first find objective function of response and observed
 
   //then find  gradient, right now f represents target histogram
@@ -196,18 +196,19 @@ RooUnfoldBlobel::Unfold()
   }
   TVectorD _grad(_nb);
   for(int i = 0; i < _nb; i++){
+    double sum_grad = 0.0;
     for(int j = 0; j < _nb; j++){
-      double denomenator = 0.0;
+      double dot_product = 0.0;
       for(int k = 0; k < _nb; k++){
-        denomenator += _reshist->GetBinContent(j,k)*target(k);
+        dot_product += _meas1d->GetBinContent(k) * _reshist->GetBinContent(k,j);
       }
-      cout << "Denomenator is: " << denomenator << endl;
-      _grad(i) += _reshist->GetBinContent(j,i) -
-      (_meas1d->GetBinContent(j)*_reshist->GetBinContent(j,i)) /
-      denomenator;
+      if(dot_product != 0){
+        sum_grad += (_reshist->GetBinContent(j,i) - ((_meas1d->GetBinContent(j) * _reshist->GetBinContent(j,i))/dot_product));
+      }
     }
+    _grad(i) = sum_grad;
   }
-  _grad.Print();
+
   //now hessian
   TMatrixD _hess(_nb,_nb);
   for(int i = 0; i < _nb; i++){
@@ -215,21 +216,26 @@ RooUnfoldBlobel::Unfold()
       _hess(i,j) = 0.0;
     }
   }
+
+  //fill Hessian
   for(int i = 0; i < _nb; i++){
     for(int j = 0; j < _nb; j++){
-      _hess(i,j) = 0.0;
+      double _sum = 0.0;
+      for(int k = 0; k < _nb; k++){
+        double dot_product = 0.0;
+        for(int l = 0; l < _nb; l++){
+          dot_product += _meas1d->GetBinContent(l) * _reshist->GetBinContent(l,k);
+        }
+        if(dot_product != 0){
+          _sum += ((_meas1d->GetBinContent(k) * _reshist->GetBinContent(k,j) * _reshist->GetBinContent(k,i)) /
+                  (dot_product * dot_product));
+        }
+      }
+      _hess(i,j) = _sum;
     }
   }
-  // _hess.Print();
+  _hess.Print();
 
-      // def maxl_H(f): # compute the gradient at an estimate f
-      //     res = np.zeros((len(f), len(f)))
-      //     for i1 in range(len(f)):
-      //       for i2 in range(len(f)):
-      //         res[i1,i2] = np.sum(
-      //           [ g[j]*R[j,i1]*R[j,i2] / pow(np.dot(R[j,:], f), 2) for j in range(len(g)) ]
-      //         )
-      //     return res
   //then create Tikhonov matrix
 
   //Covariance is given by inverse of Hessian
