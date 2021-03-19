@@ -11,6 +11,7 @@
 #include "TH2.h"
 #include "TVectorD.h"
 #include "TMatrixD.h"
+#include "TMatrixDEigen.h"
 
 #include "RooUnfoldHelpers.h"
 #include "RooUnfoldResponse.h"
@@ -149,96 +150,188 @@ RooUnfoldBlobel::Unfold()
   if(!_truth1d) throw std::runtime_error("no truth1d given!");
   if(!_reshist) throw std::runtime_error("no reshist given!");
 
-
   _nb= _nm > _nt ? _nm : _nt;
 
-  //set up expected values given _reshist
-  TVectorD expected(_nb);
-  for(int i = 0; i < _nb; i++){
-    for(int j = 0; j < _nb; j++){
-      expected(i) += (_reshist->GetBinContent(i,j) * _meas1d->GetBinContent(j));
-    }
-  }
-
-  //set up discrete curvature vector using elements of response histogram
-  TVectorD curve(_nb);
-  for(int i = 0; i < _nb; i++){
-    if(i == 0){
-      curve(i) = ((-2.0)* _meas1d->GetBinContent(i) + _meas1d->GetBinContent(i+1));
-    } else if(i == (_nb - 1)){
-      curve(i) = ((-2.0)* _meas1d->GetBinContent(i) + _meas1d->GetBinContent(i-1));
-    } else{
-      curve(i) = (_meas1d->GetBinContent(i-1) + _meas1d->GetBinContent(i+1) - ((-2.0)*_meas1d->GetBinContent(i)));
-    }
-  }
-
-  //set up loss function
-  // TVectorD LogL(_nb);
-  double Likelihood = 0.0;
-  for(int i = 0; i < _nb; i++){
-    double bin_content = _meas1d->GetBinContent(i);
-    double product = 0.0;
-    if(bin_content == 0){
-      product = 0.0;
-    } else{
-      product = expected(i) * log(bin_content);
-    }
-    // cout << "product is: " << product << endl;
-    Likelihood += (bin_content - product);
-  }
   // cout << "Likelihood is: " << Likelihood << endl;
   //first find objective function of response and observed
-
-  //then find  gradient, right now f represents target histogram
-  TVectorD target(_nb);
+  //Normalize response hist
+  TMatrixD reshistmatrix(_nb, _nb);
+  TVectorD reshistnorm(_nb);
   for(int i = 0; i < _nb; i++){
-    target(i) = 1.0;
+    for(int j = 0; j < _nb; j++){
+      reshistnorm(i) += _reshist->GetBinContent(i+1,j+1);
+      reshistmatrix(i, j) = _reshist->GetBinContent(i+1,j+1);
+    }
   }
+  // for(int i = 0; i < _nb; i++){
+  //   for(int j = 0; j < _nb; j++){
+  //     if(reshistnorm(i) != 0.0){
+  //       reshistmatrix(i, j) = reshistmatrix(i,j)/reshistnorm(i);
+  //     }
+  //   }
+  // }
+
+  //initial estimate is vector of zeros
+  TVectorD _est(_nb);
+  for(int i = 0; i < _nb; i++){
+    _est(i) = 0.0;
+  }
+  //Get Gradient Vector
   TVectorD _grad(_nb);
-  for(int i = 0; i < _nb; i++){
-    double sum_grad = 0.0;
-    for(int j = 0; j < _nb; j++){
-      double dot_product = 0.0;
-      for(int k = 0; k < _nb; k++){
-        dot_product += _meas1d->GetBinContent(k) * _reshist->GetBinContent(k,j);
-      }
-      if(dot_product != 0){
-        sum_grad += (_reshist->GetBinContent(j,i) - ((_meas1d->GetBinContent(j) * _reshist->GetBinContent(j,i))/dot_product));
-      }
-    }
-    _grad(i) = sum_grad;
-  }
-
-  //now hessian
+  _grad = GetGrad(_nb, _meas1d, reshistmatrix, &_est);
+  //Get Hessian Matrix
   TMatrixD _hess(_nb,_nb);
-  for(int i = 0; i < _nb; i++){
-    for(int j = 0; j < _nb; j++){
-      _hess(i,j) = 0.0;
-    }
-  }
+  _hess = GetHess(_nb, _meas1d, reshistmatrix, &_est);
 
-  //fill Hessian
-  for(int i = 0; i < _nb; i++){
-    for(int j = 0; j < _nb; j++){
-      double _sum = 0.0;
-      for(int k = 0; k < _nb; k++){
-        double dot_product = 0.0;
-        for(int l = 0; l < _nb; l++){
-          dot_product += _meas1d->GetBinContent(l) * _reshist->GetBinContent(l,k);
-        }
-        if(dot_product != 0){
-          _sum += ((_meas1d->GetBinContent(k) * _reshist->GetBinContent(k,j) * _reshist->GetBinContent(k,i)) /
-                  (dot_product * dot_product));
+  _rec.ResizeTo (_nb);
+  //Get Hessian Matrix for lsq objective
+  TMatrixD _lsqHess(_nb, _nb);
+  _lsqHess *= 0.0;
+  for (int i = 0; i < _nb; i++) {
+    for (int j = 0; j < _nb; j++) {
+      double sum = 0.0;
+      for (int k = 0; k < _nb; k++) {
+        if (_meas1d->GetBinContent(k) != 0.0) {
+          sum += reshistmatrix(i,k) * reshistmatrix(j,k) / _meas1d->GetBinContent(k);
         }
       }
-      _hess(i,j) = _sum;
+      _lsqHess(i,j) = sum;
     }
   }
-  _hess.Print();
+  //Get Gradient Vector for lsq objective
+  TVectorD _lsqGrad(_nb);
+  _lsqGrad *= 0.0;
+  for (int i = 0; i < _nb; i++) {
+    double value = 0.0;
+    for (int j = 0; j < _nb; j++) {
+      double dot_prod = 0.0;
+      for (int k = 0; k < _nb; k++) {
+        dot_prod += reshistmatrix(k,j) * _est(i);
+      }
+      if(_meas1d->GetBinContent(j) != 0.0){
+        value += -reshistmatrix(i,j) * (_meas1d->GetBinContent(j)-dot_prod)/(_meas1d->GetBinContent(j));
+      }
+    }
+    _lsqGrad(i) = value;
+  }
+  //Invert Hessian of lsq objective
+  TMatrixD _lsqHessInv(_nb, _nb);
+  for(int i = 0; i < _nb; i++){
+    for(int j = 0; j < _nb; j++) {
+      _lsqHessInv(i,j) = _lsqHess(j,i);
+    }
+  }
+  for (int i = 0; i < _nb; i++) {
+    double dot_prod = 0.0;
+    for (int j = 0; j < _nb; j++) {
+      dot_prod += _lsqHessInv(i,j) * _lsqGrad(j);
+    }
+    _est(i) -= dot_prod;
+  }
 
-  //then create Tikhonov matrix
+  double loss = GetLoss(_nb, _meas1d, reshistmatrix, &_est);
+
+  TMatrixD eigenVectors(_nb, _nb);
+  TMatrixD eigenValues(_nb, _nb);
+
+  TMatrixD mCurv(_nb, _nb), mC(_nb, _nb);
+  FillCurvatureMatrix(mCurv, mC, _nb);
+
+  int nItterations = 10;
+  for(int i = 0; i < nItterations; i++){
+    _grad = GetGrad(_nb, _meas1d, reshistmatrix, &_est);
+    _hess = GetHess(_nb, _meas1d, reshistmatrix, &_est);
+    TMatrixD _hessInv(_nb, _nb);
+    for(int i = 0; i < _nb; i++){
+      for(int j = 0; j < _nb; j++) {
+        _hessInv(i,j) = _hess(j,i);
+      }
+    }
+    Int_t tau = 5;
+    TMatrixD mCurv_H = mCurv;
+    mCurv_H *= tau;
+    TVectorD mCurv_G = (mCurv*_est);
+    mCurv_G *= tau;
+    _hess += mCurv_H;
+    _grad += mCurv_G;
+    TVectorD mod(_nb);
+    mod *= 0.0;
+    for (int i = 0; i < _nb; i++) {
+      double dot_prod = 0.0;
+      for (int j = 0; j < _nb; j++) {
+        dot_prod += _hessInv(i,j) * _grad(j);
+      }
+      _est(i) -= dot_prod;
+    }
+  }
+  _rec = _est;
 
   //Covariance is given by inverse of Hessian
+  _unfolded= true;
+  _haveCov=  false;
+}
+
+TMatrixD
+RooUnfoldBlobel::GetHess(Int_t _nb, TH1D *_meas1d,  TMatrixD reshistmatrix, TVectorD *_est){
+  TVectorD est = *_est;
+  TMatrixD _hess(_nb,_nb);
+  _hess *= 0.0;
+  for (int i = 0; i < _nb; i++) {
+    for (int j = 0; j < _nb; j++) {
+      double value = 0.0;
+      for (int k = 0; k < _nb; k++) {
+        double dot_prod = 0.0;
+        for (int l = 0; l < _nb; l++) {
+          dot_prod += reshistmatrix(l,k) * est(l);
+        }
+        if(dot_prod != 0.0){
+          value += _meas1d->GetBinContent(k) * reshistmatrix(i,k) * reshistmatrix(j,k) / (dot_prod*dot_prod);
+        }
+      }
+      _hess(i,j) = value;
+    }
+  }
+  return _hess;
+}
+
+TVectorD
+RooUnfoldBlobel::GetGrad(Int_t _nb, TH1D *_meas1d, TMatrixD reshistmatrix, TVectorD *_est){
+  TVectorD est = *_est;
+  TVectorD _grad(_nb);
+  for (int i = 0; i < _nb; i++) {
+    double value = 0.0;
+    for (int j = 0; j < _nb; j++) {
+      double dot_prod = 0.0;
+      double sum = 0.0;
+      for (int k = 0; k < _nb; k++) {
+        dot_prod += reshistmatrix(k,j) * est(k);
+      }
+      if(dot_prod != 0.0){
+        sum = (reshistmatrix(i,j) - _meas1d->GetBinContent(j) * reshistmatrix(i,j) / dot_prod);
+      }
+      value += sum;
+    }
+    _grad(i) = value;
+  }
+  return _grad;
+}
+
+Double_t
+RooUnfoldBlobel::GetLoss(Int_t _nb, TH1D *_meas1d, TMatrixD reshistmatrix, TVectorD *_est){
+  double loss = 0.0;
+  TVectorD est = *_est;
+  for(int i = 0; i < _nb; i++){
+    double sum = 0.0;
+    for(int j = 0; j < _nb; j++){
+      sum += reshistmatrix(i,j) * est(j);
+    }
+    double value = 0.0;
+    if(sum != 0.0){
+      value = sum - (_meas1d->GetBinContent(i) * log(sum));
+    }
+    loss += value;
+  }
+  return loss;
 }
 
 void
@@ -309,4 +402,37 @@ RooUnfoldBlobel::GetSettings(){
     _maxparm= _meas ? _meas->GetNbinsX() : 0;
     _stepsizeparm=1;
     _defaultparm=_maxparm/2;
+}
+
+void
+RooUnfoldBlobel::FillCurvatureMatrix( TMatrixD& tCurv, TMatrixD& tC, Int_t _nb) const
+{
+   Double_t eps = 0.00001;
+
+   Int_t ndim = tCurv.GetNrows();
+
+   // Init
+   tCurv *= 0;
+   tC    *= 0;
+
+  for (Int_t i=0; i< _nb; i++) {
+     if (i > 0)      tC(i,i-1) = 1.0;
+     if (i < _nb-1)  tC(i,i+1) = 1.0;
+     tC(i,i) = -2.0;
+  }
+  tC(0,0) = -1.0;
+  tC(_nb-1,_nb-1) = -1.0;
+
+
+   // Add epsilon to avoid singularities
+   for (Int_t i=0; i<ndim; i++) tC(i,i) = tC(i,i) + eps;
+
+   //Get curvature matrix
+   for (Int_t i=0; i<ndim; i++) {
+      for (Int_t j=0; j<ndim; j++) {
+         for (Int_t k=0; k<ndim; k++) {
+            tCurv(i,j) = tCurv(i,j) + tC(k,i)*tC(k,j);
+         }
+      }
+   }
 }

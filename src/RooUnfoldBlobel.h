@@ -56,11 +56,14 @@ public:
 protected:
   void Assign (const RooUnfoldBlobel& rhs);
   // virtual void PrepareHistograms();
+   TMatrixD GetHess(Int_t _nb, TH1D *_meas1d, TMatrixD reshistmatrix, TVectorD *_est);
+   TVectorD GetGrad(Int_t _nb, TH1D *_meas1d, TMatrixD reshistmatrix, TVectorD *_est);
+   Double_t GetLoss(Int_t _nb, TH1D *_meas1d, TMatrixD reshistmatrix, TVectorD *_est);
   virtual void Unfold();
   virtual void GetCov();
   virtual void GetWgt();
   virtual void GetSettings();
-
+  void FillCurvatureMatrix( TMatrixD& tCurv, TMatrixD& tC, Int_t _nb) const;
 
 private:
   void Init();
