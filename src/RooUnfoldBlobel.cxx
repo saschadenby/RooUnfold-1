@@ -164,10 +164,9 @@ RooUnfoldBlobel::Unfold()
       reshistmatrix(i, j) = _reshist->GetBinContent(i+1,j+1);
     }
   }
-
   bool tryNorm = true;
-  tryNorm = false;
-
+  // tryNorm = false;
+  reshistmatrix.Print();
   if(tryNorm){
     for(int i = 0; i < _nb; i++){
       for(int j = 0; j < _nb; j++){
@@ -186,9 +185,12 @@ RooUnfoldBlobel::Unfold()
     total += _meas1d->GetBinContent(i);
   }
   total = total/_nb;
-  for(int i = 0; i < _nb; i++){
-    _est(i) = total;
+  int binsnumber = _meas1d->GetNbinsX();
+  TVectorD measured(binsnumber);
+  for(int i = 0; i < binsnumber; i++){
+    measured(i) = _meas1d->GetBinContent(i);
   }
+  measured.Print();
   //Get Gradient Vector
   TVectorD _grad(_nb);
   //Get Hessian Matrix
@@ -204,6 +206,8 @@ RooUnfoldBlobel::Unfold()
   _lsqHess = GetHess(_nb, _meas1d, reshistmatrix, &_est);
   // _lsqHess.Print();
   _lsqGrad = GetGrad(_nb, _meas1d, reshistmatrix, &_est, &_estOld);
+  _lsqHess.Print();
+  _lsqGrad.Print();
   // _lsqGrad.Print();
   // for (int i = 0; i < _nb; i++) {
   //   for (int j = 0; j < _nb; j++) {
@@ -278,8 +282,6 @@ RooUnfoldBlobel::Unfold()
   // _lsqHessInv.Print();
   double loss = GetLoss(_nb, _meas1d, reshistmatrix, &_est);
 
-
-
   TMatrixD mCurv(_nb, _nb), mC(_nb, _nb);
   FillCurvatureMatrix(mCurv, mC, _nb);
 
@@ -350,8 +352,8 @@ RooUnfoldBlobel::Unfold()
   }
 
   // _est *= 0.000001;
+  _rec = measured;
   _rec = _est;
-
   //Covariance is given by inverse of Hessian
   _unfolded= true;
   _haveCov=  false;
