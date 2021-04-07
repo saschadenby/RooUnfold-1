@@ -157,202 +157,192 @@ RooUnfoldBlobel::Unfold()
   //first find objective function of response and observed
   //Normalize response hist
   TMatrixD reshistmatrix(_nb, _nb);
-  TVectorD reshistnorm(_nb);
-  for(int i = 0; i < _nb; i++){
-    for(int j = 0; j < _nb; j++){
-      reshistnorm(i) += _reshist->GetBinContent(i+1,j+1);
-      reshistmatrix(i, j) = _reshist->GetBinContent(i+1,j+1);
-    }
-  }
-  bool tryNorm = true;
+  // TVectorD reshistnorm(_nb);
+  // for(int i = 0; i < _nb; i++){
+  //   for(int j = 0; j < _nb; j++){
+  //     reshistnorm(i) += _reshist->GetBinContent(i+1,j+1);
+  //     reshistmatrix(i, j) = _reshist->GetBinContent(i+1,j+1);
+  //   }
+  // }
+  // bool tryNorm = true;
   // tryNorm = false;
-  reshistmatrix.Print();
-  if(tryNorm){
-    for(int i = 0; i < _nb; i++){
-      for(int j = 0; j < _nb; j++){
-        if(reshistnorm(i) != 0.0){
-          reshistmatrix(i, j) = reshistmatrix(i,j)/reshistnorm(i);
-        }
-      }
-    }
-  }
-
+  reshistmatrix(0,0)=0.23101425;
+  reshistmatrix(0,1)=0.00154646;
+  reshistmatrix(0,0)=0.0;
+  reshistmatrix(0,0)=0.0;
+  reshistmatrix(1,0)=0.00771165;
+  reshistmatrix(1,1)=0.5302493;
+  reshistmatrix(1,2)=0.02543888;
+  reshistmatrix(1,3)=0.0;
+  reshistmatrix(2,0)=0.0;
+  reshistmatrix(2,1)=0.02940941;
+  reshistmatrix(2,2)=0.6366643;
+  reshistmatrix(2,3)=0.01407598;
+  reshistmatrix(3,0)=0.0;
+  reshistmatrix(3,1)=0.0;;
+  reshistmatrix(3,2)=0.0022497;
+  reshistmatrix(3,3)=0.5336764;
+  reshistmatrix(0,0)=0.23101425;
+  // if(tryNorm){
+  //   for(int i = 0; i < _nb; i++){
+  //     for(int j = 0; j < _nb; j++){
+  //       if(reshistnorm(i) != 0.0){
+  //         reshistmatrix(i, j) = reshistmatrix(i,j)/reshistnorm(i);
+  //       }
+  //     }
+  //   }
+  // }
+  TVectorD measured(_nb);
+  // for(int i = 0; i < _nb; i++){
+  //   measured(i) = _meas1d->GetBinContent(i+1);
+  // }
 
   //initial estimate is flat estimate using total values of meas1d
   TVectorD _est(_nb);
+  _est(0) = 290;
+  _est(1) = 3157;
+  _est(2) = 3784;
+  _est(3) = 325;
   double total = 0.0;
   for(int i = 0; i < _nb; i++){
-    total += _meas1d->GetBinContent(i);
+    // total += _meas1d->GetBinContent(i);
+    total += _est(i);
+  }
+  for(int i = 0; i < _nb; i++){
+    measured(i) = _est(i);
   }
   total = total/_nb;
-  int binsnumber = _meas1d->GetNbinsX();
-  TVectorD measured(binsnumber);
-  for(int i = 0; i < binsnumber; i++){
-    measured(i) = _meas1d->GetBinContent(i);
+  for(int i = 0; i < _nb; i++){
+    _est(i) = total;
   }
-  measured.Print();
-  //Get Gradient Vector
+  //Get Gradient Vector for initial estimate
   TVectorD _grad(_nb);
-  //Get Hessian Matrix
+  _grad *= 0.0;
+  TVectorD _lsqGrad(_nb);
+  _lsqGrad *= 0.0;
+  for(int i = 0; i < _nb; i++){
+    double sumValue = 0.0;
+    for (int j = 0; j < _nb; j++) {
+      double dot_product = 0.0;
+      for (int k = 0; k < _nb; k++) {
+        dot_product += reshistmatrix(j,k)*_est(k);
+      }
+      sumValue -=
+       (reshistmatrix(j,i)*(measured(j)-dot_product)/measured(j));
+    }
+    _lsqGrad(i) = sumValue;
+  }
+  //Get Hessian for initial estimated
   TMatrixD _hess(_nb,_nb);
   _rec.ResizeTo (_nb);
   //Get Hessian Matrix for lsq objective
   TMatrixD _lsqHess(_nb, _nb);
+  _hess *= 0.0;
   _lsqHess *= 0.0;
-  TVectorD _lsqGrad(_nb);
-  _lsqGrad *= 0.0;
-  TVectorD _estOld(_nb);
-  _estOld *= 0.0;
-  _lsqHess = GetHess(_nb, _meas1d, reshistmatrix, &_est);
-  // _lsqHess.Print();
-  _lsqGrad = GetGrad(_nb, _meas1d, reshistmatrix, &_est, &_estOld);
-  _lsqHess.Print();
-  _lsqGrad.Print();
-  // _lsqGrad.Print();
-  // for (int i = 0; i < _nb; i++) {
-  //   for (int j = 0; j < _nb; j++) {
-  //     double sum = 0.0;
-  //     for (int k = 0; k < _nb; k++) {
-  //       if (_meas1d->GetBinContent(k) != 0.0) {
-  //         sum += reshistmatrix(i,k) * reshistmatrix(j,k) / _meas1d->GetBinContent(k);
-  //       }
-  //     }
-  //     _lsqHess(i,j) = sum;
-  //   }
-  // }
-  // _lsqHess.Print();
-  //Get Gradient Vector for lsq objective
-
-  // for (int i = 0; i < _nb; i++) {
-  //   double value = 0.0;
-  //   for (int j = 0; j < _nb; j++) {
-  //     double dot_prod = 0.0;
-  //     for (int k = 0; k < _nb; k++) {
-  //       dot_prod += reshistmatrix(k,j) * _est(i);
-  //     }
-  //     if(_meas1d->GetBinContent(j) != 0.0){
-  //       value += -reshistmatrix(i,j) * (_meas1d->GetBinContent(j)-dot_prod)/(_meas1d->GetBinContent(j));
-  //     }
-  //   }
-  //   _lsqGrad(i) = value;
-  // }
-  // _lsqGrad.Print();
-  TMatrixD eigenVectors(_nb, _nb);
-  TMatrixD eigenValues(_nb, _nb);
-  TMatrixDEigen eigenHess(_lsqHess);
-  eigenValues = eigenHess.GetEigenValues();
-  eigenVectors = eigenHess.GetEigenVectors();
-  // eigenValues.Print();
-  TMatrixD DInv = eigenValues.Invert();
-  // DInv.Print();
-  TMatrixD eVTrans = eigenVectors.Transpose(eigenVectors);
-  // eigenVectors.Print();
-  // eVTrans.Print();
-
-  //Invert Hessian of lsq objective
-  // _lsqHess.Print();
-  TMatrixD _lsqHessInv(_nb, _nb);
-  // TDecompSVD svd(_lsqHess);
-  // Bool_t solve;
-  // TMatrixD pseudo  = svd.Invert();
-
-  _lsqHessInv = eigenVectors * DInv * eVTrans;
-  // _lsqHessInv.Print();
-  // _lsqHessInv.Print();
-  // for (int i = 0; i < _nb; i++) {
-  //   double dot_prod = 0.0;
-  //   for (int j = 0; j < _nb; j++) {
-  //     dot_prod += _lsqHessInv(i,j) * _lsqGrad(j);
-  //   }
-  //   _est(i) -= dot_prod;
-  // }
-  _estOld = _est;
-  TVectorD estAdj(_nb);
-  // estAdj = eigenVectors * (DInv * (eVTrans * _lsqGrad));
-  TMatrixD Dsqrt(_nb,_nb);
-  Dsqrt *= 0.0;
-  for (int i = 0; i < _nb; i++) {
-    double value = DInv(i,i);
-    Dsqrt(i,i) = sqrt(value);
-  }
-
-  estAdj = Dsqrt * (eVTrans * ((_lsqHess*_est)+_lsqGrad));
-  // estAdj.Print();
-  _est = eigenVectors * (Dsqrt * estAdj);
-  // _lsqHessInv.Print();
-  double loss = GetLoss(_nb, _meas1d, reshistmatrix, &_est);
-
-  TMatrixD mCurv(_nb, _nb), mC(_nb, _nb);
-  FillCurvatureMatrix(mCurv, mC, _nb);
-
-  int nItterations = 0;
-  for(int i = 0; i < nItterations; i++){
-    _grad = GetGrad(_nb, _meas1d, reshistmatrix, &_est, &_estOld);
-    _hess = GetHess(_nb, _meas1d, reshistmatrix, &_est);
-    _estOld = _est;
-    TMatrixD _hessInv(_nb, _nb);
-    TMatrixD eigenVectorsItt(_nb, _nb);
-    TMatrixD eigenValuesItt(_nb, _nb);
-    TMatrixDEigen eigenHessItt(_hess);
-    eigenValuesItt = eigenHessItt.GetEigenValues();
-    eigenVectorsItt = eigenHessItt.GetEigenVectors();
-    // eigenValues.Print();
-    TMatrixD DInvItt = eigenValuesItt.Invert();
-    // DInv.Print();
-    TMatrixD eVTransItt = eigenVectorsItt.Transpose(eigenVectors);
-    _hessInv = eigenVectors * DInv * eVTrans;
-    // _lsqHessInv.Print();
-    for (int i = 0; i < _nb; i++) {
-      double dot_prod = 0.0;
-      for (int j = 0; j < _nb; j++) {
-        dot_prod += _hessInv(i,j) * _grad(j);
+  for(int i = 0; i < _nb; i++){
+    for (int j = 0; j < _nb; j++) {
+      double sumValue = 0.0;
+      for (int k = 0; k < _nb; k++) {
+        sumValue += reshistmatrix(k,i)*reshistmatrix(k,j)/measured(k);
       }
-      _est(i) -= dot_prod;
+      _lsqHess(i,j) = sumValue;
     }
-
-    // TDecompSVD svd(_hess);
-    // TMatrixD pseudo  = svd.Invert();
-    // TDecompSVD CSVD(_hess);
-    // TMatrixD CUort = CSVD.GetU();
-    // TMatrixD CVort = CSVD.GetV();
-    // TVectorD CSV   = CSVD.GetSig();
-    //
-    // TMatrixD CSVM(_nb, _nb);
-    // for (Int_t i=0; i<_nb; i++) CSVM(i,i) = 1/CSV(i);
-    //
-    // CUort.Transpose( CUort );
-    // _hessInv = (CVort*CSVM)*CUort;
-    // double det = _hess.Determinant();
-    // for(int i = 0; i < _nb; i++){
-    //   for(int j = 0; j < _nb; j++) {
-    //     _hessInv(i,j) = _hess(j,i);
-    //   }
-    // }
-    // Int_t tau = 5;
-    // TMatrixD mCurv_H = mCurv;
-    // mCurv_H *= tau;
-    // TVectorD mCurv_G = (mCurv*_est);
-    // mCurv_G *= tau;
-    // _hess += mCurv_H;
-    // _grad += mCurv_G;
-    // TVectorD mod(_nb);
-    // mod *= 0.0;
-    // for (int i = 0; i < _nb; i++) {
-    //   double dot_prod = 0.0;
-    //   for (int j = 0; j < _nb; j++) {
-    //     dot_prod += _hessInv(i,j) * _grad(j);
-    //   }
-    //   _est(i) -= dot_prod;
-    // }
-    // if(i % 500 == 0){
-    //   loss = GetLoss(_nb, _meas1d, reshistmatrix, &_est);
-    //   cout << "Itteration number " << i << endl << "Loss is: " << loss << endl;
-    //   // _grad.Print();
-    // }
   }
 
-  // _est *= 0.000001;
-  _rec = measured;
+  TMatrixD _lsqHessInv(_nb, _nb);
+  TVectorD _estOld(_nb);
+  _estOld = _est;
+  _lsqHessInv = _lsqHess.Invert();
+  _est -= _lsqHessInv*_lsqGrad;
+  double loss = GetLoss(_nb, measured, reshistmatrix, &_est);
+
+  _grad = GetGrad(_nb, measured, reshistmatrix, &_est);
+  cout << "Gradient itteration 2" << endl;
+  _grad.Print();
+
+  while(loss < -1000){
+
+
+    break;
+    loss = GetLoss(_nb, measured, reshistmatrix, &_est);
+  }
+  _rec = _est;
+  _unfolded= true;
+  _haveCov=  false;
+  return;
+
+
+  // TMatrixD eigenVectors(_nb, _nb);
+  // TMatrixD eigenValues(_nb, _nb);
+  // TMatrixDEigen eigenHess(_lsqHess);
+  // eigenValues = eigenHess.GetEigenValues();
+  // eigenVectors = eigenHess.GetEigenVectors();
+  // // eigenValues.Print();
+  // TMatrixD DInv = eigenValues.Invert();
+  // // DInv.Print();
+  // TMatrixD eVTrans = eigenVectors.Transpose(eigenVectors);
+  // // eigenVectors.Print();
+  // // eVTrans.Print();
+  //
+  // //Invert Hessian of lsq objective
+  // // _lsqHess.Print();
+  // // TDecompSVD svd(_lsqHess);
+  // // Bool_t solve;
+  // // TMatrixD pseudo  = svd.Invert();
+  //
+  // _lsqHessInv = eigenVectors * DInv * eVTrans;
+  // // _lsqHessInv.Print();
+  // // _lsqHessInv.Print();
+  // // for (int i = 0; i < _nb; i++) {
+  // //   double dot_prod = 0.0;
+  // //   for (int j = 0; j < _nb; j++) {
+  // //     dot_prod += _lsqHessInv(i,j) * _lsqGrad(j);
+  // //   }
+  // //   _est(i) -= dot_prod;
+  // // }
+  // _estOld = _est;
+  // TVectorD estAdj(_nb);
+  // // estAdj = eigenVectors * (DInv * (eVTrans * _lsqGrad));
+  // TMatrixD Dsqrt(_nb,_nb);
+  // Dsqrt *= 0.0;
+  // for (int i = 0; i < _nb; i++) {
+  //   double value = DInv(i,i);
+  //   Dsqrt(i,i) = sqrt(value);
+  // }
+  //
+  // estAdj = Dsqrt * (eVTrans * ((_lsqHess*_est)+_lsqGrad));
+  // // estAdj.Print();
+  // _est = eigenVectors * (Dsqrt * estAdj);
+  // // _lsqHessInv.Print();
+  //
+  // TMatrixD mCurv(_nb, _nb), mC(_nb, _nb);
+  // FillCurvatureMatrix(mCurv, mC, _nb);
+  //
+  // int nItterations = 0;
+  // for(int i = 0; i < nItterations; i++){
+  //   _grad = GetGrad(_nb, _meas1d, reshistmatrix, &_est, &_estOld);
+  //   _hess = GetHess(_nb, _meas1d, reshistmatrix, &_est);
+  //   _estOld = _est;
+  //   TMatrixD _hessInv(_nb, _nb);
+  //   TMatrixD eigenVectorsItt(_nb, _nb);
+  //   TMatrixD eigenValuesItt(_nb, _nb);
+  //   TMatrixDEigen eigenHessItt(_hess);
+  //   eigenValuesItt = eigenHessItt.GetEigenValues();
+  //   eigenVectorsItt = eigenHessItt.GetEigenVectors();
+  //   // eigenValues.Print();
+  //   TMatrixD DInvItt = eigenValuesItt.Invert();
+  //   // DInv.Print();
+  //   TMatrixD eVTransItt = eigenVectorsItt.Transpose(eigenVectors);
+  //   _hessInv = eigenVectors * DInv * eVTrans;
+  //   // _lsqHessInv.Print();
+  //   for (int i = 0; i < _nb; i++) {
+  //     double dot_prod = 0.0;
+  //     for (int j = 0; j < _nb; j++) {
+  //       dot_prod += _hessInv(i,j) * _grad(j);
+  //     }
+  //     _est(i) -= dot_prod;
+  //   }
+  // }
   _rec = _est;
   //Covariance is given by inverse of Hessian
   _unfolded= true;
@@ -379,30 +369,27 @@ RooUnfoldBlobel::GetHess(Int_t _nb, TH1D *_meas1d,  TMatrixD reshistmatrix, TVec
 }
 
 TVectorD
-RooUnfoldBlobel::GetGrad(Int_t _nb, TH1D *_meas1d, TMatrixD reshistmatrix, TVectorD *_est, TVectorD *_estOld){
+RooUnfoldBlobel::GetGrad(Int_t _nb, TVectorD measured, TMatrixD reshistmatrix, TVectorD *_est){
   TVectorD est = *_est;
-  TVectorD estOld = *_estOld;
   TVectorD _grad(_nb);
-  // cout << "RESPONSE" << endl;
-  // reshistmatrix.Print();
-  // cout << "EST" << endl;
-  // est.Print();
-  // cout << "ESTOLD" << endl;
-  // estOld.Print();
-  for (int j = 0; j < _nb; j++) {
-    double sum = 0.0;
-    for (int i = 0; i < _nb; i++) {
-      if(est(i) != 0.0){
-        sum += reshistmatrix(i,j) * (est(i)-estOld(i))/(est(i)*est(i));
+  _grad *= 0.0;
+  for(int i = 0; i < _nb; i ++){
+    double sumValue = 0.0;
+    for (int j = 0; j < _nb; j++) {
+      double dot_product = 0.0;
+      for (int k = 0; k < _nb; k++) {
+        dot_product += reshistmatrix(j,k) * est(k);
       }
+      sumValue += (reshistmatrix(j,i)-(measured(j)*reshistmatrix(j,i)/dot_product));
     }
-    _grad(j) = sum;
+
+    _grad(i) = sumValue;
   }
   return _grad;
 }
 
 Double_t
-RooUnfoldBlobel::GetLoss(Int_t _nb, TH1D *_meas1d, TMatrixD reshistmatrix, TVectorD *_est){
+RooUnfoldBlobel::GetLoss(Int_t _nb, TVectorD measured, TMatrixD reshistmatrix, TVectorD *_est){
   double loss = 0.0;
   TVectorD est = *_est;
   for(int i = 0; i < _nb; i++){
@@ -412,7 +399,7 @@ RooUnfoldBlobel::GetLoss(Int_t _nb, TH1D *_meas1d, TMatrixD reshistmatrix, TVect
     }
     double value = 0.0;
     if(sum != 0.0){
-      value = sum - (_meas1d->GetBinContent(i) * log(sum));
+      value = sum - (measured(i) * log(sum));
     }
     loss += value;
   }
