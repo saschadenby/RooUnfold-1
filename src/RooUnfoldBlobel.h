@@ -56,9 +56,10 @@ public:
 protected:
   void Assign (const RooUnfoldBlobel& rhs);
   // virtual void PrepareHistograms();
-   TMatrixD GetHess(Int_t _nb, TH1D *_meas1d, TMatrixD reshistmatrix, TVectorD *_est);
-   TVectorD GetGrad(Int_t _nb, TVectorD measured, TMatrixD reshistmatrix, TVectorD *_est);
-   Double_t GetLoss(Int_t _nb, TVectorD measured, TMatrixD reshistmatrix, TVectorD *_est);
+  TMatrixD GetHess(Int_t _nb, TVectorD measured, TMatrixD reshistmatrix, TVectorD *_est);
+  TVectorD GetGrad(Int_t _nb, TVectorD measured, TMatrixD reshistmatrix, TVectorD *_est);
+  Double_t GetLoss(Int_t _nb, TVectorD measured, TMatrixD reshistmatrix, TVectorD *_est);
+  Double_t GetRegParm(TMatrixD diag, int n_df);
   virtual void Unfold();
   virtual void GetCov();
   virtual void GetWgt();
