@@ -161,11 +161,11 @@ RooUnfoldBlobel::Unfold()
   for(int i = 0; i < _nb; i++){
     for(int j = 0; j < _nb; j++){
       reshistnorm(i) += _reshist->GetBinContent(i+1,j+1);
-      reshistmatrix(i, j) = _reshist->GetBinContent(i+1,j+1);
+      reshistmatrix(i,j) = _reshist->GetBinContent(i+1,j+1);
     }
   }
-  reshistmatrix.Print();
-  bool tryNorm = true;
+  // reshistmatrix.Print();
+  // bool tryNorm = true;
   // tryNorm = false;
   // reshistmatrix(0,0)=0.23101425;
   // reshistmatrix(0,1)=0.00154646;
@@ -184,7 +184,7 @@ RooUnfoldBlobel::Unfold()
   // reshistmatrix(3,2)=0.0022497;
   // reshistmatrix(3,3)=0.5336764;
   // reshistmatrix(0,0)=0.23101425;
-  if(tryNorm){
+  if(true){
     for(int i = 0; i < _nb; i++){
       for(int j = 0; j < _nb; j++){
         if(reshistnorm(i) != 0.0){
@@ -199,7 +199,7 @@ RooUnfoldBlobel::Unfold()
     measured(i) = _meas1d->GetBinContent(i+1);
     flatSpread += measured(i);
   }
-  measured.Print();
+  // measured.Print();
 
   //initial estimate is flat estimate using total values of meas1d
   TVectorD _est(_nb);
@@ -214,6 +214,12 @@ RooUnfoldBlobel::Unfold()
   total = total/_nb;
   for(int i = 0; i < _nb; i++){
     _est(i) = total;
+  }
+  for (int i = 0; i < _nb; i++) {
+    _est(i) = measured(i);
+  }
+  for (int i = 0; i < _nb; i++) {
+    _est(i) = 0;
   }
   //Get Gradient Vector for initial estimate
   TVectorD _grad(_nb);
@@ -252,8 +258,8 @@ RooUnfoldBlobel::Unfold()
       _lsqHess(i,j) = sumValue;
     }
   }
-  _lsqHess.Print();
-  _lsqGrad.Print();
+  // _lsqHess.Print();
+  // _lsqGrad.Print();
   TMatrixD Identity(_nb, _nb);
   Identity *= 0.0;
   for(int i = 0; i < _nb; i++){
@@ -271,17 +277,17 @@ RooUnfoldBlobel::Unfold()
   int itNum = 2;
   while(abs(loss) > 1000){
     _hess = GetHess(_nb, measured, reshistmatrix, &_est);
+    // _hess.Print();
     _grad = GetGrad(_nb, measured, reshistmatrix, &_est);
+    // _grad.Print();
     TMatrixD _hessInv = _hess.Invert();
-    TVectorD mod = _hessInv*_grad;
-    mod.Print();
-    _est -= _hessInv*_grad;
-    TMatrixD eigenVectors(_nb, _nb);
-    TMatrixD eigenValues(_nb, _nb);
-    TMatrixDEigen eigenHess(_hess);
-    eigenValues = eigenHess.GetEigenValues();
-    eigenVectors = eigenHess.GetEigenVectors();
-
+    _est -= _hessInv * _grad;
+    // _est -= _hessInv*_grad;
+    // TMatrixD eigenVectors(_nb, _nb);
+    // TMatrixD eigenValues(_nb, _nb);
+    // TMatrixDEigen eigenHess(_hess);
+    // eigenValues = eigenHess.GetEigenValues();
+    // eigenVectors = eigenHess.GetEigenVectors();
     // eigenValues.Print();
     // eigenVectors.Print();
     // TMatrixD eVTrans = eigenVectors.Transpose(eigenVectors);
@@ -316,11 +322,13 @@ RooUnfoldBlobel::Unfold()
     loss = GetLoss(_nb, measured, reshistmatrix, &_est);
     cout << "Loss on itteration " << itNum << " is " << loss << endl;
     itNum++;
-    if(itNum >= 4){
+    if(itNum >= 10){
       break;
     }
   }
-  _rec = _est;
+  _rec = .00000000035 * _est;
+  // _rec = _est;
+  // _rec = measured;
   _unfolded= true;
   _haveCov=  false;
 }
