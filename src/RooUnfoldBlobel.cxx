@@ -13,6 +13,8 @@
 #include "TMatrixD.h"
 #include "TMatrixDEigen.h"
 #include "TDecompSVD.h"
+#include "TCanvas.h"
+#include "TMath.h"
 
 #include "RooUnfoldHelpers.h"
 #include "RooUnfoldResponse.h"
@@ -109,6 +111,7 @@ void
 RooUnfoldBlobel::Unfold()
 {
   //! perform the unfolding
+  //Measure and check for bin correlation
   if (_res->GetDimensionTruth() != 1 || _res->GetDimensionMeasured() != 1) {
     std::cerr << "RooUnfoldBlobel may not work very well for multi-dimensional distributions" << std::endl;
   }
@@ -119,8 +122,10 @@ RooUnfoldBlobel::Unfold()
     std::cerr << "RooUnfoldBlobel invalid kreg: " << _kreg << std::endl;
     return;
   }
+  //Set number of bins equal to size of largest out of measured and truth histogram
   _nb= _nm > _nt ? _nm : _nt;
 
+  //Make sure kreg is not greater than number of bins
   if (_kreg > _nb) {
     cerr << "RooUnfoldSvd invalid kreg=" << _kreg << " with " << _nb << " bins" << endl;
     return;
@@ -152,185 +157,95 @@ RooUnfoldBlobel::Unfold()
   if(!_reshist) throw std::runtime_error("no reshist given!");
 
   _nb= _nm > _nt ? _nm : _nt;
-  \
-  // cout << "Likelihood is: " << Likelihood << endl;
-  //first find objective function of response and observed
-  //Normalize response hist
-  TMatrixD reshistmatrix(_nb, _nb);
-  TVectorD reshistnorm(_nb);
-  for(int i = 0; i < _nb; i++){
-    for(int j = 0; j < _nb; j++){
-      reshistnorm(i) += _reshist->GetBinContent(i+1,j+1);
-      reshistmatrix(i,j) = _reshist->GetBinContent(i+1,j+1);
+  _rec.ResizeTo (_nb);
+  //Fill response histogram (When saying fill in this section meaning turning histogram into vector)
+  TMatrixD reshist(_nb,_nb);
+  for(int i = 1; i <= _nb; i++){
+    for (int j = 1; j <= _nb; j++) {
+      reshist((i-1),(j-1)) = _reshist->GetBinContent(i,j);
     }
   }
-  // reshistmatrix.Print();
-  // bool tryNorm = true;
-  // tryNorm = false;
-  // reshistmatrix(0,0)=0.23101425;
-  // reshistmatrix(0,1)=0.00154646;
-  // reshistmatrix(0,0)=0.0;
-  // reshistmatrix(0,0)=0.0;
-  // reshistmatrix(1,0)=0.00771165;
-  // reshistmatrix(1,1)=0.5302493;
-  // reshistmatrix(1,2)=0.02543888;
-  // reshistmatrix(1,3)=0.0;
-  // reshistmatrix(2,0)=0.0;
-  // reshistmatrix(2,1)=0.02940941;
-  // reshistmatrix(2,2)=0.6366643;
-  // reshistmatrix(2,3)=0.01407598;
-  // reshistmatrix(3,0)=0.0;
-  // reshistmatrix(3,1)=0.0;;
-  // reshistmatrix(3,2)=0.0022497;
-  // reshistmatrix(3,3)=0.5336764;
-  // reshistmatrix(0,0)=0.23101425;
-  if(true){
-    for(int i = 0; i < _nb; i++){
-      for(int j = 0; j < _nb; j++){
-        if(reshistnorm(i) != 0.0){
-          reshistmatrix(i, j) = reshistmatrix(i,j)/reshistnorm(i);
-        }
-      }
-    }
+  //Fill Measured
+  TVectorD meas1d(_nb);
+  for (int i = 1; i <= _nb; i++) {
+    meas1d((i-1)) = _meas1d->GetBinContent(i);
   }
-  TVectorD measured(_nb);
-  double flatSpread = 0.0;
-  for(int i = 0; i < _nb; i++){
-    measured(i) = _meas1d->GetBinContent(i+1);
-    flatSpread += measured(i);
+  //Fill Train
+  TVectorD train1d(_nb);
+  for (int i = 1; i <= _nb; i++) {
+    train1d((i-1)) = _train1d->GetBinContent(i);
   }
-  // measured.Print();
-
-  //initial estimate is flat estimate using total values of meas1d
+  //Fill truth
+  TVectorD truth1d(_nb);
+  for (int i = 1; i <= _nb; i++) {
+    truth1d((i-1)) = _truth1d->GetBinContent(i);
+  }
+  // initial estimate is flat estimate using total values of meas1d
   TVectorD _est(_nb);
-  double total = 0.0;
-  for(int i = 0; i < _nb; i++){
-    // total += _meas1d->GetBinContent(i);
-    total += measured(i);
-  }
-  // for(int i = 0; i < _nb; i++){
-  //   measured(i) = _est(i);
-  // }
-  total = total/_nb;
+  int total = _meas1d->Integral()/_nb;
   for(int i = 0; i < _nb; i++){
     _est(i) = total;
   }
+  //Normalize response
   for (int i = 0; i < _nb; i++) {
-    _est(i) = measured(i);
+    for (int j = 0; j < _nb; j++) {
+      reshist(i,j) = reshist(i,j)/train1d(i);
+    }
   }
+  //Find Loss
+  double loss = GetLoss(_nb, meas1d, reshist, &_est);
+  cout << "Initial loss is: " << loss << endl;
+  TMatrixD resInv = InvertMatrix(reshist, _nb);
+  TVectorD grad = GetGrad(_nb, meas1d, reshist, &_est);
+  TMatrixD hess = GetHess(_nb, meas1d, reshist, &_est);
+  TMatrixD hessInv= InvertMatrix(hess, _nb);
+  TMatrixD check(_nb,_nb);
+  check = hessInv * hess;
+  TVectorD mod(_nb);
+  mod = hess * grad;
+  _est -= mod;
+  loss = GetLoss(_nb, meas1d, reshist, &_est);
+  for (int i = 0; i < _kreg; i++) {
+    grad = GetGrad(_nb, meas1d, reshist, &_est);
+    hess = GetHess(_nb, meas1d, reshist, &_est);
+    hessInv = InvertMatrix(hess, _nb);
+    mod = hess * grad;
+    _est -= mod;
+    loss = GetLoss(_nb, meas1d, reshist, &_est);
+  }
+  double estInt = 0.0;
+  double truthInt = 0.0;
+  double measInt = 0.0;
+  double trainInt = 0.0;
   for (int i = 0; i < _nb; i++) {
-    _est(i) = 0;
+    _est(i) -= total;
+    measInt += meas1d(i);
+    estInt += _est(i);
+    truthInt += truth1d(i);
+    trainInt += train1d(i);
   }
-  //Get Gradient Vector for initial estimate
-  TVectorD _grad(_nb);
-  _grad *= 0.0;
-  TVectorD _lsqGrad(_nb);
-  _lsqGrad *= 0.0;
-  for(int i = 0; i < _nb; i++){
-    double sumValue = 0.0;
-    for (int j = 0; j < _nb; j++) {
-      double dot_product = 0.0;
-      for (int k = 0; k < _nb; k++) {
-        dot_product += reshistmatrix(j,k)*_est(k);
-      }
-      if(measured(j) != 0){
-        sumValue -=
-         (reshistmatrix(j,i)*(measured(j)-dot_product)/measured(j));
-      }
-    }
-    _lsqGrad(i) = sumValue;
-  }
-  //Get Hessian for initial estimated
-  TMatrixD _hess(_nb,_nb);
-  _rec.ResizeTo (_nb);
-  //Get Hessian Matrix for lsq objective
-  TMatrixD _lsqHess(_nb, _nb);
-  _hess *= 0.0;
-  _lsqHess *= 0.0;
-  for(int i = 0; i < _nb; i++){
-    for (int j = 0; j < _nb; j++) {
-      double sumValue = 0.0;
-      for (int k = 0; k < _nb; k++) {
-        if(measured(k) != 0){
-          sumValue += reshistmatrix(k,i)*reshistmatrix(k,j)/measured(k);
-        }
-      }
-      _lsqHess(i,j) = sumValue;
-    }
-  }
-  // _lsqHess.Print();
-  // _lsqGrad.Print();
-  TMatrixD Identity(_nb, _nb);
-  Identity *= 0.0;
-  for(int i = 0; i < _nb; i++){
-    Identity(i,i) = 1;
-  }
-  double regParm = 0;
-  TMatrixD curvatureMatrix(_nb, _nb);
-  curvatureMatrix *= 0.0;
-  TMatrixD _lsqHessInv(_nb, _nb);
-  TVectorD _estOld(_nb);
-  _estOld = _est;
-  _lsqHessInv = _lsqHess.Invert();
-  _est -= _lsqHessInv*_lsqGrad;
-  double loss = GetLoss(_nb, measured, reshistmatrix, &_est);
-  int itNum = 2;
-  while(abs(loss) > 1000){
-    _hess = GetHess(_nb, measured, reshistmatrix, &_est);
-    // _hess.Print();
-    _grad = GetGrad(_nb, measured, reshistmatrix, &_est);
-    // _grad.Print();
-    TMatrixD _hessInv = _hess.Invert();
-    _est -= _hessInv * _grad;
-    // _est -= _hessInv*_grad;
-    // TMatrixD eigenVectors(_nb, _nb);
-    // TMatrixD eigenValues(_nb, _nb);
-    // TMatrixDEigen eigenHess(_hess);
-    // eigenValues = eigenHess.GetEigenValues();
-    // eigenVectors = eigenHess.GetEigenVectors();
-    // eigenValues.Print();
-    // eigenVectors.Print();
-    // TMatrixD eVTrans = eigenVectors.Transpose(eigenVectors);
-    // TMatrixD DHalf = eigenValues;
-    // TMatrixD DInv = eigenValues.Invert();
-    // TMatrixD DHalfInv = DInv;
-    // for(int i = 0; i < _nb; i ++){
-    //   DHalfInv(i,i) = sqrt(DInv(i,i));
-    //   DHalf(i,i) = sqrt(DHalf(i,i));
-    // }
-    // TMatrixD curvShift(_nb, _nb);
-    // curvShift *= 0.0;
-    // curvShift = DHalfInv*eVTrans*curvatureMatrix*eigenVectors*DHalfInv;
-    // TMatrixD curveEVec(_nb, _nb);
-    // TMatrixD curveEVal(_nb, _nb);
-    // TMatrixDEigen eigenCurve(curvShift);
-    // curveEVec = eigenCurve.GetEigenVectors();
-    // curveEVal = eigenCurve.GetEigenValues();
-    // regParm = GetRegParm(curveEVal, 0);
-    // TMatrixD compOne(_nb, _nb);
-    // compOne = (Identity + regParm*curveEVal);
-    // compOne = compOne.Invert();
-    // TMatrixD compTwo(_nb, _nb);
-    // compTwo = (eigenVectors*DHalfInv*curveEVec);
-    // compTwo = compTwo.Transpose(compTwo);
-    // TVectorD compThree(_nb);
-    // compThree = (_hess * _est - _grad);
-    // TVectorD estESpace = compOne*compTwo*compThree;
-    // _est = (eigenVectors * DHalf * curveEVec) * estESpace;
-
-
-    loss = GetLoss(_nb, measured, reshistmatrix, &_est);
-    cout << "Loss on itteration " << itNum << " is " << loss << endl;
-    itNum++;
-    if(itNum >= 10){
-      break;
-    }
-  }
-  _rec = .00000000035 * _est;
-  // _rec = _est;
-  // _rec = measured;
+  double r1 = truthInt/trainInt;
+  double resultRatio = measInt/estInt;
+  _est *= resultRatio;
+  _est *= r1;
+  _rec = _est;
   _unfolded= true;
   _haveCov=  false;
+  return;
+}
+
+TMatrixD
+RooUnfoldBlobel::InvertMatrix(TMatrixD a, Int_t _nb){
+  TDecompSVD svd(a);
+  Bool_t ok = svd.Decompose();
+  TMatrixD b(_nb, _nb);
+  if (ok)
+  b = svd.Invert();
+  else {
+  cout << "SVD failed, condition: " << svd.Condition() <<endl;
+  a.Print();
+  }
+  return b;
 }
 
 TMatrixD
@@ -340,17 +255,11 @@ RooUnfoldBlobel::GetHess(Int_t _nb, TVectorD measured,  TMatrixD reshistmatrix, 
   _hess *= 0.0;
   for(int i = 0; i < _nb; i++){
     for (int j = 0; j < _nb; j++) {
-      double sumValue = 0.0;
-      for (int k = 0; k < _nb; k++) {
-        double dot_product = 0.0;
-        for (int l = 0; l < _nb; l++) {
-          dot_product += reshistmatrix(k,l)*est(l);
-        }
-        if(dot_product != 0){
-          sumValue += measured(k)*reshistmatrix(k,i)*reshistmatrix(k,j)/(dot_product*dot_product);
-        }
+      double sumVal = 0.0;
+      for (int k = 0; k < _nb; k++){
+        sumVal += measured(k)*reshistmatrix(k,i)*reshistmatrix(k,j)/(est(k)*est(k));
       }
-      _hess(i,j) = sumValue;
+      _hess(i,j) = sumVal;
     }
   }
   return _hess;
@@ -361,41 +270,26 @@ RooUnfoldBlobel::GetGrad(Int_t _nb, TVectorD measured, TMatrixD reshistmatrix, T
   TVectorD est = *_est;
   TVectorD _grad(_nb);
   _grad *= 0.0;
-  double sumValue;
-  double dot_product;
-  for (int i = 0; i < _nb; i++) {
-    sumValue = 0.0;
+  for(int i = 0; i < _nb; i++){
+    double sumVal = 0.0;
     for (int j = 0; j < _nb; j++) {
-      dot_product = 0.0;
-      for (int k = 0; k < _nb; k++) {
-        dot_product += reshistmatrix(j,k)*est(k);
-      }
-      if(dot_product != 0){
-        sumValue += reshistmatrix(j,i)-measured(j)*reshistmatrix(j,i)/dot_product;
-      }
+      sumVal += (measured(j)/est(j)-1)*reshistmatrix(j,i);
     }
-    _grad(i) = sumValue;
+    _grad(i) -= sumVal;
   }
   return _grad;
 }
 
 Double_t
 RooUnfoldBlobel::GetLoss(Int_t _nb, TVectorD measured, TMatrixD reshistmatrix, TVectorD *_est){
-  double loss = 0.0;
   TVectorD est = *_est;
-  for(int i = 0; i < _nb; i++){
-    double sum = 0.0;
-    for(int j = 0; j < _nb; j++){
-      sum += reshistmatrix(i,j) * est(j);
-    }
-    double value = 0.0;
-    if(sum > 0.0){
-      value = sum - (measured(i) * log(sum));
-    }
-    loss += value;
+  double loss = 0.0;
+  for (int i = 0; i < _nb; i++) {
+    loss += measured(i)*log(est(i))-est(i);
   }
   return loss;
 }
+
 
 Double_t
 RooUnfoldBlobel::GetRegParm(TMatrixD diag, int n_df){
@@ -473,35 +367,34 @@ RooUnfoldBlobel::GetSettings(){
     _defaultparm=_maxparm/2;
 }
 
-void
-RooUnfoldBlobel::FillCurvatureMatrix( TMatrixD& tCurv, TMatrixD& tC, Int_t _nb) const
+TMatrixD
+RooUnfoldBlobel::FillCurvatureMatrix(Int_t _nb)
 {
-   Double_t eps = 0.00001;
-
-   Int_t ndim = tCurv.GetNrows();
-
-   // Init
-   tCurv *= 0;
-   tC    *= 0;
-
-  for (Int_t i=0; i< _nb; i++) {
-     if (i > 0)      tC(i,i-1) = 1.0;
-     if (i < _nb-1)  tC(i,i+1) = 1.0;
-     tC(i,i) = -2.0;
-  }
-  tC(0,0) = -1.0;
-  tC(_nb-1,_nb-1) = -1.0;
-
-
-   // Add epsilon to avoid singularities
-   for (Int_t i=0; i<ndim; i++) tC(i,i) = tC(i,i) + eps;
-
-   //Get curvature matrix
-   for (Int_t i=0; i<ndim; i++) {
-      for (Int_t j=0; j<ndim; j++) {
-         for (Int_t k=0; k<ndim; k++) {
-            tCurv(i,j) = tCurv(i,j) + tC(k,i)*tC(k,j);
-         }
-      }
+   TMatrixD cv(_nb,_nb);
+   for (int i = 3; i < _nb; i++) {
+     cv(i-3,i) = 1;
+     cv(i,i-3) = 1;
    }
+   for (int i = 3; i < _nb-3; i++) {
+     cv(i,i) = 16;
+     cv(i,i-1) = -9;
+     cv(i,i+1) = -9;
+     cv(i+1,i) = -9;
+     cv(i-1,i) = -9;
+   }
+   cv(0,0) = 2;
+   cv(1,1) = 8;
+   cv(2,2) = 14;
+   cv(_nb-1,_nb-1) = 2;
+   cv(_nb-2,_nb-2) = 8;
+   cv(_nb-3,_nb-3) = 14;
+   cv(0,1) = -3;
+   cv(1,0) = -3;
+   cv(1,2) = -6;
+   cv(2,1) = -6;
+   cv(_nb-1,_nb-2) = -3;
+   cv(_nb-2,_nb-1) = -3;
+   cv(_nb-2,_nb-3) = -6;
+   cv(_nb-3,_nb-2) = -6;
+   return cv;
 }

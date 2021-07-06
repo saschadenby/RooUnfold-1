@@ -60,11 +60,13 @@ protected:
   TVectorD GetGrad(Int_t _nb, TVectorD measured, TMatrixD reshistmatrix, TVectorD *_est);
   Double_t GetLoss(Int_t _nb, TVectorD measured, TMatrixD reshistmatrix, TVectorD *_est);
   Double_t GetRegParm(TMatrixD diag, int n_df);
+  // TMatrixD InvertMatrix(TMatrixD mat);
   virtual void Unfold();
   virtual void GetCov();
   virtual void GetWgt();
   virtual void GetSettings();
-  void FillCurvatureMatrix( TMatrixD& tCurv, TMatrixD& tC, Int_t _nb) const;
+  TMatrixD FillCurvatureMatrix(Int_t _nb);
+  TMatrixD InvertMatrix(TMatrixD a, Int_t _nb);
 
 private:
   void Init();
